@@ -14,7 +14,7 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ children }) => {
   return (
     <Box display="flex">
-      <Box bg="gray.900" p={8} pr={16} pos="fixed" h="100vh">
+      <Box bg="black" p={8} pr={16} pos="fixed" h="100vh">
         <VStack spacing={8} align="start" w="100%">
           <chakra.span mb={4} fontSize="2xl" fontWeight="bold" color="white">
             TStream

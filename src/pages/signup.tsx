@@ -4,11 +4,14 @@ import {
   Button,
   chakra,
   Divider,
+  extendTheme,
   Flex,
   FormControl,
   FormErrorMessage,
   FormLabel,
+  GlobalStyle,
   Input,
+  LightMode,
   Stack,
   Text,
 } from '@chakra-ui/react';
@@ -17,6 +20,7 @@ import { useRouter } from 'next/router';
 import { useContext, useEffect, useState } from 'react';
 import { FaGithub } from 'react-icons/fa';
 import Layout from '../../components/Layout';
+import { NotificationContext } from '../../context/NotificationContext';
 import { UserContext } from '../../context/UserContext';
 import { client } from '../../utils/appwriteConfig';
 
@@ -27,7 +31,7 @@ const SignUpPage = () => {
   const [error, setError] = useState('');
   const router = useRouter();
   const { setCurrentUser, currentUser } = useContext(UserContext);
-
+  const { showNotification } = useContext(NotificationContext);
   useEffect(() => {
     if (currentUser) {
       router.replace('/');
@@ -37,21 +41,17 @@ const SignUpPage = () => {
   const handleSignUp = () => {
     const account = new Account(client);
 
-    const result = account.create(ID.unique(), email, password, username);
-
-    result.then(
-      function (response) {
-        account.get().then((accountResponse) => {
-          setCurrentUser(accountResponse);
-          router.push('/');
-        });
-        // Clear input fields and error message
-      },
-      function (error) {
+    account
+      .create(ID.unique(), email, password, username)
+      .then(function (response) {
+        showNotification('Account created successfully!');
+        // Redirect to the login page
+        router.push('/login');
+      })
+      .catch(function (error) {
         console.log(error);
         setError(error.message); // Set the error message
-      }
-    );
+      });
   };
 
   const handleGithubSignup = () => {
@@ -73,78 +73,104 @@ const SignUpPage = () => {
       py={8}
       borderRadius="md"
       boxShadow="md"
-      bg="gray.700"
+      bg="white"
+      color="gray.800"
     >
-      <chakra.h1 fontSize="4xl" mb={8} fontWeight="bold" textAlign="center">
-        Sign Up
-      </chakra.h1>
-      <Button
-        colorScheme="transparent"
-        mb={4}
-        w="full"
-        borderRadius="full"
-        color="green.500"
-        borderWidth="1px"
-        borderColor="green.500"
-        onClick={handleGithubSignup}
-      >
-        <FaGithub style={{ marginRight: '0.5em' }} />
-        Sign up with Github
-      </Button>
-      <Flex align="center" justify="center" my={4}>
-        <Divider flex="1" />
-        <Text mx={2} color="gray.300" fontWeight="bold" fontSize="sm">
-          or
-        </Text>
-        <Divider flex="1" />
-      </Flex>
-      <FormControl id="email" mb={4}>
-        <FormLabel>Email address</FormLabel>
-        <Input
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
-      </FormControl>
-      <FormControl id="password" mb={6}>
-        <FormLabel>Password</FormLabel>
-        <Input
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
-      </FormControl>
-      <FormControl id="username" mb={6}>
-        <FormLabel>Username</FormLabel>
-        <Input
-          type="text"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-        />
-      </FormControl>
-      <Button
-        colorScheme="whatsapp"
-        onClick={handleSignUp}
-        mb={4}
-        w="full"
-        borderRadius="full"
-        fontWeight="bold"
-      >
-        Sign Up
-      </Button>
-      {error && (
-        <Text my={4} textAlign="center" color="red.500">
-          {error}
-        </Text>
-      )}
-      <Stack direction="row" spacing={2} my={8} justifyContent="center">
-        <Text color="gray.300">Already have an account?</Text>
-        <Link href="/login">
-          <Button variant="link" colorScheme="white">
-            Log in
-          </Button>
-        </Link>
-      </Stack>
+      <LightMode>
+        <GlobalStyle />
+        <chakra.h1 fontSize="4xl" mb={8} fontWeight="bold" textAlign="center">
+          Sign Up
+        </chakra.h1>
+        <Button
+          mb={4}
+          w="full"
+          borderRadius="full"
+          borderWidth={2}
+          onClick={handleGithubSignup}
+        >
+          <FaGithub style={{ marginRight: '0.5em' }} />
+          Sign up with Github
+        </Button>
+        <Flex align="center" justify="center" my={4}>
+          <Divider flex="1" />
+          <Text mx={2} fontWeight="bold" fontSize="sm">
+            or
+          </Text>
+          <Divider flex="1" />
+        </Flex>
+
+        <FormControl id="email" mb={4}>
+          <FormLabel>Email address</FormLabel>
+          <Input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            autoComplete="on"
+            focusBorderColor="green.900"
+            _autofill={{
+              textFillColor: '#000',
+              boxShadow: '0 0 0px 1000px #fff inset',
+              transition: 'background-color 5000s ease-in-out 0s',
+            }}
+          />
+        </FormControl>
+
+        <FormControl id="password" mb={6}>
+          <FormLabel>Password</FormLabel>
+          <Input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            autoComplete="on"
+            focusBorderColor="green.900"
+            _autofill={{
+              textFillColor: '#000',
+              boxShadow: '0 0 0px 1000px #fff inset',
+              transition: 'background-color 5000s ease-in-out 0s',
+            }}
+          />
+        </FormControl>
+
+        <FormControl id="username" mb={6}>
+          <FormLabel>Username</FormLabel>
+          <Input
+            type="text"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            autoComplete="on"
+            focusBorderColor="green.900"
+            _autofill={{
+              textFillColor: '#000',
+              boxShadow: '0 0 0px 1000px #fff inset',
+              transition: 'background-color 5000s ease-in-out 0s',
+            }}
+          />
+        </FormControl>
+
+        <Button
+          colorScheme="whatsapp"
+          onClick={handleSignUp}
+          mb={4}
+          w="full"
+          borderRadius="full"
+          fontWeight="bold"
+        >
+          Sign Up
+        </Button>
+        {error && (
+          <Text my={4} textAlign="center" color="red.500">
+            {error}
+          </Text>
+        )}
+        <Stack direction="row" spacing={2} my={8} justifyContent="center">
+          <Text color="gray.500">Already have an account?</Text>
+          <Link href="/login">
+            <Button variant="link" colorScheme="white">
+              Log in
+            </Button>
+          </Link>
+        </Stack>
+      </LightMode>
     </Box>
   );
 };

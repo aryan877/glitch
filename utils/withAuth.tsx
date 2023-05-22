@@ -1,5 +1,6 @@
 import { useRouter } from 'next/router';
 import React, { useContext, useEffect } from 'react';
+import Loader from '../components/Loader';
 import { UserContext } from '../context/UserContext';
 
 const withAuth = <P extends object>(
@@ -20,7 +21,12 @@ const withAuth = <P extends object>(
     }, [currentUser, router, loading]);
 
     // Render the wrapped component if user is authenticated
-    return <WrappedComponent {...props} />;
+    return (
+      <>
+        {loading && <Loader />}
+        {loading === false && currentUser && <WrappedComponent {...props} />}
+      </>
+    );
   };
 
   return WrapperComponent;
