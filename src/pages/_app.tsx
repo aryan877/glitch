@@ -1,6 +1,23 @@
-import '@/styles/globals.css'
-import type { AppProps } from 'next/app'
+import { CacheProvider } from '@chakra-ui/next-js';
+import { ChakraProvider } from '@chakra-ui/react';
+import type { AppProps } from 'next/app';
+import { UserContextProvider } from '../../context/UserContext';
+import theme from '../../theme';
+function App({ Component, pageProps }: AppProps) {
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('chakra-ui-color-mode', 'dark');
+  }
 
-export default function App({ Component, pageProps }: AppProps) {
-  return <Component {...pageProps} />
+  return (
+    <CacheProvider>
+      <ChakraProvider theme={theme}>
+        {/* Wrap the App component with the UserContextProvider */}
+        <UserContextProvider>
+          <Component {...pageProps} />
+        </UserContextProvider>
+      </ChakraProvider>
+    </CacheProvider>
+  );
 }
+
+export default App;
