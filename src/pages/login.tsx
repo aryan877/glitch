@@ -55,11 +55,12 @@ const LoginPage = () => {
 
   const handleGithubSignIn = () => {
     const account = new Account(client);
-    account.createOAuth2Session(
-      'github',
-      'http://localhost:3000',
-      'http://localhost:3000/login'
-    );
+    const baseUrl =
+      process.env.NODE_ENV === 'production'
+        ? 'https://appwrite-five.vercel.app'
+        : 'http://localhost:3000';
+
+    account.createOAuth2Session('github', baseUrl, `${baseUrl}/login`);
   };
 
   return (
