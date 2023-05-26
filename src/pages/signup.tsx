@@ -20,18 +20,17 @@ import { useRouter } from 'next/router';
 import { useContext, useEffect, useState } from 'react';
 import { FaGithub } from 'react-icons/fa';
 import Layout from '../../components/Layout';
-import { NotificationContext } from '../../context/NotificationContext';
-import { UserContext } from '../../context/UserContext';
+import { useNotification } from '../../context/NotificationContext';
+import { useUser } from '../../context/UserContext';
 import { client } from '../../utils/appwriteConfig';
-
 const SignUpPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [username, setUsername] = useState('');
   const [error, setError] = useState('');
   const router = useRouter();
-  const { setCurrentUser, currentUser } = useContext(UserContext);
-  const { showNotification } = useContext(NotificationContext);
+  const { setCurrentUser, currentUser } = useUser();
+  const { showNotification } = useNotification();
   useEffect(() => {
     if (currentUser) {
       router.replace('/');

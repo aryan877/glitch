@@ -1,24 +1,32 @@
-import { Box, Button } from '@chakra-ui/react';
+import { Box, Button, Text } from '@chakra-ui/react';
 import React, { useContext } from 'react';
-import { NotificationContext } from '../context/NotificationContext';
+import { useNotification } from '../context/NotificationContext';
 
 const Notification = ({ message }: { message: string }) => {
-  const { hideNotification } = useContext(NotificationContext);
+  const { hideNotification } = useNotification();
 
   return (
     <Box
       position="fixed"
-      bottom="0"
-      left="0"
+      bottom="10"
+      left="50%"
+      transform="translateX(-50%)"
       p="4"
-      bg="white"
-      color="gray.500"
+      w="200"
+      bg="blue.500"
+      color="white"
       zIndex="9999"
       borderRadius="md"
       m={4}
+      textAlign="center"
     >
-      <span>{message}</span>
-      <Button onClick={hideNotification} ml="4">
+      <Text fontSize="lg">{message}</Text>
+      <Button
+        onClick={hideNotification}
+        color="white"
+        mt="4"
+        colorScheme="whiteAlpha"
+      >
         Dismiss
       </Button>
     </Box>

@@ -1,48 +1,39 @@
 import { Link } from '@chakra-ui/next-js';
-import { Box, chakra, HStack, VStack } from '@chakra-ui/react';
-
+import { Box, chakra, Flex, HStack, VStack } from '@chakra-ui/react';
+import { useRouter } from 'next/router';
+import { useEffect, useRef, useState } from 'react';
+import { DraggableCore } from 'react-draggable';
 import {
   RiChatSmile2Line,
   RiHome2Line,
   RiTaskLine,
   RiVideoLine,
 } from 'react-icons/ri';
-interface SidebarProps {
+import { useSidebar } from '../context/SidebarContext';
+import Navbar from './Navbar';
+import Sidebar from './Sidebar';
+
+interface LayoutProps {
   children: React.ReactNode;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ children }) => {
+const Layout: React.FC<LayoutProps> = ({ children }) => {
+  const router = useRouter();
+  const { flexWidth } = useSidebar();
+
   return (
-    <Box display="flex">
-      <Box bg="black" p={8} pr={16} pos="fixed" h="100vh">
-        <VStack spacing={8} align="start" w="100%">
-          <chakra.span mb={4} fontSize="2xl" fontWeight="bold" color="white">
-            TStream
-          </chakra.span>
-          <Link href="/" color="gray.300" _hover={{ color: 'white' }}>
-            <HStack spacing={4} alignItems="center" w="100%">
-              <RiVideoLine size={24} />
-              <chakra.span fontWeight="bold">Video</chakra.span>
-            </HStack>
-          </Link>
-          <Link href="/" color="gray.300" _hover={{ color: 'white' }}>
-            <HStack spacing={4} alignItems="center" w="100%">
-              <RiChatSmile2Line size={24} />
-              <chakra.span fontWeight="bold">Chat</chakra.span>
-            </HStack>
-          </Link>
-          <Link href="/" color="gray.300" _hover={{ color: 'white' }}>
-            <HStack spacing={4} alignItems="center" w="100%">
-              <RiTaskLine size={24} />
-              <chakra.span fontWeight="bold">Tasks</chakra.span>
-            </HStack>
-          </Link>
-          {/* Add more HStacks as needed */}
-        </VStack>
-      </Box>
-      <Box flex="1">{children}</Box>
-    </Box>
+    <>
+      <Navbar flexWidth={flexWidth} />
+      {/* Pass the flexWidth prop to the Navbar component */}
+      <Flex h="full">
+        <Sidebar />
+        <Box flex="1" ml={flexWidth} mt={32} mb={16}>
+          {/* Add left margin to accommodate the fixed sidebar */}
+          {children}
+        </Box>
+      </Flex>
+    </>
   );
 };
 
-export default Sidebar;
+export default Layout;

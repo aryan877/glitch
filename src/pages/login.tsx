@@ -18,7 +18,7 @@ import { useRouter } from 'next/router';
 import { useContext, useEffect, useState } from 'react';
 import { FaGithub } from 'react-icons/fa';
 import Layout from '../../components/Layout';
-import { UserContext } from '../../context/UserContext';
+import { useUser } from '../../context/UserContext';
 import { client } from '../../utils/appwriteConfig';
 
 const LoginPage = () => {
@@ -26,7 +26,7 @@ const LoginPage = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const router = useRouter();
-  const { setCurrentUser, currentUser } = useContext(UserContext);
+  const { setCurrentUser, currentUser } = useUser();
 
   useEffect(() => {
     if (currentUser) {
@@ -75,7 +75,7 @@ const LoginPage = () => {
         bg="black"
       >
         <chakra.h1 fontSize="4xl" mb={8} fontWeight="bold" textAlign="center">
-          Login to TStream
+          Login to Glitch
         </chakra.h1>
         <Button
           colorScheme="transparent"

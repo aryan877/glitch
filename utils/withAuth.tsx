@@ -1,13 +1,12 @@
 import { useRouter } from 'next/router';
 import React, { useContext, useEffect } from 'react';
 import Loader from '../components/Loader';
-import { UserContext } from '../context/UserContext';
-
+import { UserContext, useUser } from '../context/UserContext';
 const withAuth = <P extends object>(
   WrappedComponent: React.ComponentType<P>
 ) => {
   const WrapperComponent: React.FC<P> = (props) => {
-    const { currentUser, loading } = useContext(UserContext); // Access the currentUser from UserContext
+    const { currentUser, loading } = useUser(); // Access the currentUser from UserContext
     const router = useRouter();
 
     useEffect(() => {

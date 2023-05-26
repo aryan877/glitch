@@ -13,12 +13,14 @@ export interface UserContextData {
   currentUser: any | null;
   loading: boolean;
   setCurrentUser: (user: any | null) => void;
+  fetchAccount: () => void;
 }
 
 export const UserContext = createContext<UserContextData>({
   currentUser: null,
   loading: true,
   setCurrentUser: () => {},
+  fetchAccount: () => {},
 });
 
 export const UserContextProvider: React.FC<{ children: ReactNode }> = ({
@@ -27,7 +29,7 @@ export const UserContextProvider: React.FC<{ children: ReactNode }> = ({
   const [currentUser, setCurrentUser] = useState<any | null | undefined>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const fetchAccount = () => {
     const account = new Account(client);
     setLoading(true);
     account
@@ -41,6 +43,10 @@ export const UserContextProvider: React.FC<{ children: ReactNode }> = ({
         setLoading(false);
         setCurrentUser(undefined);
       });
+  };
+
+  useEffect(() => {
+    fetchAccount();
   }, []);
 
   const handleSetCurrentUser = (user: any | null) => {
@@ -49,10 +55,23 @@ export const UserContextProvider: React.FC<{ children: ReactNode }> = ({
 
   return (
     <UserContext.Provider
-      value={{ currentUser, loading, setCurrentUser: handleSetCurrentUser }}
+      value={{
+        currentUser,
+        loading,
+        setCurrentUser: handleSetCurrentUser,
+        fetchAccount,
+      }}
     >
       {loading && <Loader />}
       {loading === false && <>{children}</>}
     </UserContext.Provider>
   );
+};
+
+export const useUser = (): UserContextData => {
+  const context = useContext(UserContext);
+  if (!context) {
+    throw new Error('useUser must be used within a UserContextProvider');
+  }
+  return context;
 };

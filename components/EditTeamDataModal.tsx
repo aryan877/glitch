@@ -1,0 +1,335 @@
+import { Image } from '@chakra-ui/next-js';
+import {
+  Box,
+  Button,
+  Flex,
+  Input,
+  Modal,
+  ModalBody,
+  ModalCloseButton,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+  ModalOverlay,
+  Slider,
+  SliderFilledTrack,
+  SliderMark,
+  SliderThumb,
+  SliderTrack,
+  Text,
+  useDisclosure,
+  VStack,
+} from '@chakra-ui/react';
+import { Databases, ID, Teams } from 'appwrite';
+import { useRouter } from 'next/router';
+import { useCallback, useContext, useState } from 'react';
+import Cropper from 'react-easy-crop';
+import { AiFillEdit } from 'react-icons/ai';
+import { useNotification } from '../context/NotificationContext';
+import { client } from '../utils/appwriteConfig';
+import getCroppedImg from './cropImage.js';
+// Example theme color picker library import
+import { HuePicker } from 'react-color';
+import { useDropzone } from 'react-dropzone';
+import { FiArrowLeft } from 'react-icons/fi';
+
+interface EditTeamDataModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  teamProfileImage: string;
+  teamName: string | undefined;
+  teamDescription: string;
+  teamThemeColor: string;
+}
+
+const EditTeamDataModal: React.FC<EditTeamDataModalProps> = ({
+  isOpen,
+  onClose,
+  teamProfileImage,
+  teamThemeColor,
+  teamDescription,
+  teamName,
+}) => {
+  const [name, setName] = useState(teamName);
+  const [description, setDescription] = useState(teamDescription);
+  const [themeColor, setThemeColor] = useState<string>(teamThemeColor); // Initial theme color
+  const router = useRouter();
+  const { id } = router.query;
+  const { showNotification } = useNotification();
+  const [file, setFile] = useState<File | undefined>(undefined);
+  const [imageUrl, setImageUrl] = useState<string | undefined>(
+    teamProfileImage
+  );
+  const [cropMode, setCropMode] = useState<boolean>(false);
+  const onDrop = useCallback((acceptedFiles: any) => {
+    if (acceptedFiles) {
+      const file = acceptedFiles[0];
+      if (file) {
+        setFile(file);
+        setImageUrl(URL.createObjectURL(file));
+        setCropMode(true);
+      }
+    }
+  }, []);
+
+  const {
+    getRootProps,
+    getInputProps,
+    isDragAccept,
+    isDragReject,
+    isDragActive,
+  } = useDropzone({
+    onDrop,
+    multiple: false,
+    accept: {
+      'image/*': ['.jpeg', '.jpg', '.png'],
+    },
+  });
+
+  const handleTeamNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setName(event.target.value);
+  };
+
+  const handleTeamDescriptionChange = (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    setDescription(event.target.value);
+  };
+
+  const handleThemeColorChange = (color: any) => {
+    setThemeColor(color.hex);
+  };
+
+  const [zoom, setZoom] = useState(1);
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [croppedArea, setCroppedArea] = useState<any>(null);
+  const handleCrop = async () => {
+    setCropMode(false);
+    const { file, url } = await getCroppedImg(imageUrl, croppedArea);
+    setImageUrl(url);
+    setFile(file);
+  };
+  const onCropComplete = useCallback(
+    (croppedArea: any, croppedAreaPixels: any) => {
+      setCroppedArea(croppedAreaPixels);
+    },
+    []
+  );
+
+  const handleSavePreferences = async () => {};
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose}>
+      <ModalOverlay />
+      <ModalContent
+        maxH="80vh"
+        overflowY="auto"
+        zIndex="99999999"
+        bg="gray.700"
+      >
+        <ModalHeader>Team Preferences</ModalHeader>
+        <ModalBody>
+          {cropMode ? (
+            <>
+              <Button
+                onClick={() => {
+                  setCropMode(false);
+                }}
+                w="fit-content"
+              >
+                <FiArrowLeft />
+              </Button>
+              <Box
+                w="full"
+                mt={2}
+                bg="gray.900"
+                justifyContent="center"
+                borderWidth={1}
+                alignItems="center"
+                cursor="pointer"
+                pos="relative"
+                minH="200"
+                h="200"
+              >
+                <Box pos="absolute" top="0" left="0" right="0" bottom="0">
+                  <Cropper
+                    image={imageUrl}
+                    crop={crop}
+                    zoom={zoom}
+                    cropShape="rect"
+                    aspect={1 / 1}
+                    onCropChange={setCrop}
+                    onCropComplete={onCropComplete}
+                    onZoomChange={setZoom}
+                  />
+                </Box>
+              </Box>
+              <Slider
+                aria-label="zoom"
+                colorScheme="blue"
+                value={zoom}
+                min={1}
+                max={3}
+                mt={4}
+                step={0.1}
+                onChange={(val) => {
+                  setZoom(val);
+                }}
+              >
+                <SliderTrack>
+                  <SliderFilledTrack />
+                </SliderTrack>
+                <SliderThumb />
+              </Slider>
+            </>
+          ) : (
+            <VStack align="flex-start" spacing={4}>
+              <Input
+                variant="outline"
+                color="white"
+                placeholder="Team name"
+                value={name}
+                type="text"
+                autoComplete="on"
+                onChange={handleTeamNameChange}
+              />
+              <Input
+                variant="outline"
+                color="white"
+                placeholder="Team description"
+                value={description}
+                type="text"
+                autoComplete="on"
+                onChange={handleTeamDescriptionChange}
+              />
+              <Box py={4}>
+                <HuePicker
+                  color={themeColor}
+                  onChange={handleThemeColorChange}
+                />
+              </Box>
+              <Box display="flex" alignItems="center">
+                <Text color="white" mr={2}>
+                  Theme Color:{' '}
+                </Text>
+                <Box
+                  width={8}
+                  height={8}
+                  bg={themeColor}
+                  borderRadius="md"
+                  border="1px solid white"
+                />
+                <Text color="white" ml={2}>
+                  {themeColor}
+                </Text>
+              </Box>
+              <Box
+                {...getRootProps()}
+                mt={4}
+                bg="gray.500"
+                borderEndWidth="1"
+                // borderRadius="md"
+                justifyContent="center"
+                borderWidth={1}
+                // borderRadius="full"
+                borderStyle={isDragActive ? 'dashed' : 'solid'}
+                borderColor={
+                  isDragAccept
+                    ? 'blue.200'
+                    : isDragReject
+                    ? 'red.500'
+                    : 'gray.400'
+                }
+                alignItems="center"
+                cursor="pointer"
+                minW="100"
+                minH="100"
+                // p={4}
+                position="relative"
+              >
+                {imageUrl && (
+                  <Image
+                    // borderRadius="full"
+                    boxShadow="xl"
+                    width="100"
+                    height="100"
+                    src={imageUrl}
+                    alt=""
+                  />
+                )}
+                <Box
+                  pos="absolute"
+                  top="0"
+                  left="0"
+                  right="0"
+                  bottom="0"
+                  opacity="0"
+                  _hover={{
+                    bg: 'rgba(0,0,0, 0.4)',
+                    opacity: '1',
+                  }}
+                  // borderRadius="full"
+                >
+                  <Flex
+                    transform="translate(-50%, -50%)"
+                    pos="absolute"
+                    top="50%"
+                    left="50%"
+                    textAlign="center"
+                    justifyContent="center"
+                    direction="column"
+                  >
+                    <AiFillEdit color="white" style={{ fontSize: '48px' }} />
+                    <Text>Change</Text>
+                  </Flex>
+                </Box>
+                <input
+                  type="file"
+                  {...getInputProps()}
+                  accept="image/*"
+                  placeholder="Choose an image"
+                />
+              </Box>
+            </VStack>
+          )}
+        </ModalBody>
+        <ModalFooter>
+          {cropMode ? (
+            <Button
+              bg="white"
+              color="gray.800"
+              borderRadius="full"
+              _hover={{ transform: 'scale(1.05)' }}
+              onClick={handleCrop}
+            >
+              Apply
+            </Button>
+          ) : (
+            <>
+              {' '}
+              <Button
+                variant="unstyled"
+                mr={4}
+                onClick={onClose}
+                _hover={{ transform: 'scale(1.05)' }}
+              >
+                Cancel
+              </Button>
+              <Button
+                bg="white"
+                color="gray.800"
+                borderRadius="full"
+                _hover={{ transform: 'scale(1.05)' }}
+                onClick={handleSavePreferences}
+              >
+                Save
+              </Button>
+            </>
+          )}
+        </ModalFooter>
+      </ModalContent>
+    </Modal>
+  );
+};
+
+export default EditTeamDataModal;
