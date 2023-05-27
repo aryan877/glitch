@@ -12,6 +12,7 @@ import {
 import { useSidebar } from '../context/SidebarContext';
 import Navbar from './Navbar';
 import Sidebar from './Sidebar';
+import TeamSidebar from './TeamSidebar';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -26,7 +27,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       <Navbar flexWidth={flexWidth} />
       {/* Pass the flexWidth prop to the Navbar component */}
       <Flex h="full">
-        <Sidebar />
+        {router.pathname.startsWith('/team/') ? <TeamSidebar /> : <Sidebar />}
         <Box flex="1" ml={flexWidth} mt={32} mb={16}>
           {/* Add left margin to accommodate the fixed sidebar */}
           {children}

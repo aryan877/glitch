@@ -8,7 +8,7 @@ import {
   Text,
   useDisclosure,
 } from '@chakra-ui/react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Avatars, Databases, Query, Teams } from 'appwrite';
 import dayjs from 'dayjs';
 import 'dayjs/locale/en';
@@ -25,36 +25,42 @@ import Navbar from '../../components/Navbar';
 import { useUser } from '../../context/UserContext';
 import { client } from '../../utils/appwriteConfig';
 import withAuth from '../../utils/withAuth';
-import { queryClient } from './_app';
 const nunito = Nunito_Sans({ subsets: ['latin'] });
 
 function Home() {
   const { currentUser, loading } = useUser();
   const { isOpen, onOpen, onClose } = useDisclosure();
-  const [teams, setTeams] = useState<any>([]);
-  const [teamPreferences, setTeamPreferences] = useState<any>([]);
-  const [teamImages, setTeamImages] = useState<any>([]);
+  // const [teams, setTeams] = useState<any>([]);
+  // const [teamPreferencesData, setTeamPreferences] = useState<any>([]);
+  // const [teamImages, setTeamImages] = useState<any>([]);
   const teamsClient = useMemo(() => new Teams(client), []);
   const databases = useMemo(() => new Databases(client), []);
+  const queryClient = useQueryClient();
 
-  const { data, isLoading, isError, isSuccess } = useQuery(
-    ['allTeams'],
+  const {
+    data: teams = [],
+    isLoading,
+    isError,
+    isSuccess,
+  } = useQuery(
+    ['teamsList'],
     async () => {
       const response = await teamsClient.list([Query.orderDesc('$createdAt')]);
       return response.teams;
     },
     {
-      staleTime: 20000,
+      staleTime: 600000,
+      cacheTime: 600000,
     }
   );
 
   const {
-    data: teamPreferencesData,
+    data: teamPreferencesData = {},
     isLoading: teamPreferencesLoading,
     isError: teamPreferencesError,
     isSuccess: teamPreferenceSuccess,
   } = useQuery(
-    ['teamPreferences', teams],
+    ['teamPreferencesData', teams],
     async () => {
       const teamPreferencePromises = teams.map((team: any) =>
         databases.getDocument(
@@ -79,27 +85,23 @@ function Home() {
     {
       staleTime: 600000,
       cacheTime: 600000,
-      enabled: teams.length > 0, // Only fetch preferences when teams have been loaded
     }
   );
 
   const {
-    data: teamAvatarData,
+    data: teamAvatarData = {},
     isLoading: teamAvatarLoading,
     isError: teamAvatarError,
     isSuccess: teamAvatarSuccess,
   } = useQuery(
-    ['teamAvatars', teams, teamPreferences],
+    ['teamAvatars', teams, teamPreferencesData],
     async () => {
-      if (isEmpty(teamPreferences) || isEmpty(teams)) {
-        return;
-      }
       const avatarPromises = teams.map((team: any) =>
         avatars.getInitials(
-          team.name,
+          teamPreferencesData[team.$id]?.name,
           240,
           240,
-          tinycolor(teamPreferences[team.$id]?.bg).lighten(20).toHex()
+          tinycolor(teamPreferencesData[team.$id]?.bg).lighten(20).toHex()
         )
       );
       const avatarResults = await Promise.allSettled(avatarPromises);
@@ -107,7 +109,6 @@ function Home() {
       avatarResults.forEach((result, index) => {
         if (result.status === 'fulfilled') {
           const avatar = result.value.toString();
-          console.log(avatar);
           avatarMap[teams[index].$id] = avatar;
         } else {
           console.error('Error fetching team avatar:', result.reason);
@@ -119,7 +120,6 @@ function Home() {
     {
       staleTime: 600000,
       cacheTime: 600000,
-      enabled: teams.length > 0, // Only fetch avatars when teams have been loaded
     }
   );
 
@@ -128,7 +128,7 @@ function Home() {
     const unsubscribe = client.subscribe('teams', (response) => {
       if (response.events.includes('teams.*.create')) {
         // queryClient.invalidateQueries(['allTeams']);
-        queryClient.setQueryData(['allTeams'], (prevData: any) => {
+        queryClient.setQueryData(['teamsList'], (prevData: any) => {
           const newTeam = response.payload;
           return [newTeam, ...prevData];
         });
@@ -137,27 +137,28 @@ function Home() {
     return () => {
       unsubscribe();
     };
-  }, []);
+  }, [queryClient]);
   const avatars = useMemo(() => new Avatars(client), []);
+
   //Subscriptions
 
-  useEffect(() => {
-    if (isSuccess && data) {
-      setTeams(data);
-    }
-  }, [isSuccess, data]);
+  // useEffect(() => {
+  //   if (isSuccess && data) {
+  //     setTeams(data);
+  //   }
+  // }, [isSuccess, data]);
 
-  useEffect(() => {
-    if (teamPreferenceSuccess && teamPreferencesData) {
-      setTeamPreferences(teamPreferencesData);
-    }
-  }, [teamPreferenceSuccess, teamPreferencesData]);
+  // useEffect(() => {
+  //   if (teamPreferenceSuccess && teamPreferencesData) {
+  //     setTeamPreferences(teamPreferencesData);
+  //   }
+  // }, [teamPreferenceSuccess, teamPreferencesData]);
 
-  useEffect(() => {
-    if (teamAvatarSuccess && teamAvatarData) {
-      setTeamImages(teamAvatarData);
-    }
-  }, [teamAvatarSuccess, teamAvatarData]);
+  // useEffect(() => {
+  //   if (teamAvatarSuccess && teamAvatarData) {
+  //     setTeamImages(teamAvatarData);
+  //   }
+  // }, [teamAvatarSuccess, teamAvatarData]);
 
   return (
     <>
@@ -199,6 +200,7 @@ function Home() {
               </Text>
             </Box>
           )}
+
           {!isLoading && (
             <Grid
               w="full"
@@ -234,11 +236,11 @@ function Home() {
                           bg: 'gray.600',
                         }}
                       >
-                        {teamImages[team.$id] && (
+                        {teamAvatarData[team.$id] && (
                           <Avatar
                             // key={member.id}
-                            name="w"
-                            src={teamImages[team.$id]}
+
+                            src={teamAvatarData[team.$id]}
                             size="md"
                             m={4}
                             marginRight={2}
@@ -246,7 +248,7 @@ function Home() {
                         )}
                         <Box p={4}>
                           <Text fontSize="xl" fontWeight="bold">
-                            {team.name}
+                            {teamPreferencesData[team.$id]?.name}
                           </Text>
                           <Text fontSize="sm" mt={2}>
                             <Text>
@@ -278,7 +280,7 @@ function Home() {
                         w="100px"
                         h="100px"
                         borderRadius="50%"
-                        bg={teamPreferences[team.$id]?.bg}
+                        bg={teamPreferencesData[team.$id]?.bg}
                       />
                     </Box>
                   </Link>

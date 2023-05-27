@@ -1,6 +1,5 @@
 import {
   Avatar,
-  Badge,
   Box,
   Button,
   Flex,
@@ -23,14 +22,18 @@ import { UserContext } from '../context/UserContext';
 import { client } from '../utils/appwriteConfig';
 
 import { useUser } from '../context/UserContext';
+
 const Navbar = ({ flexWidth }: { flexWidth: number }) => {
   const { currentUser, loading, setCurrentUser } = useUser();
   const router = useRouter();
 
-  const darkButtonRoutes = useMemo(() => ['/team/[id]'], []);
+  const darkButtonRoutes = useMemo(
+    () => ['/team/[id]', '/profile/[id]', '/profile/edit/[id]'],
+    []
+  );
 
   const isDarkButtonRoute = useMemo(() => {
-    return darkButtonRoutes.some((route) => router.pathname.includes(route));
+    return darkButtonRoutes.some((route) => router.pathname.startsWith(route));
   }, [darkButtonRoutes, router.pathname]);
 
   const handleLogOut = () => {
@@ -55,7 +58,7 @@ const Navbar = ({ flexWidth }: { flexWidth: number }) => {
       justifyContent="space-between"
       pr={4}
       align="center"
-      bg={isDarkButtonRoute ? 'transparent' : 'gray.900'}
+      bg={isDarkButtonRoute ? 'transparent' : 'gray.800'}
       color="white"
       h="16"
       w={`calc(100% - ${flexWidth}px)`}
@@ -70,10 +73,9 @@ const Navbar = ({ flexWidth }: { flexWidth: number }) => {
             aria-label="Go Back"
             icon={<FiArrowLeft />}
             onClick={goBack}
-            bg="gray.700"
-            _hover={{
-              bg: 'gray.700',
-            }}
+            bg="gray.800"
+            _hover={{ bg: 'gray.700' }}
+            _active={{ bg: 'gray.700' }}
             borderRadius="full"
             color="white"
           />
@@ -87,12 +89,12 @@ const Navbar = ({ flexWidth }: { flexWidth: number }) => {
             aria-label="notifications"
             icon={
               <Flex position="relative">
-                <FaBell />
+                <FaBell size="24px" />
                 {21 > 0 && (
                   <Box
                     position="absolute"
-                    top="-2px"
-                    right="-12px"
+                    top="0px"
+                    right="-4px"
                     px={2}
                     py={1}
                     borderRadius="full"
@@ -107,7 +109,7 @@ const Navbar = ({ flexWidth }: { flexWidth: number }) => {
                 )}
               </Flex>
             }
-            bg="gray.700"
+            bg="gray.800"
             _hover={{ bg: 'gray.700' }}
             _active={{ bg: 'gray.700' }}
             variant="outline"
@@ -116,41 +118,31 @@ const Navbar = ({ flexWidth }: { flexWidth: number }) => {
             borderRadius="full"
           />
           <MenuList p={2} border="none" borderRadius="md">
-            <MenuItem _hover={{ bg: 'gray.600' }} borderRadius="md">
-              Profile
+            <MenuItem borderRadius="md">Av joined Team Blockwave</MenuItem>
+            <MenuItem borderRadius="md">
+              John completed his assigned task in Blockwave
             </MenuItem>
-            <MenuItem _hover={{ bg: 'gray.600' }} borderRadius="md">
-              Profile
-            </MenuItem>
-            <MenuItem _hover={{ bg: 'gray.600' }} borderRadius="md">
-              Profile
-            </MenuItem>
+            <MenuItem borderRadius="md">A task was assigned to you</MenuItem>
           </MenuList>
         </Menu>
         <Menu>
           <MenuButton
             as={Button}
             borderRadius="full"
-            bg={!isDarkButtonRoute ? 'transparent' : 'gray.700'}
+            bg={!isDarkButtonRoute ? 'transparent' : 'gray.800'}
             variant="styled"
             colorScheme="gray"
           >
             <HStack gap={2}>
-              <Avatar name="user" src="/avatar-image.jpg" size="sm" />
+              <Avatar name="aryan" size="sm" />
               <Text ml={4} fontWeight="bold" color="white">
                 {currentUser?.name}
               </Text>
             </HStack>
           </MenuButton>
           <MenuList p={2} border="none" borderRadius="md">
-            <MenuItem _hover={{ bg: 'gray.500' }} borderRadius="md">
-              Profile
-            </MenuItem>
-            <MenuItem
-              _hover={{ bg: 'gray.500' }}
-              onClick={handleLogOut}
-              borderRadius="md"
-            >
+            <MenuItem borderRadius="md">Profile</MenuItem>
+            <MenuItem onClick={handleLogOut} borderRadius="md">
               Logout
             </MenuItem>
           </MenuList>

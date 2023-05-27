@@ -2,12 +2,9 @@ import { Image } from '@chakra-ui/next-js';
 import { Box, Button, HStack, Text, VStack } from '@chakra-ui/react';
 import React from 'react';
 import tinycolor from 'tinycolor2';
-import Layout from '../../../components/Layout';
-import withAuth from '../../../utils/withAuth';
-useRouter;
+import Layout from '../../../../components/Layout';
+import withAuth from '../../../../utils/withAuth';
 
-import Link from 'next/link';
-import { useRouter } from 'next/router';
 import {
   AiFillEye,
   AiFillStar,
@@ -15,10 +12,8 @@ import {
   AiOutlineUser,
 } from 'react-icons/ai';
 
-function Profile() {
+function EditProfile() {
   // Dummy repository data
-  const router = useRouter();
-  const { id } = router.query;
   const repositories = [
     { name: 'Repo 1', forks: 10, stars: 20, watchers: 30 },
     { name: 'Repo 2', forks: 5, stars: 15, watchers: 25 },
@@ -76,17 +71,15 @@ function Profile() {
             <Text>•</Text>
             <Text>Joined: May 2023</Text>
           </HStack>
-          <Link href={`/profile/edit/${id}`}>
-            <Button
-              borderRadius="full"
-              bg="white"
-              _hover={{ bg: 'white' }}
-              color="gray.900"
-              px={8}
-            >
-              Edit
-            </Button>
-          </Link>
+          <Button
+            borderRadius="full"
+            bg="white"
+            _hover={{ bg: 'white' }}
+            color="gray.900"
+            px={8}
+          >
+            Edit
+          </Button>
         </VStack>
       </Box>
 
@@ -216,4 +209,4 @@ function Profile() {
   );
 }
 
-export default withAuth(Profile);
+export default withAuth(EditProfile);

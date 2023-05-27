@@ -8,7 +8,7 @@ import { SidebarProvider } from '../../context/SidebarContext';
 import { UserContextProvider } from '../../context/UserContext';
 import theme from '../../theme';
 
-export const queryClient = new QueryClient();
+const queryClient = new QueryClient();
 
 function App({ Component, pageProps }: AppProps) {
   if (typeof window !== 'undefined') {
@@ -27,7 +27,7 @@ function App({ Component, pageProps }: AppProps) {
           </SidebarProvider>
         </ChakraProvider>
       </CacheProvider>
-      {/* <ReactQueryDevtools initialIsOpen /> */}
+      <ReactQueryDevtools initialIsOpen />
     </QueryClientProvider>
   );
 }

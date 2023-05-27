@@ -1,8 +1,8 @@
-import { Image } from '@chakra-ui/next-js';
 import {
   Box,
   Button,
   Flex,
+  Image,
   Input,
   Modal,
   ModalBody,
@@ -20,7 +20,8 @@ import {
   useDisclosure,
   VStack,
 } from '@chakra-ui/react';
-import { Databases, ID, Teams } from 'appwrite';
+import { useQueryClient } from '@tanstack/react-query';
+import { Databases, ID, Permission, Role, Storage, Teams } from 'appwrite';
 import { useRouter } from 'next/router';
 import { useCallback, useContext, useState } from 'react';
 import Cropper from 'react-easy-crop';
@@ -33,11 +34,12 @@ import { HuePicker } from 'react-color';
 import { useDropzone } from 'react-dropzone';
 import { FiArrowLeft } from 'react-icons/fi';
 
+import { useMemo } from 'react';
 interface EditTeamDataModalProps {
   isOpen: boolean;
   onClose: () => void;
   teamProfileImage: string;
-  teamName: string | undefined;
+  teamName: string;
   teamDescription: string;
   teamThemeColor: string;
 }
@@ -50,18 +52,21 @@ const EditTeamDataModal: React.FC<EditTeamDataModalProps> = ({
   teamDescription,
   teamName,
 }) => {
-  const [name, setName] = useState(teamName);
-  const [description, setDescription] = useState(teamDescription);
+  const [name, setName] = useState<string>(teamName);
+  const [description, setDescription] = useState<string>(teamDescription);
   const [themeColor, setThemeColor] = useState<string>(teamThemeColor); // Initial theme color
   const router = useRouter();
   const { id } = router.query;
   const { showNotification } = useNotification();
+  const databases = useMemo(() => new Databases(client), []);
+  const storage = useMemo(() => new Storage(client), []);
   const [file, setFile] = useState<File | undefined>(undefined);
   const [imageUrl, setImageUrl] = useState<string | undefined>(
     teamProfileImage
   );
+  const queryClient = useQueryClient();
   const [cropMode, setCropMode] = useState<boolean>(false);
-  const onDrop = useCallback((acceptedFiles: any) => {
+  const onDrop = (acceptedFiles: any) => {
     if (acceptedFiles) {
       const file = acceptedFiles[0];
       if (file) {
@@ -70,7 +75,7 @@ const EditTeamDataModal: React.FC<EditTeamDataModalProps> = ({
         setCropMode(true);
       }
     }
-  }, []);
+  };
 
   const {
     getRootProps,
@@ -103,6 +108,7 @@ const EditTeamDataModal: React.FC<EditTeamDataModalProps> = ({
   const [zoom, setZoom] = useState(1);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [croppedArea, setCroppedArea] = useState<any>(null);
+
   const handleCrop = async () => {
     setCropMode(false);
     const { file, url } = await getCroppedImg(imageUrl, croppedArea);
@@ -116,7 +122,54 @@ const EditTeamDataModal: React.FC<EditTeamDataModalProps> = ({
     []
   );
 
-  const handleSavePreferences = async () => {};
+  const handleSavePreferences = async () => {
+    try {
+      // const teams = new Teams(client);
+      // await teams.update(id as string, name as string);
+      // queryClient.setQueryData([`currentTeam-${id}`], (prevData: any) => {
+      //   return response;
+      // });
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = async (event) => {
+          const binaryFile = event.target?.result;
+          if (binaryFile instanceof ArrayBuffer) {
+            const blob = new Blob([binaryFile]);
+            const convertedFile = new File([blob], id as string, {
+              type: file.type,
+            });
+
+            const response = await storage.createFile(
+              process.env.NEXT_PUBLIC_TEAM_PROFILE_BUCKET_ID as string,
+              id as string,
+              convertedFile,
+              [
+                Permission.read(Role.team(id as string)),
+                Permission.update(Role.team(id as string)),
+              ]
+            );
+          }
+        };
+        reader.readAsArrayBuffer(file);
+      }
+
+      const updatedDocument = await databases.updateDocument(
+        process.env.NEXT_PUBLIC_DATABASE_ID as string,
+        process.env.NEXT_PUBLIC_TEAMS_COLLECTION_ID as string,
+        id as string,
+        { bg: themeColor, description: description, name: name }
+      );
+      queryClient.setQueryData([`teamPreferences-${id}`], (prevData: any) => {
+        return updatedDocument;
+      });
+
+      queryClient.removeQueries({ queryKey: ['teamPreferencesData'] });
+      onClose();
+    } catch (error) {
+      console.error('Error saving preferences:', error);
+      onClose();
+    }
+  };
 
   return (
     <Modal isOpen={isOpen} onClose={onClose}>

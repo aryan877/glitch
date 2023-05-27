@@ -33,7 +33,7 @@ const CreateTeamModal: React.FC<CreateTeamModalProps> = ({
   const createTeamHandler = async () => {
     try {
       // Create the team
-      showNotification('Adding Notification...');
+      showNotification('Created team');
       const teams = new Teams(client);
       const promise = teams.create(ID.unique(), teamName);
 
@@ -44,10 +44,14 @@ const CreateTeamModal: React.FC<CreateTeamModalProps> = ({
             process.env.NEXT_PUBLIC_DATABASE_ID as string,
             process.env.NEXT_PUBLIC_TEAMS_COLLECTION_ID as string,
             response.$id,
-            { bg: randomColor({ luminosity: 'dark' }) },
-            [Permission.read(Role.team(response.$id))]
+            { bg: randomColor({ luminosity: 'dark' }), name: teamName },
+            [
+              Permission.read(Role.team(response.$id)),
+              Permission.update(Role.team(response.$id)),
+            ]
           );
         },
+
         function (error) {
           console.log(error); // Failure
         }
