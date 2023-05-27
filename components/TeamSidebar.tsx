@@ -1,26 +1,29 @@
 import { Link } from '@chakra-ui/next-js';
-import { Box, chakra, Flex, HStack, VStack } from '@chakra-ui/react';
+import { Box, chakra, Flex, HStack, Text, VStack } from '@chakra-ui/react';
 import { useRouter } from 'next/router';
 import React, { useEffect, useRef, useState } from 'react';
 import { DraggableCore } from 'react-draggable';
-import { AiOutlineTeam, AiOutlineVideoCamera } from 'react-icons/ai';
-import { MdSettings } from 'react-icons/md';
+import { AiFillHome } from 'react-icons/ai';
 import {
-  RiChatSmile2Line,
-  RiHome2Line,
-  RiTaskLine,
-  RiVideoLine,
-} from 'react-icons/ri';
+  BsCameraVideoFill,
+  BsChatDotsFill,
+  BsCheckSquareFill,
+  BsGearFill,
+  BsPeopleFill,
+  BsSearch,
+} from 'react-icons/bs';
 import { useSidebar } from '../context/SidebarContext';
 
 function TeamSidebar() {
-  const flexRef = useRef<HTMLDivElement>(null); // Create a ref for the Flex container
-  const { flexWidth, setFlexWidth } = useSidebar(); // State to store the flex container width
+  const flexRef = useRef<HTMLDivElement>(null);
+  const { flexWidth, setFlexWidth } = useSidebar();
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const router = useRouter();
+  const { id } = router.query;
+
   const handleDrag = (e: any, data: any) => {
     const newWidth = flexWidth + data.deltaX;
-    const minWidth = 200; // Minimum width of the sidebar
+    const minWidth = 200;
     const limitedWidth = Math.max(minWidth, newWidth);
     setFlexWidth(limitedWidth);
   };
@@ -54,62 +57,63 @@ function TeamSidebar() {
         as="nav"
         h="full"
         w={flexWidth}
-        ref={flexRef} // Attach the ref to the Flex container
+        ref={flexRef}
         cursor={isDragging ? 'grabbing' : 'grab'}
       >
         <VStack spacing={8} align="start" w="100%">
-          <chakra.span mb={4} fontSize="2xl" fontWeight="bold" color="white">
-            Team
-          </chakra.span>
-
-          <Link
-            href="/"
-            color={router.pathname === '/' ? 'white' : 'gray.300'}
-            _hover={{ color: 'white' }}
-          >
-            <HStack spacing={4} alignItems="center" w="100%">
-              <RiHome2Line size={24} />
-              <chakra.span fontWeight="bold">Home</chakra.span>
-            </HStack>
+          <Link mb={4} href="/">
+            <Text fontSize="2xl" fontWeight="bold" color="white">
+              Glitch
+            </Text>
           </Link>
           <Link
-            href="/team/home" // Replace with the actual link for the team home
+            href={`/team/${id}`}
             color={router.pathname === '/team/[id]' ? 'white' : 'gray.300'}
             _hover={{ color: 'white' }}
           >
             <HStack spacing={4} alignItems="center" w="100%">
-              <AiOutlineTeam size={24} />
+              <BsPeopleFill size={24} />
               <chakra.span fontWeight="bold">Team</chakra.span>
             </HStack>
           </Link>
           <Link
-            href="/team/chat" // Replace with the actual link for the team chat
-            color={router.pathname === '/team/chat' ? 'white' : 'gray.300'}
+            href={`/team/chat/${id}`}
+            color={router.pathname === '/team/chat/[id]' ? 'white' : 'gray.300'}
             _hover={{ color: 'white' }}
           >
             <HStack spacing={4} alignItems="center" w="100%">
-              <RiChatSmile2Line size={24} />
+              <BsChatDotsFill size={24} />
               <chakra.span fontWeight="bold">Chat</chakra.span>
             </HStack>
           </Link>
           <Link
-            href="/team/tasks" // Replace with the actual link for the team tasks
+            href="/team/tasks"
             color={router.pathname === '/team/tasks' ? 'white' : 'gray.300'}
             _hover={{ color: 'white' }}
           >
             <HStack spacing={4} alignItems="center" w="100%">
-              <RiTaskLine size={24} />
+              <BsCheckSquareFill size={24} />
               <chakra.span fontWeight="bold">Tasks</chakra.span>
             </HStack>
           </Link>
           <Link
-            href="/team/video" // Replace with the actual link for the team video
+            href="/team/video"
             color={router.pathname === '/team/video' ? 'white' : 'gray.300'}
             _hover={{ color: 'white' }}
           >
             <HStack spacing={4} alignItems="center" w="100%">
-              <AiOutlineVideoCamera size={24} />
-              <chakra.span fontWeight="bold">Video</chakra.span>
+              <BsCameraVideoFill size={24} />
+              <chakra.span fontWeight="bold">Video Call</chakra.span>
+            </HStack>
+          </Link>
+          <Link
+            href="/search"
+            color={router.pathname === '/search' ? 'white' : 'gray.300'}
+            _hover={{ color: 'white' }}
+          >
+            <HStack spacing={4} alignItems="center" w="100%">
+              <BsSearch size={24} />
+              <chakra.span fontWeight="bold">Search</chakra.span>
             </HStack>
           </Link>
           <Link
@@ -118,7 +122,7 @@ function TeamSidebar() {
             _hover={{ color: 'white' }}
           >
             <HStack spacing={4} alignItems="center" w="100%">
-              <MdSettings size={24} />
+              <BsGearFill size={24} />
               <chakra.span fontWeight="bold">Settings</chakra.span>
             </HStack>
           </Link>

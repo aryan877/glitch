@@ -14,14 +14,13 @@ import {
   Tooltip,
 } from '@chakra-ui/react';
 import { Account } from 'appwrite';
+import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useContext, useMemo } from 'react';
-import { FaBell } from 'react-icons/fa';
+import { BsBellFill } from 'react-icons/bs';
 import { FiArrowLeft } from 'react-icons/fi';
-import { UserContext } from '../context/UserContext';
+import { UserContext, useUser } from '../context/UserContext';
 import { client } from '../utils/appwriteConfig';
-
-import { useUser } from '../context/UserContext';
 
 const Navbar = ({ flexWidth }: { flexWidth: number }) => {
   const { currentUser, loading, setCurrentUser } = useUser();
@@ -89,7 +88,7 @@ const Navbar = ({ flexWidth }: { flexWidth: number }) => {
             aria-label="notifications"
             icon={
               <Flex position="relative">
-                <FaBell size="24px" />
+                <BsBellFill size="24px" />
                 {21 > 0 && (
                   <Box
                     position="absolute"
@@ -141,7 +140,9 @@ const Navbar = ({ flexWidth }: { flexWidth: number }) => {
             </HStack>
           </MenuButton>
           <MenuList p={2} border="none" borderRadius="md">
-            <MenuItem borderRadius="md">Profile</MenuItem>
+            <Link href={`/profile/${currentUser.$id}`}>
+              <MenuItem borderRadius="md">Profile</MenuItem>
+            </Link>
             <MenuItem onClick={handleLogOut} borderRadius="md">
               Logout
             </MenuItem>

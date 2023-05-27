@@ -3,13 +3,8 @@ import { Box, chakra, Flex, HStack, VStack } from '@chakra-ui/react';
 import { useRouter } from 'next/router';
 import React, { useEffect, useRef, useState } from 'react';
 import { DraggableCore } from 'react-draggable';
+import { AiFillHome } from 'react-icons/ai';
 import { MdSettings } from 'react-icons/md';
-import {
-  RiChatSmile2Line,
-  RiHome2Line,
-  RiTaskLine,
-  RiVideoLine,
-} from 'react-icons/ri';
 import { useSidebar } from '../context/SidebarContext';
 
 function Sidebar() {
@@ -57,8 +52,8 @@ function Sidebar() {
         cursor={isDragging ? 'grabbing' : 'grab'}
       >
         <VStack spacing={8} align="start" w="100%">
-          <Link href="/">
-            <chakra.span mb={4} fontSize="2xl" fontWeight="bold" color="white">
+          <Link href="/" mb={4}>
+            <chakra.span fontSize="2xl" fontWeight="bold" color="white">
               Glitch
             </chakra.span>
           </Link>
@@ -68,7 +63,7 @@ function Sidebar() {
             _hover={{ color: 'white' }}
           >
             <HStack spacing={4} alignItems="center" w="100%">
-              <RiHome2Line size={24} />
+              <AiFillHome size={24} />
               <chakra.span fontWeight="bold">Home</chakra.span>
             </HStack>
           </Link>

@@ -71,10 +71,12 @@ function Team() {
         }
       },
       {
-        staleTime: 600000,
+        staleTime: 6000000,
+        cacheTime: 6000000,
       }
     );
-  const avatars = useMemo(() => new Avatars(client), []);
+
+  const avatars: any = useMemo(() => new Avatars(client), []);
 
   //team api member list
   const {
@@ -88,7 +90,7 @@ function Team() {
       const response = await teamsClient.listMemberships(id as string);
       return response.memberships;
     },
-    { staleTime: 600000, cacheTime: 600000 }
+    { staleTime: 6000000, cacheTime: 6000000 }
   );
 
   //team api data
@@ -173,7 +175,7 @@ function Team() {
         return result.toString();
       }
     },
-    { staleTime: 600000 }
+    { staleTime: 6000000, cacheTime: 6000000 }
   );
 
   return (
@@ -298,7 +300,9 @@ function Team() {
                       mr={4}
                     />
                     <VStack align="start">
-                      <Text>{teamMember.userName}</Text>{' '}
+                      <Text _hover={{ textDecoration: 'underline' }}>
+                        {teamMember.userName}
+                      </Text>{' '}
                       {teamMember.roles.map((role: string, index: number) => {
                         return (
                           <Badge mr={1} key="index" fontSize="sm">
@@ -343,4 +347,4 @@ function Team() {
   );
 }
 
-export default Team;
+export default withAuth(Team);
