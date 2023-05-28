@@ -12,7 +12,10 @@ import {
   MenuList,
   Text,
 } from '@chakra-ui/react';
-import { useEffect, useRef, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { Databases } from 'appwrite';
+import { useRouter } from 'next/router';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   BsArrowLeftShort,
   BsReply,
@@ -26,8 +29,8 @@ import { HiEllipsisHorizontal } from 'react-icons/hi2';
 import { MdSend } from 'react-icons/md';
 import Layout from '../../../../components/Layout';
 import { useSidebar } from '../../../../context/SidebarContext';
-import withAuth from '../../../../utils/withAuth';
 
+import withAuth from '../../../../utils/withAuth';
 function ChatMessage({
   sender,
   content,
@@ -39,6 +42,9 @@ function ChatMessage({
   isReply?: boolean;
   reference?: any;
 }) {
+  const router = useRouter();
+  const { id } = router.query;
+
   return (
     <Flex
       direction="column"
@@ -65,9 +71,11 @@ function ChatMessage({
             <Box
               borderRadius="md"
               p={2}
-              bg={sender === 'me' ? 'green.200' : 'purple.200'}
+              bg={sender === 'me' ? 'teal.200' : 'purple.200'}
               mb={2}
               w="full"
+              borderLeftColor={sender === 'me' ? 'teal.500' : 'purple.500'}
+              borderLeftWidth={4}
             >
               <Text color="gray.900" ml={1} fontSize="sm">
                 {reference}

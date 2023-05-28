@@ -17,7 +17,7 @@ import {
   Text,
   Tooltip,
   useDisclosure,
-  VStack,
+  VStack
 } from '@chakra-ui/react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Avatars, Databases, Storage, Teams } from 'appwrite';
@@ -28,7 +28,7 @@ import {
   AiFillEdit,
   AiFillWechat,
   AiOutlineEllipsis,
-  AiOutlineUserAdd,
+  AiOutlineUserAdd
 } from 'react-icons/ai';
 import { FiArrowLeft } from 'react-icons/fi';
 import { MdMail } from 'react-icons/md';
@@ -42,6 +42,8 @@ function Team() {
   const router = useRouter();
   const { id } = router.query;
   const databases = useMemo(() => new Databases(client), []);
+  const avatars: any = useMemo(() => new Avatars(client), []);
+
   const storage = useMemo(() => new Storage(client), []);
   const { isOpen, onOpen, onClose } = useDisclosure();
   const {
@@ -76,7 +78,6 @@ function Team() {
       }
     );
 
-  const avatars: any = useMemo(() => new Avatars(client), []);
 
   //team api member list
   const {

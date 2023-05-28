@@ -87,8 +87,10 @@ function TeamSidebar() {
             </HStack>
           </Link>
           <Link
-            href="/team/tasks"
-            color={router.pathname === '/team/tasks' ? 'white' : 'gray.300'}
+            href={`/team/tasks/${id}`}
+            color={
+              router.pathname === '/team/tasks/[id]' ? 'white' : 'gray.300'
+            }
             _hover={{ color: 'white' }}
           >
             <HStack spacing={4} alignItems="center" w="100%">
