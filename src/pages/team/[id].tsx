@@ -17,7 +17,7 @@ import {
   Text,
   Tooltip,
   useDisclosure,
-  VStack
+  VStack,
 } from '@chakra-ui/react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Avatars, Databases, Storage, Teams } from 'appwrite';
@@ -28,7 +28,7 @@ import {
   AiFillEdit,
   AiFillWechat,
   AiOutlineEllipsis,
-  AiOutlineUserAdd
+  AiOutlineUserAdd,
 } from 'react-icons/ai';
 import { FiArrowLeft } from 'react-icons/fi';
 import { MdMail } from 'react-icons/md';
@@ -52,7 +52,7 @@ function Team() {
     onClose: closeEditTeamModal,
   } = useDisclosure();
   const teamsClient = useMemo(() => new Teams(client), []);
-  const [teamMembers, setTeamMembers] = useState<any>([]);
+  // const [teamMembers, setTeamMembers] = useState<any>([]);
   const queryClient = useQueryClient();
   //team preferences in db collection
   //preferences has bg and description
@@ -77,8 +77,6 @@ function Team() {
         cacheTime: 6000000,
       }
     );
-
-
   //team api member list
   const {
     data: teamMembersData,
@@ -140,11 +138,11 @@ function Team() {
     };
   }, [id, queryClient]);
 
-  useEffect(() => {
-    if (teamMembersData && teamMembersSuccess) {
-      setTeamMembers(teamMembersData);
-    }
-  }, [teamMembersData, teamMembersSuccess]);
+  // useEffect(() => {
+  //   if (teamMembersData && teamMembersSuccess) {
+  //     setTeamMembers(teamMembersData);
+  //   }
+  // }, [teamMembersData, teamMembersSuccess]);
 
   //we get the avatar here, but before that we need to check if there is a profile image for team in bucket
   const {
@@ -229,8 +227,8 @@ function Team() {
               {teamPreference.description}
             </Text>
             <Text fontWeight="semibold" fontSize="lg">
-              {teamMembers?.length}{' '}
-              {teamMembers?.length === 1 ? 'Member' : 'Members'}
+              {teamMembersData?.length}{' '}
+              {teamMembersData?.length === 1 ? 'Member' : 'Members'}
             </Text>
             <Button
               leftIcon={<AiFillEdit size="24px" />}
@@ -276,72 +274,73 @@ function Team() {
         <Box mt={8}>
           <HStack>
             <Text fontWeight="bold">
-              {teamMembers?.length}{' '}
-              {teamMembers?.length === 1 ? 'Member' : 'Members'}
+              {teamMembersData?.length}{' '}
+              {teamMembersData?.length === 1 ? 'Member' : 'Members'}
             </Text>
           </HStack>
-          {teamMembers.map((teamMember: any) => (
-            <Flex
-              _hover={{ bg: 'gray.700' }}
-              align="center"
-              my={4}
-              px={4}
-              py={2}
-              borderRadius="md"
-              justifyContent="space-between"
-              key={teamMember.$id}
-            >
-              <>
-                <Link href={`/profile/${teamMember.$id}`}>
+          {teamMembersData &&
+            teamMembersData.map((teamMember: any) => (
+              <Flex
+                _hover={{ bg: 'gray.700' }}
+                align="center"
+                my={4}
+                px={4}
+                py={2}
+                borderRadius="md"
+                justifyContent="space-between"
+                key={teamMember.$id}
+              >
+                <>
+                  <Link href={`/profile/${teamMember.$id}`}>
+                    <Flex direction="row" align="center">
+                      <Avatar
+                        borderRadius="none"
+                        name={teamMember.userName}
+                        src="/path/to/avatar1.jpg"
+                        mr={4}
+                      />
+                      <VStack align="start">
+                        <Text _hover={{ textDecoration: 'underline' }}>
+                          {teamMember.userName}
+                        </Text>{' '}
+                        {teamMember.roles.map((role: string, index: number) => {
+                          return (
+                            <Badge mr={1} key="index" fontSize="sm">
+                              {role}
+                            </Badge>
+                          );
+                        })}
+                      </VStack>
+                      {/* Use the appropriate property for the team member's name */}
+                    </Flex>
+                  </Link>
                   <Flex direction="row" align="center">
-                    <Avatar
-                      borderRadius="none"
-                      name={teamMember.userName}
-                      src="/path/to/avatar1.jpg"
-                      mr={4}
-                    />
-                    <VStack align="start">
-                      <Text _hover={{ textDecoration: 'underline' }}>
-                        {teamMember.userName}
-                      </Text>{' '}
-                      {teamMember.roles.map((role: string, index: number) => {
-                        return (
-                          <Badge mr={1} key="index" fontSize="sm">
-                            {role}
-                          </Badge>
-                        );
-                      })}
-                    </VStack>
-                    {/* Use the appropriate property for the team member's name */}
+                    {!teamMember.confirm && (
+                      <Badge colorScheme="yellow" mr={4}>
+                        <Flex alignItems="center">
+                          <Icon as={MdMail} boxSize={4} mr={1} />
+                          Invite Pending
+                        </Flex>
+                      </Badge>
+                    )}
+                    <Menu>
+                      <MenuButton
+                        as={Button}
+                        p={0}
+                        m={0}
+                        bg="transparent"
+                        _hover={{ bg: 'transparent', color: 'gray.200' }}
+                        _active={{ bg: 'transparent' }}
+                        rightIcon={<AiOutlineEllipsis size="48px" />}
+                      ></MenuButton>
+                      <MenuList borderRadius="md" p={2} border="none">
+                        <MenuItem borderRadius="md">Remove</MenuItem>
+                      </MenuList>
+                    </Menu>
                   </Flex>
-                </Link>
-                <Flex direction="row" align="center">
-                  {!teamMember.confirm && (
-                    <Badge colorScheme="yellow" mr={4}>
-                      <Flex alignItems="center">
-                        <Icon as={MdMail} boxSize={4} mr={1} />
-                        Invite Pending
-                      </Flex>
-                    </Badge>
-                  )}
-                  <Menu>
-                    <MenuButton
-                      as={Button}
-                      p={0}
-                      m={0}
-                      bg="transparent"
-                      _hover={{ bg: 'transparent', color: 'gray.200' }}
-                      _active={{ bg: 'transparent' }}
-                      rightIcon={<AiOutlineEllipsis size="48px" />}
-                    ></MenuButton>
-                    <MenuList borderRadius="md" p={2} border="none">
-                      <MenuItem borderRadius="md">Remove</MenuItem>
-                    </MenuList>
-                  </Menu>
-                </Flex>
-              </>
-            </Flex>
-          ))}
+                </>
+              </Flex>
+            ))}
         </Box>
       </Box>
     </Layout>

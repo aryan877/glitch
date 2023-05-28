@@ -15,7 +15,7 @@ import {
 } from '@chakra-ui/react';
 import { Account } from 'appwrite';
 import { useRouter } from 'next/router';
-import { useContext, useEffect, useState } from 'react';
+import { useContext, useEffect, useMemo, useState } from 'react';
 import { FaGithub } from 'react-icons/fa';
 import Layout from '../../components/Layout';
 import { useUser } from '../../context/UserContext';
@@ -28,6 +28,7 @@ const LoginPage = () => {
   const router = useRouter();
   const { setCurrentUser, currentUser } = useUser();
 
+  const account = useMemo(() => new Account(client), []);
   useEffect(() => {
     if (currentUser) {
       router.replace('/');
@@ -35,7 +36,6 @@ const LoginPage = () => {
   }, [currentUser, router]);
 
   const handleSignIn = () => {
-    const account = new Account(client);
     const promise = account.createEmailSession(email, password);
 
     promise.then(

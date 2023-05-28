@@ -12,8 +12,15 @@ import {
   MenuList,
   Text,
 } from '@chakra-ui/react';
-import { useQuery } from '@tanstack/react-query';
-import { Databases } from 'appwrite';
+import { isNotEmptyObject } from '@chakra-ui/utils';
+import {
+  useInfiniteQuery,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
+import { Account, Databases, ID, Permission, Query, Role } from 'appwrite';
+import axios from 'axios';
+import { isEmpty } from 'lodash';
 import { useRouter } from 'next/router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -29,7 +36,8 @@ import { HiEllipsisHorizontal } from 'react-icons/hi2';
 import { MdSend } from 'react-icons/md';
 import Layout from '../../../../components/Layout';
 import { useSidebar } from '../../../../context/SidebarContext';
-
+import { useUser } from '../../../../context/UserContext';
+import { client } from '../../../../utils/appwriteConfig';
 import withAuth from '../../../../utils/withAuth';
 function ChatMessage({
   sender,
@@ -44,14 +52,14 @@ function ChatMessage({
 }) {
   const router = useRouter();
   const { id } = router.query;
-
+  const { currentUser } = useUser();
   return (
     <Flex
       direction="column"
-      alignItems={sender === 'me' ? 'flex-end' : 'flex-start'}
+      alignItems={sender === currentUser.$id ? 'flex-end' : 'flex-start'}
     >
       <Flex alignItems="center">
-        {sender !== 'me' && (
+        {sender !== currentUser.$id && (
           <Avatar name={sender} size="sm" bg="teal.500" color="white" mr={2} />
         )}
 
@@ -59,7 +67,7 @@ function ChatMessage({
           maxW="2xl"
           py={4}
           px={4}
-          bg={sender === 'me' ? 'teal.400' : 'purple.400'}
+          bg={sender === currentUser.$id ? 'teal.400' : 'purple.400'}
           color="white"
           borderRadius="md"
           my={2}
@@ -71,10 +79,12 @@ function ChatMessage({
             <Box
               borderRadius="md"
               p={2}
-              bg={sender === 'me' ? 'teal.200' : 'purple.200'}
+              bg={sender === currentUser.$id ? 'teal.200' : 'purple.200'}
               mb={2}
               w="full"
-              borderLeftColor={sender === 'me' ? 'teal.500' : 'purple.500'}
+              borderLeftColor={
+                sender === currentUser.$id ? 'teal.500' : 'purple.500'
+              }
               borderLeftWidth={4}
             >
               <Text color="gray.900" ml={1} fontSize="sm">
@@ -126,48 +136,35 @@ function ChatMessage({
 function TeamChat() {
   const { flexWidth, setFlexWidth } = useSidebar();
   const [message, setMessage] = useState('');
-  const [messages, setMessages] = useState([
-    { id: 1, sender: 'me', content: 'Hello!' },
-    { id: 2, sender: 'John', content: 'Hi there!' },
-    { id: 3, sender: 'me', content: 'How are you?' },
-    { id: 4, sender: 'John', content: "I'm good, thanks!" },
-    // Additional messages
-    { id: 5, sender: 'Jane', content: 'Hey everyone!' },
-    {
-      id: 6,
-      sender: 'Sam',
-      content: 'Nice to see you all. How was your day?',
-      isReply: true,
-      reference: 4, // Reference to the message with id 4
+  const databases = useMemo(() => new Databases(client), []);
+
+  const { currentUser } = useUser();
+  const queryClient = useQueryClient();
+  const [replyReference, setReplyReference] = useState<string | null>(null);
+  const account = useMemo(() => new Account(client), []);
+  const router = useRouter();
+  const { id } = router.query;
+  const { data } = useQuery(
+    [`teamMessages-${id}`],
+    async () => {
+      try {
+        console.log('ran this');
+        const response = await databases.listDocuments(
+          process.env.NEXT_PUBLIC_DATABASE_ID as string,
+          process.env.NEXT_PUBLIC_CHATS_COLLECTION_ID as string,
+          [Query.search('team', id as string)]
+        );
+        return response.documents;
+      } catch (error) {
+        console.error('Error fetching team messages:', error);
+        throw error;
+      }
     },
     {
-      id: 7,
-      sender: 'John',
-      content: 'It was great! I had a productive day at work.',
-      isReply: true,
-      reference: 3, // Reference to the message with id 3
-    },
-    {
-      id: 8,
-      sender: 'Jane',
-      content: "I'm glad to hear that. Mine was busy but good.",
-    },
-    {
-      id: 9,
-      sender: 'Sam',
-      content:
-        'That sounds great. Let me share some updates...That sounds great. Let me share some updates...That sounds great. Let me share some updates...That sounds great. Let me share some updates...',
-      isReply: true,
-      reference: 7, // Reference to the message with id 7
-    },
-    {
-      id: 10,
-      sender: 'me',
-      content: 'Sure, go ahead!',
-      isReply: true,
-      reference: 9, // Reference to the message with id 9
-    },
-  ]);
+      staleTime: 6000000,
+      cacheTime: 6000000,
+    }
+  );
 
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
@@ -177,19 +174,67 @@ function TeamChat() {
       chatContainerRef.current.scrollTop =
         chatContainerRef.current.scrollHeight;
     }
-  }, [messages]);
+  }, [data]);
 
-  const sendMessage = () => {
+  const sendMessage = async () => {
     if (message.trim() !== '') {
-      const newMessage = {
-        id: messages.length + 1,
-        sender: 'me',
-        content: message,
-      };
-      setMessages([...messages, newMessage]);
-      setMessage('');
+      try {
+        const docId = ID.unique();
+        queryClient.setQueryData([`teamMessages-${id}`], (prevData: any) => {
+          const newMessage = {
+            sender: currentUser.$id,
+            content: message,
+            team: id,
+            id: docId,
+          };
+          return [...prevData, newMessage];
+        });
+        const promise = await account.createJWT();
+        const res = await axios.post('/api/postchat', {
+          jwt: promise.jwt,
+          content: message,
+          team: id,
+          id: docId,
+        });
+      } catch (error) {
+        console.error(error);
+      }
     }
   };
+
+  //Subscriptions
+  useEffect(() => {
+    const unsubscribe = client.subscribe(
+      `databases.${process.env.NEXT_PUBLIC_DATABASE_ID}.collections.${process.env.NEXT_PUBLIC_CHATS_COLLECTION_ID}.documents`,
+      (response) => {
+        if (
+          response.events.includes(
+            `databases.${process.env.NEXT_PUBLIC_DATABASE_ID}.collections.${process.env.NEXT_PUBLIC_CHATS_COLLECTION_ID}.documents.*.create`
+          )
+        ) {
+          queryClient.invalidateQueries(['allTeams']);
+          if (
+            (response.payload as { team?: string; sender?: string })?.team ===
+              id &&
+            (response.payload as { team?: string; sender?: string })?.sender !==
+              currentUser.$id
+          ) {
+            setMessage('');
+            queryClient.setQueryData(
+              [`teamMessages-${id}`],
+              (prevData: any) => {
+                const newMessage = response.payload;
+                return [...prevData, newMessage];
+              }
+            );
+          }
+        }
+      }
+    );
+    return () => {
+      unsubscribe();
+    };
+  }, [queryClient, id, currentUser.$id]);
 
   return (
     <Layout>
@@ -215,15 +260,18 @@ function TeamChat() {
           p={4}
           ref={chatContainerRef}
         >
-          {messages.map((msg) => (
-            <ChatMessage
-              key={msg.id}
-              sender={msg.sender}
-              content={msg.content}
-              isReply={msg.isReply}
-              reference={messages.find((m) => m.id === msg.reference)?.content}
-            />
-          ))}
+          {data &&
+            data.map((msg: any) => (
+              <ChatMessage
+                key={msg.$id}
+                sender={msg.sender}
+                content={msg.content}
+                isReply={msg.isReply}
+                // reference={
+                //   messages.find((m) => m.id === msg.reference)?.content
+                // }
+              />
+            ))}
         </Box>
         <Box
           p={4}

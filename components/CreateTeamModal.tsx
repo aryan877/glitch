@@ -13,7 +13,7 @@ import {
 } from '@chakra-ui/react';
 import { Databases, ID, Permission, Role, Teams } from 'appwrite';
 import randomColor from 'randomcolor';
-import { useState } from 'react';
+import { useState, useMemo} from 'react';
 import { useNotification } from '../context/NotificationContext';
 import { client } from '../utils/appwriteConfig';
 
@@ -29,7 +29,7 @@ const CreateTeamModal: React.FC<CreateTeamModalProps> = ({
   const [teamName, setTeamName] = useState('');
 
   const { showNotification } = useNotification();
-
+  const databases = useMemo(() => new Databases(client), []);
   const createTeamHandler = async () => {
     try {
       // Create the team
@@ -39,7 +39,7 @@ const CreateTeamModal: React.FC<CreateTeamModalProps> = ({
 
       promise.then(
         async function (response) {
-          const databases = new Databases(client);
+         
           await databases.createDocument(
             process.env.NEXT_PUBLIC_DATABASE_ID as string,
             process.env.NEXT_PUBLIC_TEAMS_COLLECTION_ID as string,

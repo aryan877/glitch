@@ -99,8 +99,10 @@ function TeamSidebar() {
             </HStack>
           </Link>
           <Link
-            href="/team/video"
-            color={router.pathname === '/team/video' ? 'white' : 'gray.300'}
+            href={`/team/video/${id}`}
+            color={
+              router.pathname === '/team/video/[id]' ? 'white' : 'gray.300'
+            }
             _hover={{ color: 'white' }}
           >
             <HStack spacing={4} alignItems="center" w="100%">
@@ -109,8 +111,12 @@ function TeamSidebar() {
             </HStack>
           </Link>
           <Link
-            href="/search"
-            color={router.pathname === '/search' ? 'white' : 'gray.300'}
+            href={`/team/user_search/${id}`}
+            color={
+              router.pathname === '/team/user_search/[id]'
+                ? 'white'
+                : 'gray.300'
+            }
             _hover={{ color: 'white' }}
           >
             <HStack spacing={4} alignItems="center" w="100%">
