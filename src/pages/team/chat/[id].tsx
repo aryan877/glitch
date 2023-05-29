@@ -76,7 +76,13 @@ function ChatMessage({
     >
       <Flex alignItems="center">
         {sender !== currentUser.$id && (
-          <Avatar name={sender} size="md" bg="gray.500" color="white" mr={2} />
+          <Avatar
+            name={senderName}
+            size="md"
+            bg="gray.500"
+            color="white"
+            mr={2}
+          />
         )}
 
         <Box
