@@ -49,8 +49,8 @@ function Home() {
       return response.teams;
     },
     {
-      staleTime: 600000,
-      cacheTime: 600000,
+      staleTime: 3600000,
+      cacheTime: 3600000,
     }
   );
 
@@ -83,8 +83,8 @@ function Home() {
       return preferencesMap;
     },
     {
-      staleTime: 600000,
-      cacheTime: 600000,
+      staleTime: 3600000,
+      cacheTime: 3600000,
     }
   );
 
@@ -118,8 +118,8 @@ function Home() {
       return avatarMap;
     },
     {
-      staleTime: 600000,
-      cacheTime: 600000,
+      staleTime: 3600000,
+      cacheTime: 3600000,
     }
   );
 

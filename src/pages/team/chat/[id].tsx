@@ -133,12 +133,19 @@ function ChatMessage({
                 >
                   Reply
                 </MenuItem>
-                <MenuItem icon={<FiEdit />} onClick={() => console.log('Edit')}>
-                  Edit
-                </MenuItem>
-                <MenuItem icon={<BsTrash2 />} onClick={handleDelete}>
-                  Delete
-                </MenuItem>
+                {sender === currentUser.$id && (
+                  <MenuItem
+                    icon={<FiEdit />}
+                    onClick={() => console.log('Edit')}
+                  >
+                    Edit
+                  </MenuItem>
+                )}
+                {sender === currentUser.$id && (
+                  <MenuItem icon={<BsTrash2 />} onClick={handleDelete}>
+                    Delete
+                  </MenuItem>
+                )}
               </MenuList>
             </Menu>
           </HStack>
@@ -176,8 +183,8 @@ function TeamChat() {
       }
     },
     {
-      staleTime: 6000000,
-      cacheTime: 6000000,
+      staleTime: 3600000,
+      cacheTime: 3600000,
     }
   );
 

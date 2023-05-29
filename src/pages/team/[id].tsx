@@ -73,8 +73,8 @@ function Team() {
         }
       },
       {
-        staleTime: 6000000,
-        cacheTime: 6000000,
+        staleTime: 3600000,
+        cacheTime: 3600000,
       }
     );
   //team api member list
@@ -89,7 +89,7 @@ function Team() {
       const response = await teamsClient.listMemberships(id as string);
       return response.memberships;
     },
-    { staleTime: 6000000, cacheTime: 6000000 }
+    { staleTime: 3600000, cacheTime: 3600000 }
   );
 
   //team api data
@@ -174,7 +174,7 @@ function Team() {
         return result.toString();
       }
     },
-    { staleTime: 6000000, cacheTime: 6000000 }
+    { staleTime: 3600000, cacheTime: 3600000 }
   );
 
   return (
