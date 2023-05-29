@@ -1,4 +1,3 @@
-import { isEqual } from 'lodash';
 import { NextApiRequest, NextApiResponse } from 'next';
 import sdk from 'node-appwrite';
 
@@ -7,7 +6,7 @@ const postChat = async (req: NextApiRequest, res: NextApiResponse) => {
   const account = new sdk.Account(client);
   const databases = new sdk.Databases(client);
   const teams = new sdk.Teams(client);
-  const { jwt, content, team, id } = req.body;
+  const { jwt, content, team, $id } = req.body;
 
   try {
     // Set up the Appwrite client
@@ -34,13 +33,18 @@ const postChat = async (req: NextApiRequest, res: NextApiResponse) => {
     const response = await databases.createDocument(
       process.env.NEXT_PUBLIC_DATABASE_ID as string,
       process.env.NEXT_PUBLIC_CHATS_COLLECTION_ID as string,
-      id,
+      $id,
       {
         sender: user.$id,
         content,
         team,
+        sender_name: user.name,
       },
-      [sdk.Permission.read(sdk.Role.team(team as string))]
+      [
+        sdk.Permission.read(sdk.Role.team(team as string)),
+        sdk.Permission.update(sdk.Role.user(user.$id as string)),
+        sdk.Permission.delete(sdk.Role.user(user.$id as string)),
+      ]
     );
 
     res.status(201).json({

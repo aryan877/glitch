@@ -20,6 +20,7 @@ import {
 } from '@tanstack/react-query';
 import { Account, Databases, ID, Permission, Query, Role } from 'appwrite';
 import axios from 'axios';
+import dayjs from 'dayjs';
 import { isEmpty } from 'lodash';
 import { useRouter } from 'next/router';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -44,15 +45,28 @@ function ChatMessage({
   content,
   isReply,
   reference,
+  senderName,
+  createdAt,
+  docId,
 }: {
-  sender: any;
-  content: any;
+  sender: string;
+  content: string;
   isReply?: boolean;
-  reference?: any;
+  reference?: string;
+  createdAt: string;
+  senderName: string;
+  docId: string;
 }) {
-  const router = useRouter();
-  const { id } = router.query;
   const { currentUser } = useUser();
+  const account = useMemo(() => new Account(client), []);
+  const handleDelete = async () => {
+    const promise = await account.createJWT();
+    await axios.post('/api/deletechat', {
+      $id: docId,
+      jwt: promise.jwt,
+    });
+  };
+
   return (
     <Flex
       direction="column"
@@ -60,20 +74,20 @@ function ChatMessage({
     >
       <Flex alignItems="center">
         {sender !== currentUser.$id && (
-          <Avatar name={sender} size="sm" bg="teal.500" color="white" mr={2} />
+          <Avatar name={sender} size="md" bg="gray.500" color="white" mr={2} />
         )}
 
         <Box
           maxW="2xl"
           py={4}
           px={4}
-          bg={sender === currentUser.$id ? 'teal.400' : 'purple.400'}
+          bg={sender === currentUser.$id ? 'teal.100' : 'purple.100'}
           color="white"
           borderRadius="md"
           my={2}
         >
-          <Text fontSize="md" mb={2} color="gray.100">
-            {sender}
+          <Text fontSize="xs" mb={2} color="gray.500">
+            {senderName}
           </Text>
           {isReply && (
             <Box
@@ -87,22 +101,24 @@ function ChatMessage({
               }
               borderLeftWidth={4}
             >
-              <Text color="gray.900" ml={1} fontSize="sm">
+              <Text color="gray.900" ml={1} fontSize="xs">
                 {reference}
               </Text>
             </Box>
           )}
 
-          <Text>{content}</Text>
+          <Text fontSize="md" color="gray.900">
+            {content}
+          </Text>
           <HStack gap={4} align="center">
-            <Text mt={2} color="gray.100" fontSize="xs">
-              06:24 AM
+            <Text mt={2} color="gray.500" fontSize="xs">
+              {dayjs(createdAt).format('hh:mm A')}
             </Text>
             <Menu>
               <MenuButton
                 p={2}
                 as={IconButton}
-                icon={<HiEllipsisHorizontal size="24px" />}
+                icon={<HiEllipsisHorizontal color="black" size="24px" />}
                 bg="transparent"
                 size="sm"
                 variant="unstyled"
@@ -118,10 +134,7 @@ function ChatMessage({
                 <MenuItem icon={<FiEdit />} onClick={() => console.log('Edit')}>
                   Edit
                 </MenuItem>
-                <MenuItem
-                  icon={<BsTrash2 />}
-                  onClick={() => console.log('Delete')}
-                >
+                <MenuItem icon={<BsTrash2 />} onClick={handleDelete}>
                   Delete
                 </MenuItem>
               </MenuList>
@@ -185,16 +198,19 @@ function TeamChat() {
             sender: currentUser.$id,
             content: message,
             team: id,
-            id: docId,
+            $id: docId,
+            sender_name: currentUser.name,
+            $createdAt: Date.now(),
           };
+
           return [...prevData, newMessage];
         });
         const promise = await account.createJWT();
-        const res = await axios.post('/api/postchat', {
+        await axios.post('/api/postchat', {
           jwt: promise.jwt,
           content: message,
           team: id,
-          id: docId,
+          $id: docId,
         });
       } catch (error) {
         console.error(error);
@@ -212,7 +228,7 @@ function TeamChat() {
             `databases.${process.env.NEXT_PUBLIC_DATABASE_ID}.collections.${process.env.NEXT_PUBLIC_CHATS_COLLECTION_ID}.documents.*.create`
           )
         ) {
-          queryClient.invalidateQueries(['allTeams']);
+          // queryClient.invalidateQueries(['allTeams']);
           if (
             (response.payload as { team?: string; sender?: string })?.team ===
               id &&
@@ -225,6 +241,28 @@ function TeamChat() {
               (prevData: any) => {
                 const newMessage = response.payload;
                 return [...prevData, newMessage];
+              }
+            );
+          }
+        } else if (
+          response.events.includes(
+            `databases.${process.env.NEXT_PUBLIC_DATABASE_ID}.collections.${process.env.NEXT_PUBLIC_CHATS_COLLECTION_ID}.documents.*.delete`
+          )
+        ) {
+          if (
+            (response.payload as { team?: string; sender?: string })?.team ===
+            id
+          ) {
+            queryClient.setQueryData(
+              [`teamMessages-${id}`],
+              (prevData: any) => {
+                const deletedMessage = response.payload as {
+                  $id: string;
+                };
+                const newData = prevData.filter(
+                  (message: any) => message.$id !== deletedMessage.$id
+                );
+                return [...newData];
               }
             );
           }
@@ -264,9 +302,12 @@ function TeamChat() {
             data.map((msg: any) => (
               <ChatMessage
                 key={msg.$id}
+                docId={msg.$id}
                 sender={msg.sender}
                 content={msg.content}
                 isReply={msg.isReply}
+                senderName={msg.sender_name}
+                createdAt={msg.$createdAt}
                 // reference={
                 //   messages.find((m) => m.id === msg.reference)?.content
                 // }
