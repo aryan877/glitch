@@ -36,12 +36,14 @@
     "react-easy-crop": "^4.7.4",
     "react-icons": "^4.8.0",
     "tinycolor2": "^1.6.0",
-    "typescript": "5.0.4"
+    "typescript": "5.0.4",
+    "uuid": "^9.0.0"
   },
   "devDependencies": {
     "@types/randomcolor": "^0.5.7",
     "@types/react-color": "^3.0.6",
     "@types/react-resizable": "^3.0.4",
-    "@types/tinycolor2": "^1.4.3"
+    "@types/tinycolor2": "^1.4.3",
+    "@types/uuid": "^9.0.1"
   }
 }

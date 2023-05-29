@@ -18,6 +18,8 @@ import {
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query';
+import { v4 as uuidv4 } from 'uuid';
+
 import { Account, Databases, ID, Permission, Query, Role } from 'appwrite';
 import axios from 'axios';
 import dayjs from 'dayjs';
@@ -192,7 +194,7 @@ function TeamChat() {
   const sendMessage = async () => {
     if (message.trim() !== '') {
       try {
-        const docId = ID.unique();
+        const docId = uuidv4();
         queryClient.setQueryData([`teamMessages-${id}`], (prevData: any) => {
           const newMessage = {
             sender: currentUser.$id,

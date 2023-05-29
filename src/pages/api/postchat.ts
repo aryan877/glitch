@@ -7,7 +7,7 @@ const postChat = async (req: NextApiRequest, res: NextApiResponse) => {
   const databases = new sdk.Databases(client);
   const teams = new sdk.Teams(client);
   const { jwt, content, team, $id } = req.body;
-
+  console.log($id);
   try {
     // Set up the Appwrite client
     client
