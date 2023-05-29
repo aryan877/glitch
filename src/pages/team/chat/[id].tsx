@@ -201,6 +201,7 @@ function TeamChat() {
   const sendMessage = async () => {
     if (message.trim() !== '') {
       try {
+        setMessage('');
         const docId = uuidv4();
         queryClient.setQueryData([`teamMessages-${id}`], (prevData: any) => {
           const newMessage = {
@@ -211,7 +212,6 @@ function TeamChat() {
             sender_name: currentUser.name,
             $createdAt: Date.now(),
           };
-
           return [...prevData, newMessage];
         });
         const promise = await account.createJWT();
