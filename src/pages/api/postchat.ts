@@ -6,7 +6,15 @@ const postChat = async (req: NextApiRequest, res: NextApiResponse) => {
   const account = new sdk.Account(client);
   const databases = new sdk.Databases(client);
   const teams = new sdk.Teams(client);
-  const { jwt, content, team, $id } = req.body;
+  const {
+    jwt,
+    content,
+    team,
+    $id,
+    reference,
+    referenceContent,
+    referenceUser,
+  } = req.body;
   console.log($id);
   try {
     // Set up the Appwrite client
@@ -28,8 +36,6 @@ const postChat = async (req: NextApiRequest, res: NextApiResponse) => {
         .status(403)
         .json({ error: 'You are not a member of the team' });
     }
-
-    // Create the document in the chat collection
     const response = await databases.createDocument(
       process.env.NEXT_PUBLIC_DATABASE_ID as string,
       process.env.NEXT_PUBLIC_CHATS_COLLECTION_ID as string,
@@ -39,6 +45,12 @@ const postChat = async (req: NextApiRequest, res: NextApiResponse) => {
         content,
         team,
         sender_name: user.name,
+        ...(referenceContent &&
+          reference && {
+            reference: reference,
+            referenceContent: referenceContent,
+            referenceUser: referenceUser,
+          }),
       },
       [
         sdk.Permission.read(sdk.Role.team(team as string)),
@@ -51,6 +63,8 @@ const postChat = async (req: NextApiRequest, res: NextApiResponse) => {
       message: 'Document created successfully',
       document: response,
     });
+
+    // Create the document in the chat collection
   } catch (error) {
     console.error('Error creating document:', error);
     res.status(500).json({ error: 'Failed to create document' });

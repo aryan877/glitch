@@ -18,6 +18,7 @@ import {
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query';
+import { MdClose } from 'react-icons/md';
 import { v4 as uuidv4 } from 'uuid';
 
 import { Account, Databases, ID, Permission, Query, Role } from 'appwrite';
@@ -33,7 +34,7 @@ import {
   BsThreeDots,
   BsTrash2,
 } from 'react-icons/bs';
-import { FaEllipsisH } from 'react-icons/fa';
+import { FaEllipsisH, FaXing } from 'react-icons/fa';
 import { FiEdit, FiPaperclip } from 'react-icons/fi';
 import { HiEllipsisHorizontal } from 'react-icons/hi2';
 import { MdSend } from 'react-icons/md';
@@ -45,19 +46,33 @@ import withAuth from '../../../../utils/withAuth';
 function ChatMessage({
   sender,
   content,
-  isReply,
-  reference,
   senderName,
   createdAt,
   docId,
+  reference,
+  referenceContent,
+  referenceUser,
+  setMessageId,
+  setMessageContent,
+  inputRef,
+  setMessage,
+  setMode,
+  setMessageUser,
 }: {
   sender: string;
   content: string;
-  isReply?: boolean;
-  reference?: string;
+  reference: string;
+  referenceContent: string;
   createdAt: string;
   senderName: string;
   docId: string;
+  referenceUser: string;
+  setMessageId: React.Dispatch<React.SetStateAction<string | null>>;
+  setMessageContent: React.Dispatch<React.SetStateAction<string | null>>;
+  setMessageUser: React.Dispatch<React.SetStateAction<string | null>>;
+  setMessage: React.Dispatch<React.SetStateAction<string>>;
+  inputRef: any;
+  setMode: React.Dispatch<React.SetStateAction<'EDIT' | 'REPLY' | null>>;
 }) {
   const { currentUser } = useUser();
   const account = useMemo(() => new Account(client), []);
@@ -72,10 +87,10 @@ function ChatMessage({
   return (
     <Flex
       direction="column"
-      alignItems={sender === currentUser.$id ? 'flex-end' : 'flex-start'}
+      alignItems={sender === currentUser?.$id ? 'flex-end' : 'flex-start'}
     >
       <Flex alignItems="center">
-        {sender !== currentUser.$id && (
+        {sender !== currentUser?.$id && (
           <Avatar
             name={senderName}
             size="md"
@@ -85,77 +100,94 @@ function ChatMessage({
           />
         )}
 
-        <Box
-          maxW="2xl"
-          py={4}
-          px={4}
-          bg={sender === currentUser.$id ? 'teal.100' : 'purple.100'}
-          color="white"
-          borderRadius="md"
-          my={2}
-        >
-          <Text fontSize="xs" mb={2} color="gray.500">
-            {senderName}
-          </Text>
-          {isReply && (
-            <Box
-              borderRadius="md"
-              p={2}
-              bg={sender === currentUser.$id ? 'teal.200' : 'purple.200'}
-              mb={2}
-              w="full"
-              borderLeftColor={
-                sender === currentUser.$id ? 'teal.500' : 'purple.500'
-              }
-              borderLeftWidth={4}
-            >
-              <Text color="gray.900" ml={1} fontSize="xs">
-                {reference}
-              </Text>
-            </Box>
-          )}
-
-          <Text fontSize="md" color="gray.900">
-            {content}
-          </Text>
-          <HStack gap={4} align="center">
-            <Text mt={2} color="gray.500" fontSize="xs">
-              {dayjs(createdAt).format('hh:mm A')}
+        {
+          <Box
+            maxW="2xl"
+            py={4}
+            px={4}
+            bg={sender === currentUser?.$id ? 'teal.100' : 'purple.100'}
+            color="white"
+            borderRadius="md"
+            my={2}
+          >
+            <Text fontSize="xs" mb={2} color="gray.500">
+              {senderName}
             </Text>
-            <Menu>
-              <MenuButton
+            {reference && (
+              <Box
+                borderRadius="md"
                 p={2}
-                as={IconButton}
-                icon={<HiEllipsisHorizontal color="black" size="24px" />}
-                bg="transparent"
-                size="sm"
-                variant="unstyled"
-                aria-label="Message Options"
-              />
-              <MenuList border="none">
-                <MenuItem
-                  icon={<BsReply />}
-                  onClick={() => console.log('Reply')}
-                >
-                  Reply
-                </MenuItem>
-                {sender === currentUser.$id && (
+                bg={sender === currentUser?.$id ? 'teal.200' : 'purple.200'}
+                mb={2}
+                w="full"
+                borderLeftColor={
+                  sender === currentUser.$id ? 'teal.500' : 'purple.500'
+                }
+                borderLeftWidth={4}
+              >
+                <Text color="gray.900" ml={1} fontSize="xs">
+                  {referenceUser}
+                </Text>
+                <Text color="gray.900" ml={1} fontSize="xs">
+                  {referenceContent}
+                </Text>
+              </Box>
+            )}
+
+            <Text fontSize="md" color="gray.900">
+              {content}
+            </Text>
+            <HStack gap={4} align="center">
+              <Text mt={2} color="gray.500" fontSize="xs">
+                {dayjs(createdAt).format('hh:mm A')}
+              </Text>
+              <Menu>
+                <MenuButton
+                  p={2}
+                  as={IconButton}
+                  icon={<HiEllipsisHorizontal color="black" size="24px" />}
+                  bg="transparent"
+                  size="sm"
+                  variant="unstyled"
+                  aria-label="Message Options"
+                />
+                <MenuList border="none">
                   <MenuItem
-                    icon={<FiEdit />}
-                    onClick={() => console.log('Edit')}
+                    icon={<BsReply />}
+                    onClick={() => {
+                      setMessageId(docId);
+                      setMessageContent(content);
+                      setMessageUser(senderName);
+                      setMode('REPLY');
+                      inputRef.current.focus();
+                    }}
                   >
-                    Edit
+                    Reply
                   </MenuItem>
-                )}
-                {sender === currentUser.$id && (
-                  <MenuItem icon={<BsTrash2 />} onClick={handleDelete}>
-                    Delete
-                  </MenuItem>
-                )}
-              </MenuList>
-            </Menu>
-          </HStack>
-        </Box>
+                  {sender === currentUser.$id && (
+                    <MenuItem
+                      icon={<FiEdit />}
+                      onClick={() => {
+                        setMessageId(docId);
+                        setMessageContent(content);
+                        setMode('EDIT');
+                        setMessage(content);
+                        inputRef.current.focus();
+                      }}
+                    >
+                      Edit
+                    </MenuItem>
+                  )}
+                  {sender === currentUser.$id && (
+                    <MenuItem icon={<BsTrash2 />} onClick={handleDelete}>
+                      Delete
+                    </MenuItem>
+                  )}
+                </MenuList>
+              </Menu>
+            </HStack>
+          </Box>
+        }
       </Flex>
     </Flex>
   );
@@ -165,10 +197,13 @@ function TeamChat() {
   const { flexWidth, setFlexWidth } = useSidebar();
   const [message, setMessage] = useState('');
   const databases = useMemo(() => new Databases(client), []);
-
+  const [mode, setMode] = useState<'EDIT' | 'REPLY' | null>(null);
   const { currentUser } = useUser();
   const queryClient = useQueryClient();
-  const [replyReference, setReplyReference] = useState<string | null>(null);
+  const [messageId, setMessageId] = useState<string | null>(null);
+  const [messageContent, setMessageContent] = useState<string | null>(null);
+  const [messageUser, setMessageUser] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const account = useMemo(() => new Account(client), []);
   const router = useRouter();
   const { id } = router.query;
@@ -176,7 +211,6 @@ function TeamChat() {
     [`teamMessages-${id}`],
     async () => {
       try {
-        console.log('ran this');
         const response = await databases.listDocuments(
           process.env.NEXT_PUBLIC_DATABASE_ID as string,
           process.env.NEXT_PUBLIC_CHATS_COLLECTION_ID as string,
@@ -204,12 +238,24 @@ function TeamChat() {
     }
   }, [data]);
 
+  const handleKeyDown = (e: any) => {
+    if (e.keyCode === 13) {
+      sendMessage();
+    }
+  };
+
   const sendMessage = async () => {
     if (message.trim() !== '') {
       try {
         setMessage('');
+        if (mode === 'REPLY') {
+          setMessageContent('');
+          setMode(null);
+        }
+
         const docId = uuidv4();
-        queryClient.setQueryData([`teamMessages-${id}`], (prevData: any) => {
+
+        const queryData = (prevData: any) => {
           const newMessage = {
             sender: currentUser.$id,
             content: message,
@@ -217,15 +263,28 @@ function TeamChat() {
             $id: docId,
             sender_name: currentUser.name,
             $createdAt: Date.now(),
+            ...(mode === 'REPLY' && {
+              reference: messageId,
+              referenceContent: messageContent,
+              referenceUser: messageUser,
+            }),
           };
           return [...prevData, newMessage];
-        });
+        };
+
+        queryClient.setQueryData([`teamMessages-${id}`], queryData);
+
         const promise = await account.createJWT();
         await axios.post('/api/postchat', {
           jwt: promise.jwt,
           content: message,
           team: id,
           $id: docId,
+          ...(mode === 'REPLY' && {
+            reference: messageId,
+            referenceContent: messageContent,
+            referenceUser: messageUser,
+          }),
         });
       } catch (error) {
         console.error(error);
@@ -248,7 +307,7 @@ function TeamChat() {
             (response.payload as { team?: string; sender?: string })?.team ===
               id &&
             (response.payload as { team?: string; sender?: string })?.sender !==
-              currentUser.$id
+              currentUser?.$id
           ) {
             setMessage('');
             queryClient.setQueryData(
@@ -287,7 +346,7 @@ function TeamChat() {
     return () => {
       unsubscribe();
     };
-  }, [queryClient, id, currentUser.$id]);
+  }, [queryClient, id, currentUser]);
 
   return (
     <Layout>
@@ -320,15 +379,72 @@ function TeamChat() {
                 docId={msg.$id}
                 sender={msg.sender}
                 content={msg.content}
-                isReply={msg.isReply}
                 senderName={msg.sender_name}
                 createdAt={msg.$createdAt}
+                reference={msg.reference}
+                referenceContent={msg.referenceContent}
+                setMessageContent={setMessageContent}
+                setMessageUser={setMessageUser}
+                setMessageId={setMessageId}
+                inputRef={inputRef}
+                setMode={setMode}
+                setMessage={setMessage}
+                referenceUser={msg.referenceUser}
                 // reference={
                 //   messages.find((m) => m.id === msg.reference)?.content
                 // }
               />
             ))}
         </Box>
+        {messageContent && mode === 'REPLY' && (
+          <Flex
+            justifyContent="space-between"
+            p={4}
+            bg="gray.500"
+            position="fixed"
+            bottom="20"
+            left={flexWidth}
+            align="center"
+            right="0"
+          >
+            {`Replying : ${messageContent}`}
+            <Button
+              borderRadius="full"
+              onClick={() => {
+                setMessageContent('');
+                setMessageId('');
+                setMode(null);
+              }}
+              leftIcon={<MdClose />}
+            >
+              Clear
+            </Button>
+          </Flex>
+        )}
+        {messageContent && mode === 'EDIT' && (
+          <Flex
+            justifyContent="space-between"
+            p={4}
+            bg="gray.500"
+            position="fixed"
+            bottom="20"
+            left={flexWidth}
+            align="center"
+            right="0"
+          >
+            {`Editing : ${messageContent}`}
+            <Button
+              borderRadius="full"
+              onClick={() => {
+                setMessageContent('');
+                setMessageId('');
+              }}
+              leftIcon={<MdClose />}
+            >
+              Clear
+            </Button>
+          </Flex>
+        )}
         <Box
           p={4}
           bg="gray.700"
@@ -356,6 +472,8 @@ function TeamChat() {
               flex={1}
               color="gray.900"
               mr={2}
+              ref={inputRef}
+              onKeyDown={handleKeyDown}
             />
             <IconButton
               icon={<BsSend size="24px" />}
@@ -371,4 +489,4 @@ function TeamChat() {
   );
 }
 
-export default withAuth(TeamChat);
+export default TeamChat;
