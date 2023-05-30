@@ -11,6 +11,7 @@ import {
   MenuItem,
   MenuList,
   Text,
+  VStack,
 } from '@chakra-ui/react';
 import { isNotEmptyObject } from '@chakra-ui/utils';
 import {
@@ -58,6 +59,7 @@ function ChatMessage({
   setMessage,
   setMode,
   setMessageUser,
+  edited,
 }: {
   sender: string;
   content: string;
@@ -67,6 +69,7 @@ function ChatMessage({
   senderName: string;
   docId: string;
   referenceUser: string;
+  edited: boolean;
   setMessageId: React.Dispatch<React.SetStateAction<string | null>>;
   setMessageContent: React.Dispatch<React.SetStateAction<string | null>>;
   setMessageUser: React.Dispatch<React.SetStateAction<string | null>>;
@@ -83,11 +86,16 @@ function ChatMessage({
       jwt: promise.jwt,
     });
   };
+  const [isOpen, setIsOpen] = useState(false);
 
   return (
     <Flex
       direction="column"
       alignItems={sender === currentUser?.$id ? 'flex-end' : 'flex-start'}
+      onContextMenu={(e) => {
+        e.preventDefault();
+        setIsOpen(true);
+      }}
     >
       <Flex alignItems="center">
         {sender !== currentUser?.$id && (
@@ -110,7 +118,13 @@ function ChatMessage({
             borderRadius="md"
             my={2}
           >
-            <Text fontSize="xs" mb={2} color="gray.500">
+            <Text
+              fontSize="sm"
+              mb={2}
+              textTransform="uppercase"
+              color="gray.500"
+              fontWeight="bold"
+            >
               {senderName}
             </Text>
             {reference && (
@@ -125,10 +139,20 @@ function ChatMessage({
                 }
                 borderLeftWidth={4}
               >
-                <Text color="gray.900" ml={1} fontSize="xs">
+                <Text
+                  color={sender === currentUser.$id ? 'teal.700' : 'purple.700'}
+                  ml={1}
+                  textTransform="uppercase"
+                  fontSize="sm"
+                  fontWeight="bold"
+                >
                   {referenceUser}
                 </Text>
-                <Text color="gray.900" ml={1} fontSize="xs">
+                <Text
+                  color={sender === currentUser.$id ? 'teal.700' : 'purple.700'}
+                  ml={1}
+                  fontSize="md"
+                >
                   {referenceContent}
                 </Text>
               </Box>
@@ -137,15 +161,26 @@ function ChatMessage({
             <Text fontSize="md" color="gray.900">
               {content}
             </Text>
-            <HStack gap={4} align="center">
+            <HStack gap={4} align="flex-end">
+              {edited && (
+                <Text mt={2} fontWeight="bold" color="gray.500" fontSize="xs">
+                  edited
+                </Text>
+              )}
               <Text mt={2} color="gray.500" fontSize="xs">
                 {dayjs(createdAt).format('hh:mm A')}
               </Text>
-              <Menu>
+
+              <Menu
+                isOpen={isOpen}
+                onClose={() => {
+                  setIsOpen(false);
+                }}
+              >
                 <MenuButton
                   p={2}
                   as={IconButton}
-                  icon={<HiEllipsisHorizontal color="black" size="24px" />}
+                  // icon={<HiEllipsisHorizontal color="black" size="24px" />}
                   bg="transparent"
                   size="sm"
                   variant="unstyled"
@@ -247,13 +282,40 @@ function TeamChat() {
   const sendMessage = async () => {
     if (message.trim() !== '') {
       try {
+        message.trim();
         setMessage('');
-        if (mode === 'REPLY') {
+        if (mode === 'REPLY' || mode === 'EDIT') {
           setMessageContent('');
           setMode(null);
         }
 
         const docId = uuidv4();
+
+        if (mode === 'EDIT') {
+          //find id with messageId
+          const queryData = (prevData: any) => {
+            const messageIndex = prevData.findIndex(
+              (message: any) => message.$id === messageId
+            );
+            if (messageIndex !== -1) {
+              prevData[messageIndex].content = message;
+              prevData[messageIndex].edited = true;
+            }
+
+            return prevData;
+          };
+
+          queryClient.setQueryData([`teamMessages-${id}`], queryData);
+
+          const promise = await account.createJWT();
+          await axios.post('/api/editchat', {
+            jwt: promise.jwt,
+            content: message,
+            $id: messageId,
+          });
+
+          return;
+        }
 
         const queryData = (prevData: any) => {
           const newMessage = {
@@ -268,6 +330,7 @@ function TeamChat() {
               referenceContent: messageContent,
               referenceUser: messageUser,
             }),
+            edited: false,
           };
           return [...prevData, newMessage];
         };
@@ -390,6 +453,7 @@ function TeamChat() {
                 setMode={setMode}
                 setMessage={setMessage}
                 referenceUser={msg.referenceUser}
+                edited={msg.edited}
                 // reference={
                 //   messages.find((m) => m.id === msg.reference)?.content
                 // }
@@ -399,7 +463,8 @@ function TeamChat() {
         {messageContent && mode === 'REPLY' && (
           <Flex
             justifyContent="space-between"
-            p={4}
+            p={2}
+            px={4}
             bg="gray.500"
             position="fixed"
             bottom="20"
@@ -407,7 +472,10 @@ function TeamChat() {
             align="center"
             right="0"
           >
-            {`Replying : ${messageContent}`}
+            <Flex direction="column">
+              <Text color="gray.200">{messageUser}</Text>
+              <Text>{messageContent}</Text>
+            </Flex>
             <Button
               borderRadius="full"
               onClick={() => {
@@ -438,6 +506,8 @@ function TeamChat() {
               onClick={() => {
                 setMessageContent('');
                 setMessageId('');
+                setMode(null);
+                setMessage('');
               }}
               leftIcon={<MdClose />}
             >
@@ -462,6 +532,7 @@ function TeamChat() {
               fontSize="20px"
               aria-label="Attach File"
               mr={2}
+              onClick={() => {}}
             />
             <Input
               placeholder="Type your message..."

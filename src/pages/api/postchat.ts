@@ -15,7 +15,6 @@ const postChat = async (req: NextApiRequest, res: NextApiResponse) => {
     referenceContent,
     referenceUser,
   } = req.body;
-  console.log($id);
   try {
     // Set up the Appwrite client
     client
