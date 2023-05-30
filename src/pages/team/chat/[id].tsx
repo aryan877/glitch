@@ -19,15 +19,12 @@ import {
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query';
-import { MdClose } from 'react-icons/md';
-import { v4 as uuidv4 } from 'uuid';
-
 import { Account, Databases, ID, Permission, Query, Role } from 'appwrite';
 import axios from 'axios';
 import dayjs from 'dayjs';
 import { isEmpty } from 'lodash';
 import { useRouter } from 'next/router';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { createRef, useEffect, useMemo, useRef, useState } from 'react';
 import {
   BsArrowLeftShort,
   BsReply,
@@ -38,7 +35,8 @@ import {
 import { FaEllipsisH, FaXing } from 'react-icons/fa';
 import { FiEdit, FiPaperclip } from 'react-icons/fi';
 import { HiEllipsisHorizontal } from 'react-icons/hi2';
-import { MdSend } from 'react-icons/md';
+import { MdClose, MdSend } from 'react-icons/md';
+import { v4 as uuidv4 } from 'uuid';
 import Layout from '../../../../components/Layout';
 import { useSidebar } from '../../../../context/SidebarContext';
 import { useUser } from '../../../../context/UserContext';
@@ -60,6 +58,9 @@ function ChatMessage({
   setMode,
   setMessageUser,
   edited,
+  referenceToScroll,
+  handleOriginalMessageClick,
+  originalMessageRef,
 }: {
   sender: string;
   content: string;
@@ -76,6 +77,9 @@ function ChatMessage({
   setMessage: React.Dispatch<React.SetStateAction<string>>;
   inputRef: any;
   setMode: React.Dispatch<React.SetStateAction<'EDIT' | 'REPLY' | null>>;
+  referenceToScroll: string | null;
+  handleOriginalMessageClick: any;
+  originalMessageRef: any;
 }) {
   const { currentUser } = useUser();
   const account = useMemo(() => new Account(client), []);
@@ -90,14 +94,19 @@ function ChatMessage({
 
   return (
     <Flex
+      ref={originalMessageRef}
       direction="column"
+      bg={docId === referenceToScroll ? 'gray.400' : ''}
+      px={4}
       alignItems={sender === currentUser?.$id ? 'flex-end' : 'flex-start'}
-      onContextMenu={(e) => {
-        e.preventDefault();
-        setIsOpen(true);
-      }}
     >
-      <Flex alignItems="center">
+      <Flex
+        alignItems="center"
+        onContextMenu={(e) => {
+          e.preventDefault();
+          setIsOpen(true);
+        }}
+      >
         {sender !== currentUser?.$id && (
           <Avatar
             name={senderName}
@@ -107,7 +116,6 @@ function ChatMessage({
             mr={2}
           />
         )}
-
         {
           <Box
             maxW="2xl"
@@ -129,6 +137,7 @@ function ChatMessage({
             </Text>
             {reference && (
               <Box
+                onClick={() => handleOriginalMessageClick(reference)}
                 borderRadius="md"
                 p={2}
                 bg={sender === currentUser?.$id ? 'teal.200' : 'purple.200'}
@@ -137,6 +146,7 @@ function ChatMessage({
                 borderLeftColor={
                   sender === currentUser.$id ? 'teal.500' : 'purple.500'
                 }
+                cursor="pointer"
                 borderLeftWidth={4}
               >
                 <Text
@@ -179,11 +189,8 @@ function ChatMessage({
               >
                 <MenuButton
                   p={2}
-                  as={IconButton}
                   // icon={<HiEllipsisHorizontal color="black" size="24px" />}
                   bg="transparent"
-                  size="sm"
-                  variant="unstyled"
                   aria-label="Message Options"
                 />
                 <MenuList border="none">
@@ -236,6 +243,9 @@ function TeamChat() {
   const { currentUser } = useUser();
   const queryClient = useQueryClient();
   const [messageId, setMessageId] = useState<string | null>(null);
+  const [referenceToScroll, setReferenceToScroll] = useState<string | null>(
+    null
+  );
   const [messageContent, setMessageContent] = useState<string | null>(null);
   const [messageUser, setMessageUser] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -411,6 +421,32 @@ function TeamChat() {
     };
   }, [queryClient, id, currentUser]);
 
+  const componentRefs =
+    data?.reduce(
+      (acc: { [key: string]: React.RefObject<HTMLDivElement> }, item) => {
+        const id = item.$id;
+        acc[id] = createRef();
+        return acc;
+      },
+      {}
+    ) || {};
+
+  const handleOriginalMessageClick = (id: string) => {
+    if (data) {
+      setReferenceToScroll(id);
+      setTimeout(() => {
+        setReferenceToScroll(null);
+      }, 2000);
+      const referencedElement = data.find((item) => item.$id === id);
+      if (referencedElement && componentRefs[id]?.current !== null) {
+        const targetElement = componentRefs[id]?.current;
+        if (targetElement instanceof HTMLElement) {
+          targetElement.scrollIntoView({ behavior: 'auto' });
+        }
+      }
+    }
+  };
+
   return (
     <Layout>
       <Box
@@ -429,36 +465,38 @@ function TeamChat() {
         flexDirection="column"
       >
         <Box
-          bg="gray.700"
           overflowY="scroll"
           flex="1"
-          p={4}
+          bg="gray.700"
+          py={4}
           ref={chatContainerRef}
         >
           {data &&
-            data.map((msg: any) => (
-              <ChatMessage
-                key={msg.$id}
-                docId={msg.$id}
-                sender={msg.sender}
-                content={msg.content}
-                senderName={msg.sender_name}
-                createdAt={msg.$createdAt}
-                reference={msg.reference}
-                referenceContent={msg.referenceContent}
-                setMessageContent={setMessageContent}
-                setMessageUser={setMessageUser}
-                setMessageId={setMessageId}
-                inputRef={inputRef}
-                setMode={setMode}
-                setMessage={setMessage}
-                referenceUser={msg.referenceUser}
-                edited={msg.edited}
-                // reference={
-                //   messages.find((m) => m.id === msg.reference)?.content
-                // }
-              />
-            ))}
+            data.map((msg: any) => {
+              return (
+                <ChatMessage
+                  key={msg.$id}
+                  docId={msg.$id}
+                  sender={msg.sender}
+                  content={msg.content}
+                  senderName={msg.sender_name}
+                  createdAt={msg.$createdAt}
+                  reference={msg.reference}
+                  referenceContent={msg.referenceContent}
+                  setMessageContent={setMessageContent}
+                  setMessageUser={setMessageUser}
+                  setMessageId={setMessageId}
+                  inputRef={inputRef}
+                  setMode={setMode}
+                  setMessage={setMessage}
+                  referenceUser={msg.referenceUser}
+                  edited={msg.edited}
+                  referenceToScroll={referenceToScroll}
+                  handleOriginalMessageClick={handleOriginalMessageClick}
+                  originalMessageRef={componentRefs[msg.$id]}
+                />
+              );
+            })}
         </Box>
         {messageContent && mode === 'REPLY' && (
           <Flex
