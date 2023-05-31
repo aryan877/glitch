@@ -1,16 +1,17 @@
 import { Image } from '@chakra-ui/next-js';
-import { Box, Button, HStack, Text, VStack } from '@chakra-ui/react';
-import React from 'react';
+import {
+  Box,
+  Button,
+  Divider,
+  Input,
+  Text,
+  Textarea,
+  VStack
+} from '@chakra-ui/react';
+import React, { useState } from 'react';
 import tinycolor from 'tinycolor2';
 import Layout from '../../../../components/Layout';
 import withAuth from '../../../../utils/withAuth';
-
-import {
-  AiFillEye,
-  AiFillStar,
-  AiOutlineFork,
-  AiOutlineUser,
-} from 'react-icons/ai';
 
 function EditProfile() {
   // Dummy repository data
@@ -21,12 +22,34 @@ function EditProfile() {
   ];
 
   // Dummy GitHub user data
-  const githubUsername = 'aryankumar877';
-  const githubFollowers = 100;
-  const githubFollowing = 50;
-  const website = 'https://example.com';
-  const country = 'United States';
-  const joinedDate = 'May 2022';
+  const [githubUsername, setGithubUsername] = useState('aryankumar877');
+  const [website, setWebsite] = useState('https://example.com');
+  const [country, setCountry] = useState('United States');
+
+  const handleNameUpdate = () => {
+    // Update name logic
+    console.log('Name updated');
+  };
+
+  const handleAboutUpdate = () => {
+    // Update about logic
+    console.log('About updated');
+  };
+
+  const handleEmailUpdate = () => {
+    // Update email logic
+    console.log('Email updated');
+  };
+
+  const handleCountryUpdate = () => {
+    // Update country logic
+    console.log('Country updated');
+  };
+
+  const handleGithubUpdate = () => {
+    // Update GitHub logic
+    console.log('GitHub updated');
+  };
 
   return (
     <Layout>
@@ -57,154 +80,105 @@ function EditProfile() {
           alt="team profile"
           mr={8}
         />
-        <VStack spacing={4} align="start">
-          <Text fontWeight="extrabold" fontSize="6xl">
-            Aryan Kumar
+        {/* <VStack spacing={4} align="start"></VStack> */}
+      </Box>
+
+      {/* About Me and Links */}
+      <VStack align="start" px={8} gap={4} w="full">
+        <Box bg="gray.700" w="full" p={4} borderRadius="md">
+          <Text fontWeight="bold" fontSize="xl">
+            Name
           </Text>
-          <Text fontWeight="semibold" fontSize="lg">
-            aryankumar877@gmail.com
-          </Text>
-          <HStack spacing={2}>
-            <Text>{githubUsername}</Text>
-            <Text>•</Text>
-            <Text>Country: India</Text>
-            <Text>•</Text>
-            <Text>Joined: May 2023</Text>
-          </HStack>
+          <Input defaultValue="Aryan Kumar" />
           <Button
+            mt={4}
             borderRadius="full"
             bg="white"
             _hover={{ bg: 'white' }}
             color="gray.900"
             px={8}
+            onClick={handleNameUpdate}
           >
-            Edit
+            Update
           </Button>
-        </VStack>
-      </Box>
+        </Box>
 
-      {/* About Me and Links */}
-      <VStack align="start" px={8} w="full" gap={8} width="80%">
-        <Box>
-          <Text fontWeight="bold" fontSize="xl" mb={4}>
+        <Box bg="gray.700" w="full" p={4} borderRadius="md">
+          <Text fontWeight="bold" fontSize="xl">
             About me
           </Text>
-          <Text>
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam
-            facilisis, nisl a lobortis finibus, ligula enim placerat est, non
-            feugiat lacus elit non ante. Fusce eu eleifend magna. Vestibulum
-            ultrices lacinia eros, sed ullamcorper purus pharetra nec.
-          </Text>
+          <Textarea defaultValue="Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam facilisis, nisl a lobortis finibus, ligula enim placerat est, non feugiat lacus elit non ante. Fusce eu eleifend magna. Vestibulum ultrices lacinia eros, sed ullamcorper purus pharetra nec." />
+          <Button
+            mt={4}
+            borderRadius="full"
+            bg="white"
+            _hover={{ bg: 'white' }}
+            color="gray.900"
+            px={8}
+            onClick={handleAboutUpdate}
+          >
+            Update
+          </Button>
         </Box>
-        {/* <Box>
-          <Text fontWeight="semibold" fontSize="lg">
-            Links
+
+        <Box bg="gray.700" w="full" p={4} borderRadius="md">
+          <Text fontWeight="bold" fontSize="xl">
+            Email
           </Text>
-        </Box> */}
-        <Box>
-          <Text fontWeight="bold" fontSize="xl" mb={4}>
-            Github Stats
-          </Text>
-          <Box>
-            {/* <Text>Username: {githubUsername}</Text>
-            <Text>Followers: {githubFollowers}</Text>
-            <Text>Following: {githubFollowing}</Text> */}
-            <HStack spacing={2}>
-              <Text colorScheme="teal" size="sm">
-                Public Repos: 2
-              </Text>
-              <Text>•</Text>
-              <Text colorScheme="green" size="sm">
-                Followers: {githubFollowers}
-              </Text>
-              <Text>•</Text>
-              <Text colorScheme="green" size="sm">
-                Following: {githubFollowing}
-              </Text>
-            </HStack>
-          </Box>
+          <Input defaultValue="aryankumar877@gmail.com"  />
+          <Button
+            mt={4}
+            borderRadius="full"
+            bg="white"
+            _hover={{ bg: 'white' }}
+            color="gray.900"
+            px={8}
+            onClick={handleEmailUpdate}
+          >
+            Update
+          </Button>
         </Box>
-        <Box w="full">
-          <Text mb={4} fontWeight="bold" fontSize="xl" w="full">
-            GitHub Repositories
+
+        <Box bg="gray.700" w="full" p={4} borderRadius="md">
+          <Text fontWeight="bold" fontSize="xl">
+            Country
           </Text>
-          {repositories.map((repo) => (
-            <Box
-              key={repo.name}
-              borderRadius="md"
-              bg="gray.700"
-              p={4}
-              w="full"
-              display="flex"
-              mb={4}
-              justifyContent="space-between"
-              alignItems="center"
-            >
-              <VStack align="start" gap={2}>
-                <Text fontWeight="semibold" fontSize="lg">
-                  {repo.name}
-                </Text>
-                <Text mb={4}>
-                  Lorem ipsum dolor sit amet consectetur adipisicing elit.
-                  Architecto quam pariatur eligendi repellendus maxime illum
-                  saepe corporis fugit neque animi molestiae, temporibus,
-                  dolorum debitis libero nam delectus placeat enim expedita?
-                </Text>
-                <HStack spacing={4}>
-                  <Button
-                    as="a"
-                    href={`https://github.com/${githubUsername}/${repo.name}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    colorScheme="gray"
-                    leftIcon={<AiFillStar />}
-                    size="sm"
-                    borderRadius="full"
-                  >
-                    Stars: {repo.stars}
-                  </Button>
-                  <Button
-                    as="a"
-                    href={`https://github.com/${githubUsername}/${repo.name}/network/members`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    colorScheme="blue"
-                    leftIcon={<AiFillEye />}
-                    size="sm"
-                    borderRadius="full"
-                  >
-                    Watchers: {repo.watchers}
-                  </Button>
-                  <Button
-                    as="a"
-                    href={`https://github.com/${githubUsername}/${repo.name}/network/members`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    colorScheme="green"
-                    leftIcon={<AiOutlineFork />}
-                    size="sm"
-                    borderRadius="full"
-                  >
-                    Forks: {repo.forks}
-                  </Button>
-                </HStack>
-              </VStack>
-              {/* <Button
-                as="a"
-                href={`https://github.com/${githubUsername}/${repo.name}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                colorScheme="teal"
-                size="sm"
-              >
-                View
-              </Button> */}
-            </Box>
-          ))}
+          <Input
+            defaultValue={country}
+            onChange={(e) => setCountry(e.target.value)}
+            placeholder="country"
+          />
+          <Button
+            mt={4}
+            borderRadius="full"
+            bg="white"
+            _hover={{ bg: 'white' }}
+            color="gray.900"
+            px={8}
+            onClick={handleCountryUpdate}
+          >
+            Update
+          </Button>
+        </Box>
+
+        <Box bg="gray.700" w="full" p={4} borderRadius="md">
+          <Text fontWeight="bold" fontSize="xl">
+            Add GitHub
+          </Text>
+          <Input placeholder="github username" />
+          <Button
+            mt={4}
+            borderRadius="full"
+            bg="white"
+            _hover={{ bg: 'white' }}
+            color="gray.900"
+            px={8}
+            onClick={handleGithubUpdate}
+          >
+            Add
+          </Button>
         </Box>
       </VStack>
-
-      {/* GitHub Repositories */}
     </Layout>
   );
 }

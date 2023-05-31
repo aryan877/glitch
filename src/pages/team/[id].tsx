@@ -36,6 +36,7 @@ import tinycolor from 'tinycolor2';
 import EditTeamDataModal from '../../../components/EditTeamDataModal';
 import InviteMemberModal from '../../../components/InviteMemberModal';
 import Layout from '../../../components/Layout';
+import { useUser } from '../../../context/UserContext';
 import { client } from '../../../utils/appwriteConfig';
 import withAuth from '../../../utils/withAuth';
 function Team() {
@@ -43,7 +44,7 @@ function Team() {
   const { id } = router.query;
   const databases = useMemo(() => new Databases(client), []);
   const avatars: any = useMemo(() => new Avatars(client), []);
-
+  const { currentUser } = useUser();
   const storage = useMemo(() => new Storage(client), []);
   const { isOpen, onOpen, onClose } = useDisclosure();
   const {
@@ -113,7 +114,14 @@ function Team() {
   useEffect(() => {
     const unsubscribe = client.subscribe('memberships', (response) => {
       console.log(response);
-      if (
+      if (response.events.includes(`teams.${id}.memberships.*.delete`)) {
+        queryClient.setQueryData([`teamMembers-${id}`], (prevData: any) => {
+          const deletedMember: any = response.payload;
+          return prevData.filter(
+            (member: any) => member.$id !== deletedMember.$id
+          );
+        });
+      } else if (
         response.events.includes(`teams.${id}.memberships.*.create`) ||
         response.events.includes(`teams.${id}.memberships.*.update.status`)
       ) {
@@ -162,7 +170,7 @@ function Team() {
           process.env.NEXT_PUBLIC_TEAM_PROFILE_BUCKET_ID as string,
           id as string
         );
-        console.log(imageUrl);
+
         return `${imageUrl.toString()}&timestamp=${timestamp}`;
       } catch (error) {
         const result = avatars.getInitials(
@@ -176,6 +184,45 @@ function Team() {
     },
     { staleTime: 3600000, cacheTime: 3600000 }
   );
+
+  const cancelMembershipHandler = async (membershipId: string) => {
+    const promise = await teamsClient.deleteMembership(
+      id as string,
+      membershipId as string
+    );
+  };
+
+  const owner = useMemo(
+    () =>
+      teamMembersData?.some(
+        (teamMember) =>
+          teamMember.roles.includes('owner') &&
+          teamMember.userId === currentUser.$id
+      ),
+    [teamMembersData, currentUser]
+  );
+
+  const leaveTeamHandler = async () => {
+    const membership = teamMembersData?.find(
+      (teamMember) => teamMember.userId === currentUser.$id
+    );
+
+    if (membership) {
+      const membershipId = membership.$id;
+
+      try {
+        await teamsClient.deleteMembership(
+          id as string,
+          membershipId as string
+        );
+
+        queryClient.removeQueries({ queryKey: ['teamPreferencesData'] });
+        router.push('/');
+      } catch (error) {
+        // Handle error
+      }
+    }
+  };
 
   return (
     <Layout>
@@ -266,7 +313,14 @@ function Team() {
             ></MenuButton>
             <MenuList borderRadius="md" p={2} border="none">
               <MenuItem borderRadius="md">Chat</MenuItem>
-              <MenuItem borderRadius="md">Leave Team</MenuItem>
+
+              <MenuItem
+                _hover={{ bg: 'red.500' }}
+                borderRadius="md"
+                onClick={leaveTeamHandler}
+              >
+                {owner ? 'Leave and Delete Team' : 'Leave Team'}
+              </MenuItem>
             </MenuList>
           </Menu>
         </Box>
@@ -334,7 +388,25 @@ function Team() {
                         rightIcon={<AiOutlineEllipsis size="48px" />}
                       ></MenuButton>
                       <MenuList borderRadius="md" p={2} border="none">
-                        <MenuItem borderRadius="md">Remove</MenuItem>
+                        {owner && teamMember.userId !== currentUser.$id && (
+                          <MenuItem
+                            onClick={() => {
+                              cancelMembershipHandler(teamMember.$id);
+                            }}
+                            _hover={{ bg: 'red.500' }}
+                            borderRadius="md"
+                          >
+                            Remove
+                          </MenuItem>
+                        )}
+                        <MenuItem
+                          onClick={() => {
+                            // cancelMembershipHandler(teamMember.$id);
+                          }}
+                          borderRadius="md"
+                        >
+                          View Profile
+                        </MenuItem>
                       </MenuList>
                     </Menu>
                   </Flex>

@@ -146,6 +146,7 @@ const EditTeamDataModal: React.FC<EditTeamDataModalProps> = ({
               [
                 Permission.read(Role.team(id as string)),
                 Permission.update(Role.team(id as string)),
+                Permission.delete(Role.team(id as string)),
               ]
             );
           }

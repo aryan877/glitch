@@ -13,7 +13,7 @@ import {
 } from '@chakra-ui/react';
 import { Databases, ID, Teams } from 'appwrite';
 import { useRouter } from 'next/router';
-import { useContext, useState } from 'react';
+import { useContext, useMemo, useState } from 'react';
 import { useNotification } from '../context/NotificationContext';
 import { client } from '../utils/appwriteConfig';
 
@@ -30,8 +30,8 @@ const InviteMemberModal: React.FC<InviteMemberModalProps> = ({
   const router = useRouter();
   const { id } = router.query;
   const { showNotification } = useNotification();
+  const teams = useMemo(() => new Teams(client), []);
   const addMemberHandler = async () => {
-    const teams = new Teams(client);
     const promise = teams.createMembership(
       id as string,
       email,

@@ -10,6 +10,7 @@ import {
   MenuButton,
   MenuItem,
   MenuList,
+  Spacer,
   Text,
   VStack,
 } from '@chakra-ui/react';
@@ -61,13 +62,15 @@ function ChatMessage({
   referenceToScroll,
   handleOriginalMessageClick,
   originalMessageRef,
+  marginY,
+  display,
 }: {
   sender: string;
   content: string;
   reference: string;
   referenceContent: string;
   createdAt: string;
-  senderName: string;
+  senderName: string | null;
   docId: string;
   referenceUser: string;
   edited: boolean;
@@ -80,6 +83,8 @@ function ChatMessage({
   referenceToScroll: string | null;
   handleOriginalMessageClick: any;
   originalMessageRef: any;
+  marginY: number;
+  display: boolean;
 }) {
   const { currentUser } = useUser();
   const account = useMemo(() => new Account(client), []);
@@ -107,10 +112,11 @@ function ChatMessage({
           setIsOpen(true);
         }}
       >
-        {sender !== currentUser?.$id && (
+        {sender !== currentUser?.$id && senderName && (
           <Avatar
             name={senderName}
             size="md"
+            w="12"
             bg="gray.500"
             color="white"
             mr={2}
@@ -118,23 +124,26 @@ function ChatMessage({
         )}
         {
           <Box
+            // ml={senderName ? 0 : 14}
             maxW="2xl"
-            py={4}
+            py={2}
             px={4}
             bg={sender === currentUser?.$id ? 'teal.100' : 'purple.100'}
             color="white"
             borderRadius="md"
-            my={2}
+            mt={marginY}
           >
-            <Text
-              fontSize="sm"
-              mb={2}
-              textTransform="uppercase"
-              color="gray.500"
-              fontWeight="bold"
-            >
-              {senderName}
-            </Text>
+            {display && (
+              <Text
+                fontSize="sm"
+                mb={2}
+                textTransform="uppercase"
+                color="gray.500"
+                fontWeight="bold"
+              >
+                {senderName}
+              </Text>
+            )}
             {reference && (
               <Box
                 onClick={() => handleOriginalMessageClick(reference)}
@@ -171,16 +180,18 @@ function ChatMessage({
             <Text fontSize="md" color="gray.900">
               {content}
             </Text>
-            <HStack gap={4} align="flex-end">
-              {edited && (
-                <Text mt={2} fontWeight="bold" color="gray.500" fontSize="xs">
-                  edited
-                </Text>
-              )}
-              <Text mt={2} color="gray.500" fontSize="xs">
-                {dayjs(createdAt).format('hh:mm A')}
+            <HStack
+              // gap={4}
+              // bg="red"
+              mt={2}
+              // align="flex-end"
+              justifyContent="space-between"
+            >
+              <Spacer />
+              <Text fontWeight="bold" color="gray.500" fontSize="xs">
+                {dayjs(createdAt).format('hh:mm A')}{' '}
+                {edited && <span>edited</span>}
               </Text>
-
               <Menu
                 isOpen={isOpen}
                 onClose={() => {
@@ -188,7 +199,7 @@ function ChatMessage({
                 }}
               >
                 <MenuButton
-                  p={2}
+                  // p={2}
                   // icon={<HiEllipsisHorizontal color="black" size="24px" />}
                   bg="transparent"
                   aria-label="Message Options"
@@ -259,7 +270,7 @@ function TeamChat() {
         const response = await databases.listDocuments(
           process.env.NEXT_PUBLIC_DATABASE_ID as string,
           process.env.NEXT_PUBLIC_CHATS_COLLECTION_ID as string,
-          [Query.search('team', id as string)]
+          [Query.equal('team', [id as string])]
         );
         return response.documents;
       } catch (error) {
@@ -455,7 +466,6 @@ function TeamChat() {
         right="0"
         bottom="0"
         top="0"
-        bg="red"
         my={16}
         mb={20}
         // mb={-16}
@@ -472,7 +482,11 @@ function TeamChat() {
           ref={chatContainerRef}
         >
           {data &&
-            data.map((msg: any) => {
+            data.map((msg: any, index: number) => {
+              const previousMsg = index > 0 ? data[index - 1] : data[index];
+              const isSameSender =
+                previousMsg && previousMsg.sender === msg.sender;
+
               return (
                 <ChatMessage
                   key={msg.$id}
@@ -480,6 +494,7 @@ function TeamChat() {
                   sender={msg.sender}
                   content={msg.content}
                   senderName={msg.sender_name}
+                  display={isSameSender && index !== 0 ? false : true}
                   createdAt={msg.$createdAt}
                   reference={msg.reference}
                   referenceContent={msg.referenceContent}
@@ -494,6 +509,7 @@ function TeamChat() {
                   referenceToScroll={referenceToScroll}
                   handleOriginalMessageClick={handleOriginalMessageClick}
                   originalMessageRef={componentRefs[msg.$id]}
+                  marginY={isSameSender && index !== 0 ? 1 : 8}
                 />
               );
             })}
