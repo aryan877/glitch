@@ -33,7 +33,7 @@ import {
   BsThreeDots,
   BsTrash2,
 } from 'react-icons/bs';
-import { FaEllipsisH, FaXing } from 'react-icons/fa';
+import { FaCheck, FaEllipsisH, FaXing } from 'react-icons/fa';
 import { FiEdit, FiPaperclip } from 'react-icons/fi';
 import { HiEllipsisHorizontal } from 'react-icons/hi2';
 import { MdClose, MdSend } from 'react-icons/md';
@@ -64,6 +64,7 @@ function ChatMessage({
   originalMessageRef,
   marginY,
   display,
+  delivered,
 }: {
   sender: string;
   content: string;
@@ -85,6 +86,7 @@ function ChatMessage({
   originalMessageRef: any;
   marginY: number;
   display: boolean;
+  delivered: boolean | null;
 }) {
   const { currentUser } = useUser();
   const account = useMemo(() => new Account(client), []);
@@ -97,13 +99,16 @@ function ChatMessage({
   };
   const [isOpen, setIsOpen] = useState(false);
 
+  useEffect(() => {});
+
   return (
     <Flex
       ref={originalMessageRef}
       direction="column"
       bg={docId === referenceToScroll ? 'gray.400' : ''}
       px={4}
-      alignItems={sender === currentUser?.$id ? 'flex-end' : 'flex-start'}
+      mt={marginY}
+      alignItems={sender === currentUser?.$id ? 'flex-start' : 'flex-start'}
     >
       <Flex
         alignItems="center"
@@ -112,26 +117,24 @@ function ChatMessage({
           setIsOpen(true);
         }}
       >
-        {sender !== currentUser?.$id && senderName && (
+        {
           <Avatar
-            name={senderName}
+            name={senderName as string}
             size="md"
             w="12"
             bg="gray.500"
             color="white"
             mr={2}
           />
-        )}
+        }
         {
           <Box
-            // ml={senderName ? 0 : 14}
             maxW="2xl"
             py={2}
             px={4}
             bg={sender === currentUser?.$id ? 'teal.100' : 'purple.100'}
             color="white"
             borderRadius="md"
-            mt={marginY}
           >
             {display && (
               <Text
@@ -187,11 +190,12 @@ function ChatMessage({
               // align="flex-end"
               justifyContent="space-between"
             >
-              <Spacer />
+              {/* <Spacer /> */}
               <Text fontWeight="bold" color="gray.500" fontSize="xs">
                 {dayjs(createdAt).format('hh:mm A')}{' '}
                 {edited && <span>edited</span>}
               </Text>
+
               <Menu
                 isOpen={isOpen}
                 onClose={() => {
@@ -239,6 +243,12 @@ function ChatMessage({
                 </MenuList>
               </Menu>
             </HStack>
+
+            {delivered && (
+              <Box py={2} color="gray.400">
+                <FaCheck />
+              </Box>
+            )}
           </Box>
         }
       </Flex>
@@ -270,17 +280,35 @@ function TeamChat() {
         const response = await databases.listDocuments(
           process.env.NEXT_PUBLIC_DATABASE_ID as string,
           process.env.NEXT_PUBLIC_CHATS_COLLECTION_ID as string,
-          [Query.equal('team', [id as string])]
+          [
+            Query.equal('team', [id as string]),
+            Query.limit(8),
+            Query.orderDesc('$createdAt'),
+          ]
         );
-        return response.documents;
+
+        const sortedDocuments = response.documents.sort((a, b) => {
+          const dateA = new Date(a.$createdAt);
+          const dateB = new Date(b.$createdAt);
+          return dateA.getTime() - dateB.getTime();
+        });
+
+        const updatedDocuments = sortedDocuments.map((document) => {
+          if (document.sender === currentUser.$id) {
+            return { ...document, delivered: true };
+          }
+          return document;
+        });
+
+        return updatedDocuments;
       } catch (error) {
         console.error('Error fetching team messages:', error);
         throw error;
       }
     },
     {
-      staleTime: 3600000,
-      cacheTime: 3600000,
+      staleTime: 0,
+      cacheTime: 0,
     }
   );
 
@@ -337,7 +365,8 @@ function TeamChat() {
 
           return;
         }
-
+        // edit flow ends here
+        // normal message and reply flow
         const queryData = (prevData: any) => {
           const newMessage = {
             sender: currentUser.$id,
@@ -352,6 +381,7 @@ function TeamChat() {
               referenceUser: messageUser,
             }),
             edited: false,
+            delivered: false,
           };
           return [...prevData, newMessage];
         };
@@ -370,6 +400,21 @@ function TeamChat() {
             referenceUser: messageUser,
           }),
         });
+
+        // Mark the message as delivered
+        queryClient.setQueryData([`teamMessages-${id}`], (prevData: any) => {
+          const updatedData = prevData.map((msg: any) => {
+            if (msg.$id === docId && msg.sender === currentUser.$id) {
+              return {
+                ...msg,
+                delivered: true,
+              };
+            }
+            return msg;
+          });
+          return updatedData;
+        });
+        //here we set that as delivered
       } catch (error) {
         console.error(error);
       }
@@ -458,6 +503,65 @@ function TeamChat() {
     }
   };
 
+  useEffect(() => {
+    const markNotificationsAsRead = async () => {
+      try {
+        const response = await databases.listDocuments(
+          process.env.NEXT_PUBLIC_DATABASE_ID as string,
+          process.env.NEXT_PUBLIC_CHATS_NOTIFICATION_COLLECTION_ID as string,
+          [
+            Query.equal('teamId', id as string),
+            Query.equal('readerId', currentUser.$id),
+            Query.equal('isRead', false),
+          ]
+        );
+
+        for (const document of response.documents) {
+          try {
+            await databases.updateDocument(
+              process.env.NEXT_PUBLIC_DATABASE_ID as string,
+              process.env
+                .NEXT_PUBLIC_CHATS_NOTIFICATION_COLLECTION_ID as string,
+              document.$id,
+              { isRead: true, readTime: new Date().toISOString() }
+            );
+          } catch (error) {
+            console.error('Failed to update notification:', error);
+          }
+        }
+
+        // TODO: Mark notifications as read
+      } catch (error) {
+        console.error('Error fetching team messages:', error);
+        throw error;
+      }
+    };
+
+    markNotificationsAsRead();
+  }, [databases, currentUser.$id, id, data]);
+
+  const { data: teamPreference = { bg: '', description: '', name: '' } } =
+    useQuery(
+      [`teamPreferences-${id}`],
+      async () => {
+        try {
+          const response = await databases.getDocument(
+            process.env.NEXT_PUBLIC_DATABASE_ID as string,
+            process.env.NEXT_PUBLIC_TEAMS_COLLECTION_ID as string,
+            id as string
+          );
+          return response;
+        } catch (error) {
+          console.error('Error fetching team preferences:', error);
+          throw error;
+        }
+      },
+      {
+        staleTime: 3600000,
+        cacheTime: 3600000,
+      }
+    );
+
   return (
     <Layout>
       <Box
@@ -477,7 +581,7 @@ function TeamChat() {
         <Box
           overflowY="scroll"
           flex="1"
-          bg="gray.700"
+          bgGradient={`linear(to bottom, gray.700, ${teamPreference.bg})`}
           py={4}
           ref={chatContainerRef}
         >
@@ -510,6 +614,7 @@ function TeamChat() {
                   handleOriginalMessageClick={handleOriginalMessageClick}
                   originalMessageRef={componentRefs[msg.$id]}
                   marginY={isSameSender && index !== 0 ? 1 : 8}
+                  delivered={msg.delivered}
                 />
               );
             })}
@@ -614,4 +719,4 @@ function TeamChat() {
   );
 }
 
-export default TeamChat;
+export default withAuth(TeamChat);

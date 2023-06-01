@@ -14,11 +14,11 @@ import {
   Text,
   Tooltip,
 } from '@chakra-ui/react';
-import { useQuery } from '@tanstack/react-query';
-import { Account, Avatars, Databases, Storage } from 'appwrite';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { Account, Avatars, Databases, Query, Storage } from 'appwrite';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import { useContext, useMemo } from 'react';
+import { useContext, useEffect, useMemo } from 'react';
 import { BsBellFill } from 'react-icons/bs';
 import { FiArrowLeft } from 'react-icons/fi';
 import tinycolor from 'tinycolor2';
@@ -26,6 +26,7 @@ import { UserContext, useUser } from '../context/UserContext';
 import { client } from '../utils/appwriteConfig';
 const Navbar = ({ flexWidth }: { flexWidth: number }) => {
   const { currentUser, loading, setCurrentUser } = useUser();
+  const queryClient = useQueryClient();
   const storage = useMemo(() => new Storage(client), []);
   const avatars: any = useMemo(() => new Avatars(client), []);
   const router = useRouter();
@@ -113,6 +114,117 @@ const Navbar = ({ flexWidth }: { flexWidth: number }) => {
     router.back();
   };
 
+  interface UnreadChat {
+    teamId: string;
+    teamName: string;
+    unreadCount: number;
+  }
+
+  // notifications reader
+  const { data: unreadChatsData = [] } = useQuery<UnreadChat[]>(
+    ['unreadChats'],
+    async () => {
+      try {
+        const response = await databases.listDocuments(
+          process.env.NEXT_PUBLIC_DATABASE_ID as string,
+          process.env.NEXT_PUBLIC_CHATS_NOTIFICATION_COLLECTION_ID as string,
+          [
+            Query.equal('readerId', currentUser.$id),
+            Query.equal('isRead', false),
+          ]
+        );
+
+        const unreadChats: UnreadChat[] = response.documents.reduce(
+          (result: UnreadChat[], document: any) => {
+            const { teamId, teamName } = document;
+
+            const existingTeam = result.find((team) => team.teamId === teamId);
+
+            if (existingTeam) {
+              existingTeam.unreadCount++;
+            } else {
+              result.push({
+                teamId,
+                teamName,
+                unreadCount: 1,
+              });
+            }
+
+            return result;
+          },
+          []
+        );
+
+        return unreadChats;
+      } catch (error) {
+        console.error('Error fetching team messages:', error);
+        throw error;
+      }
+    },
+    {
+      staleTime: 3600000,
+      cacheTime: 3600000,
+    }
+  );
+
+  //Subscriptions
+  // Subscriptions
+  useEffect(() => {
+    const unsubscribe = client.subscribe(
+      `databases.${process.env.NEXT_PUBLIC_DATABASE_ID}.collections.${process.env.NEXT_PUBLIC_CHATS_NOTIFICATION_COLLECTION_ID}.documents`,
+      (response) => {
+        if (
+          response.events.includes(
+            `databases.${process.env.NEXT_PUBLIC_DATABASE_ID}.collections.${process.env.NEXT_PUBLIC_CHATS_NOTIFICATION_COLLECTION_ID}.documents.*.create`
+          )
+        ) {
+          console.log(response);
+          const payload = response.payload as {
+            isRead: boolean;
+            sender: string;
+            teamName: string;
+            teamId: string;
+          };
+          // console.log(payload.teamId);
+          if (payload?.sender !== currentUser?.$id) {
+            queryClient.setQueryData(['unreadChats'], (prevData: any) => {
+              const teamId = payload.teamId;
+              const existingTeamIndex = prevData.findIndex(
+                (team: any) => team.teamId === teamId
+              );
+              if (existingTeamIndex !== -1) {
+                console.log('Updating existing team');
+                const updatedData = [...prevData];
+                updatedData[existingTeamIndex] = {
+                  ...updatedData[existingTeamIndex],
+                  unreadCount: updatedData[existingTeamIndex].unreadCount + 1,
+                };
+                return updatedData;
+              } else {
+                console.log('Adding new team');
+                const newData = [
+                  ...prevData,
+                  {
+                    teamId,
+                    teamName: payload.teamName,
+                    unreadCount: 1,
+                  },
+                ];
+                return newData;
+              }
+            });
+          }
+        }
+      }
+    );
+
+    return () => {
+      unsubscribe();
+    };
+  }, [queryClient, id, currentUser]);
+
+  // Rendering the count with the Box component
+
   return (
     <Flex
       justifyContent="space-between"
@@ -143,7 +255,7 @@ const Navbar = ({ flexWidth }: { flexWidth: number }) => {
           </Tooltip>
         )}
         {router.pathname.startsWith('/team/chat/[id]') && (
-          <Link href={`/team/${id}`}>
+          <Link href={`/team/chat/${id}`}>
             <HStack ml={4}>
               <Avatar
                 borderWidth={2}
@@ -167,7 +279,7 @@ const Navbar = ({ flexWidth }: { flexWidth: number }) => {
             icon={
               <Flex position="relative">
                 <BsBellFill size="24px" />
-                {21 > 0 && (
+                {unreadChatsData.length > 0 && (
                   <Box
                     position="absolute"
                     top="0px"
@@ -181,7 +293,7 @@ const Navbar = ({ flexWidth }: { flexWidth: number }) => {
                     fontWeight="bold"
                     transform="translate(50%, -50%)"
                   >
-                    2
+                    {unreadChatsData.length.toString()}
                   </Box>
                 )}
               </Flex>
@@ -195,35 +307,33 @@ const Navbar = ({ flexWidth }: { flexWidth: number }) => {
             borderRadius="full"
           />
           <MenuList p={2} border="none" borderRadius="md">
-            <MenuItem borderRadius="md">
-              <Image
-                src="/notification_logo.svg"
-                alt="notification logo"
-                h="10"
-                mr={2}
-              ></Image>
-              Av joined Team Blockwave
-            </MenuItem>
-            <MenuItem borderRadius="md">
-              <Image
-                src="/notification_logo.svg"
-                alt="notification logo"
-                h="10"
-                mr={2}
-              ></Image>
-              John completed his assigned task in Blockwave
-            </MenuItem>
-
-            <MenuItem borderRadius="md">
-              {' '}
-              <Image
-                src="/notification_logo.svg"
-                alt="notification logo"
-                h="10"
-                mr={2}
-              ></Image>
-              A task was assigned to you
-            </MenuItem>
+            {unreadChatsData.length > 0 ? (
+              unreadChatsData.map((unreadChat) => (
+                <Link
+                  key={unreadChat.teamId}
+                  href={`/team/chat/${unreadChat.teamId}`}
+                >
+                  <MenuItem borderRadius="md">
+                    <Image
+                      src="/notification_logo.svg"
+                      alt="notification logo"
+                      h="10"
+                      mr={2}
+                    />
+                    {unreadChat.unreadCount === 1 ? (
+                      <>1 new chat in {unreadChat.teamName}</>
+                    ) : (
+                      <>
+                        {unreadChat.unreadCount} new chats in{' '}
+                        {unreadChat.teamName}
+                      </>
+                    )}
+                  </MenuItem>
+                </Link>
+              ))
+            ) : (
+              <Box p={4}>You have no new notifications!</Box>
+            )}
           </MenuList>
         </Menu>
         <Menu>
