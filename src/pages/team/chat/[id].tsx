@@ -2,6 +2,7 @@ import {
   Avatar,
   Box,
   Button,
+  Divider,
   Flex,
   HStack,
   IconButton,
@@ -28,12 +29,14 @@ import { useRouter } from 'next/router';
 import { createRef, useEffect, useMemo, useRef, useState } from 'react';
 import {
   BsArrowLeftShort,
+  BsCheck2,
+  BsCheck2All,
   BsReply,
   BsSend,
   BsThreeDots,
   BsTrash2,
 } from 'react-icons/bs';
-import { FaCheck, FaEllipsisH, FaXing } from 'react-icons/fa';
+import { FaCheck, FaCheckDouble, FaEllipsisH, FaXing } from 'react-icons/fa';
 import { FiEdit, FiPaperclip } from 'react-icons/fi';
 import { HiEllipsisHorizontal } from 'react-icons/hi2';
 import { MdClose, MdSend } from 'react-icons/md';
@@ -90,6 +93,7 @@ function ChatMessage({
 }) {
   const { currentUser } = useUser();
   const account = useMemo(() => new Account(client), []);
+  const databases = useMemo(() => new Databases(client), []);
   const handleDelete = async () => {
     const promise = await account.createJWT();
     await axios.post('/api/deletechat', {
@@ -99,7 +103,29 @@ function ChatMessage({
   };
   const [isOpen, setIsOpen] = useState(false);
 
-  useEffect(() => {});
+  const { data, isLoading, isError } = useQuery(
+    [`messageReaders-${docId}`],
+    async () => {
+      const response = await databases.listDocuments(
+        process.env.NEXT_PUBLIC_DATABASE_ID as string,
+        process.env.NEXT_PUBLIC_CHATS_NOTIFICATION_COLLECTION_ID as string,
+        [Query.equal('isRead', true), Query.equal('messageId', docId)]
+      );
+      // Extract reader names from the response
+      const readers = response.documents
+        .filter((document: any) => document.readerId !== currentUser.$id)
+        .map((document: any) => ({
+          readerId: document.readerId,
+          readerName: document.readerName,
+          readTime: document.readTime,
+        }));
+      return readers;
+    },
+    {
+      staleTime: 3600000,
+      cacheTime: 3600000,
+    }
+  );
 
   return (
     <Flex
@@ -240,14 +266,26 @@ function ChatMessage({
                       Delete
                     </MenuItem>
                   )}
+
+                  {data?.map((reader: any) => (
+                    <MenuItem key={reader.$id}>
+                      <Text mr={2}>{reader.readerName}</Text>
+                      Read at {dayjs(reader.readTime).format('HH:mm')}
+                    </MenuItem>
+                  ))}
                 </MenuList>
               </Menu>
             </HStack>
 
             {delivered && (
-              <Box py={2} color="gray.400">
-                <FaCheck />
-              </Box>
+              <Flex py={1} color="gray.400">
+                <Spacer />
+                {data && data.length > 0 ? (
+                  <BsCheck2All size="24" />
+                ) : (
+                  <BsCheck2 size="24" />
+                )}
+              </Flex>
             )}
           </Box>
         }
@@ -273,6 +311,9 @@ function TeamChat() {
   const account = useMemo(() => new Account(client), []);
   const router = useRouter();
   const { id } = router.query;
+
+  //here we implement infinite query and we move up and load previous messages not the next ones,
+  // we start with the latest and go back
   const { data } = useQuery(
     [`teamMessages-${id}`],
     async () => {
@@ -506,6 +547,9 @@ function TeamChat() {
   useEffect(() => {
     const markNotificationsAsRead = async () => {
       try {
+        if (!data) {
+          return;
+        }
         const response = await databases.listDocuments(
           process.env.NEXT_PUBLIC_DATABASE_ID as string,
           process.env.NEXT_PUBLIC_CHATS_NOTIFICATION_COLLECTION_ID as string,
@@ -515,9 +559,10 @@ function TeamChat() {
             Query.equal('isRead', false),
           ]
         );
-
+        console.log(response);
         for (const document of response.documents) {
           try {
+            console.log('updating22');
             await databases.updateDocument(
               process.env.NEXT_PUBLIC_DATABASE_ID as string,
               process.env
@@ -562,6 +607,56 @@ function TeamChat() {
       }
     );
 
+  useEffect(() => {
+    const unsubscribe = client.subscribe(
+      `databases.${process.env.NEXT_PUBLIC_DATABASE_ID}.collections.${process.env.NEXT_PUBLIC_CHATS_NOTIFICATION_COLLECTION_ID}.documents`,
+      (response) => {
+        if (
+          response.events.includes(
+            `databases.${process.env.NEXT_PUBLIC_DATABASE_ID}.collections.${process.env.NEXT_PUBLIC_CHATS_NOTIFICATION_COLLECTION_ID}.documents.*.update`
+          )
+        ) {
+          console.log(response);
+          if (
+            (
+              response.payload as {
+                isRead: boolean;
+                readerId: string;
+                messageId: string;
+                sender: string;
+              }
+            )?.sender === currentUser.$id
+          ) {
+            const updatedMessage = response.payload as {
+              isRead: boolean;
+              readerId: string;
+              messageId: string;
+            };
+            queryClient.setQueryData(
+              [`messageReaders-${updatedMessage.messageId}`],
+              (prevData: any) => {
+                const existingIndex = prevData.findIndex(
+                  (item: any) =>
+                    item.messageId === updatedMessage.messageId &&
+                    item.readerId === updatedMessage.readerId
+                );
+                if (existingIndex !== -1) {
+                  prevData[existingIndex] = updatedMessage;
+                  return [...prevData];
+                } else {
+                  return [...prevData, updatedMessage];
+                }
+              }
+            );
+          }
+        }
+      }
+    );
+    return () => {
+      unsubscribe();
+    };
+  }, [currentUser.$id, queryClient]);
+
   return (
     <Layout>
       <Box
@@ -581,7 +676,7 @@ function TeamChat() {
         <Box
           overflowY="scroll"
           flex="1"
-          bgGradient={`linear(to bottom, gray.700, ${teamPreference.bg})`}
+          bgGradient={`linear(to top, gray.700 99%, ${teamPreference.bg})`}
           py={4}
           ref={chatContainerRef}
         >

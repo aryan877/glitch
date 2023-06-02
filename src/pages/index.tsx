@@ -138,6 +138,7 @@ function Home() {
       unsubscribe();
     };
   }, [queryClient]);
+
   const avatars = useMemo(() => new Avatars(client), []);
 
   //Subscriptions
