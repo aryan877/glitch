@@ -13,13 +13,13 @@ import {
   MenuList,
   Spacer,
   Text,
-  VStack,
+  VStack
 } from '@chakra-ui/react';
 import { isNotEmptyObject } from '@chakra-ui/utils';
 import {
   useInfiniteQuery,
   useQuery,
-  useQueryClient,
+  useQueryClient
 } from '@tanstack/react-query';
 import { Account, Databases, ID, Permission, Query, Role } from 'appwrite';
 import axios from 'axios';
@@ -34,7 +34,7 @@ import {
   BsReply,
   BsSend,
   BsThreeDots,
-  BsTrash2,
+  BsTrash2
 } from 'react-icons/bs';
 import { FaCheck, FaCheckDouble, FaEllipsisH, FaXing } from 'react-icons/fa';
 import { FiEdit, FiPaperclip } from 'react-icons/fi';
@@ -559,7 +559,7 @@ function TeamChat() {
             Query.equal('isRead', false),
           ]
         );
-        console.log(response);
+
         for (const document of response.documents) {
           try {
             console.log('updating22');
@@ -574,7 +574,7 @@ function TeamChat() {
             console.error('Failed to update notification:', error);
           }
         }
-
+        queryClient.refetchQueries({ queryKey: ['unreadChats'] });
         // TODO: Mark notifications as read
       } catch (error) {
         console.error('Error fetching team messages:', error);
@@ -583,7 +583,7 @@ function TeamChat() {
     };
 
     markNotificationsAsRead();
-  }, [databases, currentUser.$id, id, data]);
+  }, [databases, currentUser.$id, id, data, queryClient]);
 
   const { data: teamPreference = { bg: '', description: '', name: '' } } =
     useQuery(
