@@ -42,9 +42,9 @@ function TeamTasks() {
   );
 
   const generateGradient = (color: string) => {
-    const gradientColor = tinycolor(color).darken(16).toString();
-
-    return `linear-gradient(to bottom right, ${color} 0%, ${gradientColor} 100%)`;
+    const gradientColor1 = tinycolor(color).darken(20).toString();
+    const gradientColor2 = tinycolor(color).darken(16).toString();
+    return `linear-gradient(to bottom right, ${gradientColor1} 0%, ${gradientColor2} 100%)`;
   };
 
   return (
@@ -56,12 +56,7 @@ function TeamTasks() {
           onChange={(e) => setSearchQuery(e.target.value)}
         />
       </Box>
-      <Grid
-        templateColumns="repeat(auto-fit, minmax(300px, 1fr))"
-        gap={4}
-        px={8}
-        py={8}
-      >
+      <Grid templateColumns="repeat(1,1fr)" gap={4} px={8} py={8}>
         {filteredTasks.length > 0 ? (
           filteredTasks.map((task) => (
             <Box

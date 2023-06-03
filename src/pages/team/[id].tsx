@@ -21,6 +21,7 @@ import {
 } from '@chakra-ui/react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Avatars, Databases, Storage, Teams } from 'appwrite';
+import { isEmpty } from 'lodash';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useEffect, useMemo, useState } from 'react';
@@ -74,8 +75,8 @@ function Team() {
         }
       },
       {
-        staleTime: 3600000,
-        cacheTime: 3600000,
+        staleTime: 600000,
+        cacheTime: 600000,
       }
     );
   //team api member list
@@ -182,7 +183,11 @@ function Team() {
         return result.toString();
       }
     },
-    { staleTime: 3600000, cacheTime: 3600000 }
+    {
+      staleTime: 600000,
+      cacheTime: 600000,
+      enabled: !isEmpty(teamPreference),
+    }
   );
 
   const cancelMembershipHandler = async (membershipId: string) => {
@@ -345,7 +350,7 @@ function Team() {
                 key={teamMember.$id}
               >
                 <>
-                  <Link href={`/profile/${teamMember.$id}`}>
+                  <Link href={`/profile/${teamMember.userId}`}>
                     <Flex direction="row" align="center">
                       <Avatar
                         borderRadius="none"

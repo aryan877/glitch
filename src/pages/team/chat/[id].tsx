@@ -13,13 +13,16 @@ import {
   MenuList,
   Spacer,
   Text,
-  VStack
+  Textarea,
+  TextareaProps,
+  VStack,
 } from '@chakra-ui/react';
+
 import { isNotEmptyObject } from '@chakra-ui/utils';
 import {
   useInfiniteQuery,
   useQuery,
-  useQueryClient
+  useQueryClient,
 } from '@tanstack/react-query';
 import { Account, Databases, ID, Permission, Query, Role } from 'appwrite';
 import axios from 'axios';
@@ -34,12 +37,13 @@ import {
   BsReply,
   BsSend,
   BsThreeDots,
-  BsTrash2
+  BsTrash2,
 } from 'react-icons/bs';
 import { FaCheck, FaCheckDouble, FaEllipsisH, FaXing } from 'react-icons/fa';
 import { FiEdit, FiPaperclip } from 'react-icons/fi';
 import { HiEllipsisHorizontal } from 'react-icons/hi2';
 import { MdClose, MdSend } from 'react-icons/md';
+import ResizeTextarea from 'react-textarea-autosize';
 import { v4 as uuidv4 } from 'uuid';
 import Layout from '../../../../components/Layout';
 import { useSidebar } from '../../../../context/SidebarContext';
@@ -158,7 +162,7 @@ function ChatMessage({
             maxW="2xl"
             py={2}
             px={4}
-            bg={sender === currentUser?.$id ? 'teal.100' : 'purple.100'}
+            bg={sender === currentUser?.$id ? 'teal.100' : 'white'}
             color="white"
             borderRadius="md"
           >
@@ -178,17 +182,17 @@ function ChatMessage({
                 onClick={() => handleOriginalMessageClick(reference)}
                 borderRadius="md"
                 p={2}
-                bg={sender === currentUser?.$id ? 'teal.200' : 'purple.200'}
+                bg={sender === currentUser?.$id ? 'teal.200' : 'gray.100'}
                 mb={2}
                 w="full"
                 borderLeftColor={
-                  sender === currentUser.$id ? 'teal.500' : 'purple.500'
+                  sender === currentUser.$id ? 'teal.500' : 'gray.300'
                 }
                 cursor="pointer"
                 borderLeftWidth={4}
               >
                 <Text
-                  color={sender === currentUser.$id ? 'teal.700' : 'purple.700'}
+                  color={sender === currentUser.$id ? 'teal.700' : 'gray.700'}
                   ml={1}
                   textTransform="uppercase"
                   fontSize="sm"
@@ -197,18 +201,20 @@ function ChatMessage({
                   {referenceUser}
                 </Text>
                 <Text
-                  color={sender === currentUser.$id ? 'teal.700' : 'purple.700'}
+                  color={sender === currentUser.$id ? 'teal.700' : 'gray.700'}
                   ml={1}
                   fontSize="md"
                 >
-                  {referenceContent}
+                  {referenceContent.replaceAll('<br>', ' ')}
                 </Text>
               </Box>
             )}
 
-            <Text fontSize="md" color="gray.900">
-              {content}
-            </Text>
+            <Text
+              fontSize="md"
+              color="gray.900"
+              dangerouslySetInnerHTML={{ __html: content }}
+            />
             <HStack
               // gap={4}
               // bg="red"
@@ -234,7 +240,7 @@ function ChatMessage({
                   bg="transparent"
                   aria-label="Message Options"
                 />
-                <MenuList border="none">
+                <MenuList border="none" maxH="420px" overflow="auto">
                   <MenuItem
                     icon={<BsReply />}
                     onClick={() => {
@@ -269,8 +275,12 @@ function ChatMessage({
 
                   {data?.map((reader: any) => (
                     <MenuItem key={reader.$id}>
-                      <Text mr={2}>{reader.readerName}</Text>
-                      Read at {dayjs(reader.readTime).format('HH:mm')}
+                      <Text fontSize="sm" mr={2}>
+                        {reader.readerName}
+                      </Text>
+                      <Text fontSize="xs">
+                        Read at {dayjs(reader.readTime).format('HH:mm')}
+                      </Text>
                     </MenuItem>
                   ))}
                 </MenuList>
@@ -296,7 +306,7 @@ function ChatMessage({
 
 function TeamChat() {
   const { flexWidth, setFlexWidth } = useSidebar();
-  const [message, setMessage] = useState('');
+  const [message, setMessage] = useState<string>('');
   const databases = useMemo(() => new Databases(client), []);
   const [mode, setMode] = useState<'EDIT' | 'REPLY' | null>(null);
   const { currentUser } = useUser();
@@ -307,7 +317,8 @@ function TeamChat() {
   );
   const [messageContent, setMessageContent] = useState<string | null>(null);
   const [messageUser, setMessageUser] = useState<string | null>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const textAreaRef = useRef<HTMLTextAreaElement>(null);
+  const ChatSectionRef = useRef<HTMLDivElement>(null);
   const account = useMemo(() => new Account(client), []);
   const router = useRouter();
   const { id } = router.query;
@@ -365,22 +376,27 @@ function TeamChat() {
 
   const handleKeyDown = (e: any) => {
     if (e.keyCode === 13) {
-      sendMessage();
+      if (e.shiftKey) {
+        e.preventDefault();
+        setMessage((prevMessage: string) => prevMessage + '\n');
+      } else {
+        e.preventDefault();
+        sendMessage();
+      }
     }
   };
 
   const sendMessage = async () => {
     if (message.trim() !== '') {
       try {
-        message.trim();
+        let formattedMessage = message.trim();
+        formattedMessage = message.replace(/\n/g, '<br>');
         setMessage('');
         if (mode === 'REPLY' || mode === 'EDIT') {
           setMessageContent('');
           setMode(null);
         }
-
         const docId = uuidv4();
-
         if (mode === 'EDIT') {
           //find id with messageId
           const queryData = (prevData: any) => {
@@ -388,22 +404,18 @@ function TeamChat() {
               (message: any) => message.$id === messageId
             );
             if (messageIndex !== -1) {
-              prevData[messageIndex].content = message;
+              prevData[messageIndex].content = formattedMessage;
               prevData[messageIndex].edited = true;
             }
-
             return prevData;
           };
-
           queryClient.setQueryData([`teamMessages-${id}`], queryData);
-
           const promise = await account.createJWT();
           await axios.post('/api/editchat', {
             jwt: promise.jwt,
-            content: message,
+            content: formattedMessage,
             $id: messageId,
           });
-
           return;
         }
         // edit flow ends here
@@ -411,7 +423,7 @@ function TeamChat() {
         const queryData = (prevData: any) => {
           const newMessage = {
             sender: currentUser.$id,
-            content: message,
+            content: formattedMessage,
             team: id,
             $id: docId,
             sender_name: currentUser.name,
@@ -426,13 +438,11 @@ function TeamChat() {
           };
           return [...prevData, newMessage];
         };
-
         queryClient.setQueryData([`teamMessages-${id}`], queryData);
-
         const promise = await account.createJWT();
         await axios.post('/api/postchat', {
           jwt: promise.jwt,
-          content: message,
+          content: formattedMessage,
           team: id,
           $id: docId,
           ...(mode === 'REPLY' && {
@@ -441,7 +451,6 @@ function TeamChat() {
             referenceUser: messageUser,
           }),
         });
-
         // Mark the message as delivered
         queryClient.setQueryData([`teamMessages-${id}`], (prevData: any) => {
           const updatedData = prevData.map((msg: any) => {
@@ -562,7 +571,6 @@ function TeamChat() {
 
         for (const document of response.documents) {
           try {
-            console.log('updating22');
             await databases.updateDocument(
               process.env.NEXT_PUBLIC_DATABASE_ID as string,
               process.env
@@ -581,7 +589,6 @@ function TeamChat() {
         throw error;
       }
     };
-
     markNotificationsAsRead();
   }, [databases, currentUser.$id, id, data, queryClient]);
 
@@ -657,16 +664,24 @@ function TeamChat() {
     };
   }, [currentUser.$id, queryClient]);
 
+  const [bottomValue, setBottomValue] = useState(20);
+
+  useEffect(() => {
+    if (ChatSectionRef.current) {
+      const height = ChatSectionRef.current.clientHeight;
+      setBottomValue(height);
+    }
+  }, [message]);
+
   return (
     <Layout>
       <Box
         pos="fixed"
         left={flexWidth}
         right="0"
-        bottom="0"
-        top="0"
-        my={16}
-        mb={20}
+        bottom="20"
+        top="16"
+        // my={16}
         // mb={-16}
         // mt={-16}
         // h="calc(100% - 100px)"
@@ -700,7 +715,7 @@ function TeamChat() {
                   setMessageContent={setMessageContent}
                   setMessageUser={setMessageUser}
                   setMessageId={setMessageId}
-                  inputRef={inputRef}
+                  inputRef={textAreaRef}
                   setMode={setMode}
                   setMessage={setMessage}
                   referenceUser={msg.referenceUser}
@@ -714,6 +729,7 @@ function TeamChat() {
               );
             })}
         </Box>
+
         {messageContent && mode === 'REPLY' && (
           <Flex
             justifyContent="space-between"
@@ -721,14 +737,14 @@ function TeamChat() {
             px={4}
             bg="gray.500"
             position="fixed"
-            bottom="20"
+            bottom={`${bottomValue}px`}
             left={flexWidth}
             align="center"
             right="0"
           >
             <Flex direction="column">
               <Text color="gray.200">{messageUser}</Text>
-              <Text>{messageContent}</Text>
+              <Text>{messageContent.replaceAll('<br>', ' ')}</Text>
             </Flex>
             <Button
               borderRadius="full"
@@ -749,12 +765,13 @@ function TeamChat() {
             p={4}
             bg="gray.500"
             position="fixed"
-            bottom="20"
+            bottom={`${bottomValue}px`}
             left={flexWidth}
             align="center"
             right="0"
           >
-            {`Editing : ${messageContent}`}
+            <Text>{messageContent.replaceAll('<br>', ' ')}</Text>
+
             <Button
               borderRadius="full"
               onClick={() => {
@@ -771,13 +788,15 @@ function TeamChat() {
         )}
         <Box
           p={4}
+          ref={ChatSectionRef}
+          // py={5}
           bg="gray.700"
           borderTopWidth="1px"
           position="fixed"
           bottom="0"
           left={flexWidth}
           right="0"
-          h={20}
+          // h={20}
         >
           <Flex align="center">
             <IconButton
@@ -788,18 +807,26 @@ function TeamChat() {
               mr={2}
               onClick={() => {}}
             />
-            <Input
+            <Textarea
               placeholder="Type your message..."
-              value={message}
+              value={message.replace(/<br\s*\/?>/gi, '\n')}
               onChange={(e) => setMessage(e.target.value)}
-              bg="white"
-              borderRadius="full"
-              flex={1}
-              color="gray.900"
+              // bg="white"
+              minH="12"
+              minRows={1}
+              // whiteSpace="pre-wrap"
+              size="lg"
+              resize="none"
+              overflow="hidden"
+              ref={textAreaRef}
+              p={2}
+              px={4}
+              as={ResizeTextarea}
+              // color="gray.900"
               mr={2}
-              ref={inputRef}
               onKeyDown={handleKeyDown}
             />
+
             <IconButton
               icon={<BsSend size="24px" />}
               colorScheme="teal"

@@ -35,6 +35,7 @@
     "react-dropzone": "^14.2.3",
     "react-easy-crop": "^4.7.4",
     "react-icons": "^4.8.0",
+    "react-textarea-autosize": "^8.4.1",
     "tinycolor2": "^1.6.0",
     "typescript": "5.0.4",
     "uuid": "^9.0.0"

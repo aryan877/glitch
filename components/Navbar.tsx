@@ -55,6 +55,7 @@ const Navbar = ({ flexWidth }: { flexWidth: number }) => {
       {
         staleTime: 3600000,
         cacheTime: 3600000,
+        enabled: !router.pathname.startsWith('/profile/[id]'),
       }
     );
 
@@ -90,6 +91,7 @@ const Navbar = ({ flexWidth }: { flexWidth: number }) => {
     {
       staleTime: 3600000,
       cacheTime: 3600000,
+      enabled: !router.pathname.startsWith('/profile/[id]'),
     }
   );
 
@@ -255,7 +257,7 @@ const Navbar = ({ flexWidth }: { flexWidth: number }) => {
           </Tooltip>
         )}
         {router.pathname.startsWith('/team/chat/[id]') && (
-          <Link href={`/team/chat/${id}`}>
+          <Link href={`/team/${id}`}>
             <HStack ml={4}>
               <Avatar
                 borderWidth={2}
