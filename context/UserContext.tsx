@@ -39,7 +39,7 @@ export const UserContextProvider: React.FC<{ children: ReactNode }> = ({
         setLoading(false);
       })
       .catch((error) => {
-        console.log(error);
+        console.error(error);
         setLoading(false);
         setCurrentUser(undefined);
       });

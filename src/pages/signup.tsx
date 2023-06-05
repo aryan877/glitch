@@ -48,7 +48,7 @@ const SignUpPage = () => {
         router.push('/login');
       })
       .catch(function (error) {
-        console.log(error);
+        console.error(error);
         setError(error.message); // Set the error message
       });
   };
@@ -83,7 +83,8 @@ const SignUpPage = () => {
         <Button
           mb={4}
           w="full"
-          borderRadius="full"
+          fontSize="lg"
+          borderRadius="md"
           borderWidth={2}
           onClick={handleGithubSignup}
         >
@@ -151,7 +152,8 @@ const SignUpPage = () => {
           onClick={handleSignUp}
           mb={4}
           w="full"
-          borderRadius="full"
+          fontSize="lg"
+          borderRadius="md"
           fontWeight="bold"
         >
           Sign Up

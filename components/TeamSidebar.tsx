@@ -1,7 +1,17 @@
 import { Link } from '@chakra-ui/next-js';
-import { Box, chakra, Flex, HStack, Text, VStack } from '@chakra-ui/react';
+import {
+  Box,
+  chakra,
+  Flex,
+  HStack,
+  Image,
+  Text,
+  VStack,
+} from '@chakra-ui/react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { Teams } from 'appwrite';
 import { useRouter } from 'next/router';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { DraggableCore } from 'react-draggable';
 import { AiFillHome } from 'react-icons/ai';
 import {
@@ -13,6 +23,7 @@ import {
   BsSearch,
 } from 'react-icons/bs';
 import { useSidebar } from '../context/SidebarContext';
+import { client } from '../utils/appwriteConfig';
 
 function TeamSidebar() {
   const flexRef = useRef<HTMLDivElement>(null);
@@ -20,13 +31,16 @@ function TeamSidebar() {
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const router = useRouter();
   const { id } = router.query;
+  const queryClient = useQueryClient();
 
   const handleDrag = (e: any, data: any) => {
     const newWidth = flexWidth + data.deltaX;
-    const minWidth = 200;
+    const minWidth = 100;
     const limitedWidth = Math.max(minWidth, newWidth);
     setFlexWidth(limitedWidth);
   };
+
+  const teamsClient = useMemo(() => new Teams(client), []);
 
   const handleDragStart = () => {
     setIsDragging(true);
@@ -42,6 +56,22 @@ function TeamSidebar() {
       setFlexWidth(width);
     }
   }, [setFlexWidth]);
+
+  const {
+    data: teamMembersData,
+    isLoading: teamMembersLoading,
+    isError: teamMembersError,
+    isSuccess: teamMembersSuccess,
+  } = useQuery(
+    [`teamMembers-${id}`],
+    async () => {
+      const response = await teamsClient.listMemberships(id as string);
+      return response.memberships;
+    },
+    { staleTime: 3600000, cacheTime: 3600000 }
+  );
+
+  const shouldHideIcons = flexWidth < 200;
 
   return (
     <DraggableCore
@@ -63,7 +93,7 @@ function TeamSidebar() {
         <VStack spacing={8} align="start" w="100%">
           <Link mb={4} href="/">
             <Text fontSize="2xl" fontWeight="bold" color="white">
-              Glitch
+              <Image src="/logo.png" alt="logo" />
             </Text>
           </Link>
           <Link
@@ -73,7 +103,12 @@ function TeamSidebar() {
           >
             <HStack spacing={4} alignItems="center" w="100%">
               <BsPeopleFill size={24} />
-              <chakra.span fontWeight="bold">Team</chakra.span>
+              <chakra.span
+                display={shouldHideIcons ? 'none' : 'flex'}
+                fontWeight="bold"
+              >
+                Team
+              </chakra.span>
             </HStack>
           </Link>
           <Link
@@ -83,7 +118,12 @@ function TeamSidebar() {
           >
             <HStack spacing={4} alignItems="center" w="100%">
               <BsChatDotsFill size={24} />
-              <chakra.span fontWeight="bold">Chat</chakra.span>
+              <chakra.span
+                display={shouldHideIcons ? 'none' : 'flex'}
+                fontWeight="bold"
+              >
+                Chat
+              </chakra.span>
             </HStack>
           </Link>
           <Link
@@ -95,7 +135,12 @@ function TeamSidebar() {
           >
             <HStack spacing={4} alignItems="center" w="100%">
               <BsCheckSquareFill size={24} />
-              <chakra.span fontWeight="bold">Tasks</chakra.span>
+              <chakra.span
+                display={shouldHideIcons ? 'none' : 'flex'}
+                fontWeight="bold"
+              >
+                Tasks
+              </chakra.span>
             </HStack>
           </Link>
           <Link
@@ -107,7 +152,12 @@ function TeamSidebar() {
           >
             <HStack spacing={4} alignItems="center" w="100%">
               <BsCameraVideoFill size={24} />
-              <chakra.span fontWeight="bold">Video Call</chakra.span>
+              <chakra.span
+                display={shouldHideIcons ? 'none' : 'flex'}
+                fontWeight="bold"
+              >
+                Video Call
+              </chakra.span>
             </HStack>
           </Link>
           <Link
@@ -121,7 +171,12 @@ function TeamSidebar() {
           >
             <HStack spacing={4} alignItems="center" w="100%">
               <BsSearch size={24} />
-              <chakra.span fontWeight="bold">Search</chakra.span>
+              <chakra.span
+                display={shouldHideIcons ? 'none' : 'flex'}
+                fontWeight="bold"
+              >
+                Search
+              </chakra.span>
             </HStack>
           </Link>
           <Link
@@ -131,7 +186,12 @@ function TeamSidebar() {
           >
             <HStack spacing={4} alignItems="center" w="100%">
               <BsGearFill size={24} />
-              <chakra.span fontWeight="bold">Settings</chakra.span>
+              <chakra.span
+                fontWeight="bold"
+                display={shouldHideIcons ? 'none' : 'flex'}
+              >
+                Settings
+              </chakra.span>
             </HStack>
           </Link>
         </VStack>

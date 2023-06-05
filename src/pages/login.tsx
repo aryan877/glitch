@@ -46,7 +46,7 @@ const LoginPage = () => {
         });
       },
       function (error) {
-        console.log(error);
+        console.error(error);
         setError(error.message);
         setCurrentUser(undefined);
       }
@@ -81,7 +81,8 @@ const LoginPage = () => {
           colorScheme="transparent"
           mb={4}
           w="full"
-          borderRadius="full"
+          fontSize="lg"
+          borderRadius="md"
           color="green.500"
           borderWidth={2}
           borderColor="green.500"
@@ -123,7 +124,8 @@ const LoginPage = () => {
           onClick={handleSignIn}
           mb={4}
           w="full"
-          borderRadius="full"
+          fontSize="lg"
+          borderRadius="md"
           fontWeight="bold"
         >
           Log In

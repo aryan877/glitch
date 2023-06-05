@@ -76,7 +76,7 @@ const Navbar = ({ flexWidth }: { flexWidth: number }) => {
           process.env.NEXT_PUBLIC_TEAM_PROFILE_BUCKET_ID as string,
           id as string
         );
-        console.log(imageUrl);
+
         return `${imageUrl.toString()}&timestamp=${timestamp}`;
       } catch (error) {
         const result = avatars.getInitials(
@@ -107,7 +107,7 @@ const Navbar = ({ flexWidth }: { flexWidth: number }) => {
         setCurrentUser(undefined);
       },
       function (error) {
-        console.log(error);
+        console.error(error);
       }
     );
   };
@@ -175,12 +175,12 @@ const Navbar = ({ flexWidth }: { flexWidth: number }) => {
     const unsubscribe = client.subscribe(
       `databases.${process.env.NEXT_PUBLIC_DATABASE_ID}.collections.${process.env.NEXT_PUBLIC_CHATS_NOTIFICATION_COLLECTION_ID}.documents`,
       (response) => {
+        queryClient.invalidateQueries([`teamMessages-${id}`]);
         if (
           response.events.includes(
             `databases.${process.env.NEXT_PUBLIC_DATABASE_ID}.collections.${process.env.NEXT_PUBLIC_CHATS_NOTIFICATION_COLLECTION_ID}.documents.*.create`
           )
         ) {
-          console.log(response);
           const payload = response.payload as {
             isRead: boolean;
             sender: string;
@@ -191,11 +191,11 @@ const Navbar = ({ flexWidth }: { flexWidth: number }) => {
           if (payload?.sender !== currentUser?.$id) {
             queryClient.setQueryData(['unreadChats'], (prevData: any) => {
               const teamId = payload.teamId;
+
               const existingTeamIndex = prevData.findIndex(
                 (team: any) => team.teamId === teamId
               );
               if (existingTeamIndex !== -1) {
-                console.log('Updating existing team');
                 const updatedData = [...prevData];
                 updatedData[existingTeamIndex] = {
                   ...updatedData[existingTeamIndex],
@@ -203,7 +203,6 @@ const Navbar = ({ flexWidth }: { flexWidth: number }) => {
                 };
                 return updatedData;
               } else {
-                console.log('Adding new team');
                 const newData = [
                   ...prevData,
                   {

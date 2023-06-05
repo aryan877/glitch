@@ -13,7 +13,7 @@ import {
 } from '@chakra-ui/react';
 import { Databases, ID, Permission, Role, Teams } from 'appwrite';
 import randomColor from 'randomcolor';
-import { useState, useMemo} from 'react';
+import { useMemo, useState } from 'react';
 import { useNotification } from '../context/NotificationContext';
 import { client } from '../utils/appwriteConfig';
 
@@ -39,7 +39,6 @@ const CreateTeamModal: React.FC<CreateTeamModalProps> = ({
 
       promise.then(
         async function (response) {
-         
           await databases.createDocument(
             process.env.NEXT_PUBLIC_DATABASE_ID as string,
             process.env.NEXT_PUBLIC_TEAMS_COLLECTION_ID as string,
@@ -53,7 +52,7 @@ const CreateTeamModal: React.FC<CreateTeamModalProps> = ({
         },
 
         function (error) {
-          console.log(error); // Failure
+          console.error(error); // Failure
         }
       );
       // Close the modal

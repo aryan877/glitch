@@ -135,7 +135,7 @@ const EditTeamDataModal: React.FC<EditTeamDataModalProps> = ({
           const binaryFile = event.target?.result;
           if (binaryFile instanceof ArrayBuffer) {
             const blob = new Blob([binaryFile]);
-            const convertedFile = new File([blob], id as string, {
+            const convertedFile = new File([blob], file.name, {
               type: file.type,
             });
 

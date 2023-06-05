@@ -6,6 +6,7 @@ import {
   Flex,
   HStack,
   IconButton,
+  Image,
   Input,
   Menu,
   MenuButton,
@@ -15,22 +16,35 @@ import {
   Text,
   Textarea,
   TextareaProps,
+  Tooltip,
+  useDisclosure,
   VStack,
 } from '@chakra-ui/react';
-
 import { isNotEmptyObject } from '@chakra-ui/utils';
 import {
   useInfiniteQuery,
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query';
-import { Account, Databases, ID, Permission, Query, Role } from 'appwrite';
+import {
+  Account,
+  Avatars,
+  Databases,
+  ID,
+  Permission,
+  Query,
+  Role,
+  Storage,
+  Teams,
+} from 'appwrite';
 import axios from 'axios';
 import dayjs from 'dayjs';
-import { isEmpty } from 'lodash';
+import { random } from 'lodash';
 import { useRouter } from 'next/router';
 import { createRef, useEffect, useMemo, useRef, useState } from 'react';
+import { useDropzone } from 'react-dropzone';
 import {
+  BsArrowDown,
   BsArrowLeftShort,
   BsCheck2,
   BsCheck2All,
@@ -44,12 +58,15 @@ import { FiEdit, FiPaperclip } from 'react-icons/fi';
 import { HiEllipsisHorizontal } from 'react-icons/hi2';
 import { MdClose, MdSend } from 'react-icons/md';
 import ResizeTextarea from 'react-textarea-autosize';
+import tinycolor from 'tinycolor2';
 import { v4 as uuidv4 } from 'uuid';
+import ChatFileSender from '../../../../components/ChatFileSender';
 import Layout from '../../../../components/Layout';
 import { useSidebar } from '../../../../context/SidebarContext';
 import { useUser } from '../../../../context/UserContext';
 import { client } from '../../../../utils/appwriteConfig';
 import withAuth from '../../../../utils/withAuth';
+
 function ChatMessage({
   sender,
   content,
@@ -72,6 +89,8 @@ function ChatMessage({
   marginY,
   display,
   delivered,
+  fileId,
+  profileImage,
 }: {
   sender: string;
   content: string;
@@ -93,19 +112,67 @@ function ChatMessage({
   originalMessageRef: any;
   marginY: number;
   display: boolean;
+  fileId: string;
   delivered: boolean | null;
+  profileImage: string | undefined;
 }) {
+  const router = useRouter();
+  const { id } = router.query;
   const { currentUser } = useUser();
   const account = useMemo(() => new Account(client), []);
   const databases = useMemo(() => new Databases(client), []);
-  const handleDelete = async () => {
+  const storage = useMemo(() => new Storage(client), []);
+
+  const handleDelete = async (): Promise<void> => {
     const promise = await account.createJWT();
-    await axios.post('/api/deletechat', {
+    const postData: { $id: string; jwt: string; file?: string } = {
       $id: docId,
       jwt: promise.jwt,
-    });
+    };
+
+    if (fileId) {
+      postData.file = fileId;
+    }
+
+    try {
+      await axios.post('/api/deletechat', postData);
+    } catch (error) {
+      // Handle the error
+    }
   };
+
   const [isOpen, setIsOpen] = useState(false);
+
+  const {
+    data: result = { previewUrl: '', name: '' },
+    isLoading: resultLoading,
+    isError: resultError,
+  } = useQuery(
+    [`chatFile-${docId}`],
+    async () => {
+      try {
+        const promise = await storage.getFile(
+          process.env.NEXT_PUBLIC_CHATS_FILES_BUCKET_ID as string,
+          fileId
+        );
+        // const timestamp = Date.now(); // Get the current timestamp
+        const previewUrl = storage.getFilePreview(
+          process.env.NEXT_PUBLIC_CHATS_FILES_BUCKET_ID as string,
+          fileId
+        );
+        return {
+          previewUrl: `${previewUrl.toString()}`,
+          name: promise.name,
+        };
+      } catch (error) {
+        return { previewUrl: '', name: '' };
+      }
+    },
+    {
+      staleTime: 3600000,
+      cacheTime: 3600000,
+    }
+  );
 
   const { data, isLoading, isError } = useQuery(
     [`messageReaders-${docId}`],
@@ -131,6 +198,16 @@ function ChatMessage({
     }
   );
 
+  const downloadFileHandler = () => {
+    const result = storage.getFileDownload(
+      process.env.NEXT_PUBLIC_CHATS_FILES_BUCKET_ID as string,
+      fileId as string
+    );
+    const link = document.createElement('a');
+    link.href = result.href;
+    link.download = 'filename'; // Set the desired filename here
+    link.click();
+  };
   return (
     <Flex
       ref={originalMessageRef}
@@ -151,6 +228,7 @@ function ChatMessage({
           <Avatar
             name={senderName as string}
             size="md"
+            src={profileImage}
             w="12"
             bg="gray.500"
             color="white"
@@ -159,7 +237,7 @@ function ChatMessage({
         }
         {
           <Box
-            maxW="2xl"
+            maxW="xl"
             py={2}
             px={4}
             bg={sender === currentUser?.$id ? 'teal.100' : 'white'}
@@ -215,6 +293,38 @@ function ChatMessage({
               color="gray.900"
               dangerouslySetInnerHTML={{ __html: content }}
             />
+
+            {fileId && (
+              <Image
+                src={result.previewUrl}
+                alt="file preview"
+                w={
+                  result.name.endsWith('.jpg') ||
+                  result.name.endsWith('.jpeg') ||
+                  result.name.endsWith('.png')
+                    ? 'auto'
+                    : '200px'
+                }
+              />
+            )}
+            {fileId && (
+              <Flex alignItems="center" justifyContent="space-between">
+                <Text mt={2} color="gray.900">
+                  {result.name.length > 10
+                    ? result.name.replace(/^(.{7}).+?(\.[^.]+)$/, '$1...$2')
+                    : result.name}
+                </Text>
+                <Tooltip color="white" label="Download File" placement="top">
+                  <Button
+                    onClick={downloadFileHandler}
+                    variant="unstyled"
+                    aria-label="download file"
+                  >
+                    <BsArrowDown size="20" color="#606060" />
+                  </Button>
+                </Tooltip>
+              </Flex>
+            )}
             <HStack
               // gap={4}
               // bg="red"
@@ -245,7 +355,11 @@ function ChatMessage({
                     icon={<BsReply />}
                     onClick={() => {
                       setMessageId(docId);
-                      setMessageContent(content);
+                      if (fileId) {
+                        setMessageContent(result.name);
+                      } else {
+                        setMessageContent(content);
+                      }
                       setMessageUser(senderName);
                       setMode('REPLY');
                       inputRef.current.focus();
@@ -253,12 +367,14 @@ function ChatMessage({
                   >
                     Reply
                   </MenuItem>
-                  {sender === currentUser.$id && (
+                  {sender === currentUser.$id && !fileId && (
                     <MenuItem
                       icon={<FiEdit />}
                       onClick={() => {
                         setMessageId(docId);
+
                         setMessageContent(content);
+
                         setMode('EDIT');
                         setMessage(content);
                         inputRef.current.focus();
@@ -274,7 +390,7 @@ function ChatMessage({
                   )}
 
                   {data?.map((reader: any) => (
-                    <MenuItem key={reader.$id}>
+                    <MenuItem key={random()}>
                       <Text fontSize="sm" mr={2}>
                         {reader.readerName}
                       </Text>
@@ -308,6 +424,8 @@ function TeamChat() {
   const { flexWidth, setFlexWidth } = useSidebar();
   const [message, setMessage] = useState<string>('');
   const databases = useMemo(() => new Databases(client), []);
+  const avatars = useMemo(() => new Avatars(client), []);
+  const storage = useMemo(() => new Storage(client), []);
   const [mode, setMode] = useState<'EDIT' | 'REPLY' | null>(null);
   const { currentUser } = useUser();
   const queryClient = useQueryClient();
@@ -315,6 +433,8 @@ function TeamChat() {
   const [referenceToScroll, setReferenceToScroll] = useState<string | null>(
     null
   );
+  const teamsClient = useMemo(() => new Teams(client), []);
+  const [file, setFile] = useState<File | undefined>(undefined);
   const [messageContent, setMessageContent] = useState<string | null>(null);
   const [messageUser, setMessageUser] = useState<string | null>(null);
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
@@ -323,6 +443,31 @@ function TeamChat() {
   const router = useRouter();
   const { id } = router.query;
 
+  const onDrop = (acceptedFiles: any) => {
+    if (acceptedFiles) {
+      const file = acceptedFiles[0];
+      if (file) {
+        setFile(file);
+        onOpen();
+        // setImageUrl(URL.createObjectURL(file));
+        // setCropMode(true);
+      }
+    }
+  };
+
+  const {
+    getRootProps,
+    getInputProps,
+    isDragAccept,
+    isDragReject,
+    isDragActive,
+  } = useDropzone({
+    onDrop,
+    multiple: false,
+    maxSize: 50 * 1024 * 1024, // 50MB in bytes
+  });
+
+  const { isOpen, onOpen, onClose } = useDisclosure();
   //here we implement infinite query and we move up and load previous messages not the next ones,
   // we start with the latest and go back
   const { data } = useQuery(
@@ -359,8 +504,8 @@ function TeamChat() {
       }
     },
     {
-      staleTime: 0,
-      cacheTime: 0,
+      staleTime: 3600000,
+      cacheTime: 3600000,
     }
   );
 
@@ -464,6 +609,96 @@ function TeamChat() {
           });
           return updatedData;
         });
+
+        //here we set that as delivered
+      } catch (error) {
+        console.error(error);
+      }
+    }
+  };
+
+  const sendFileMessage = async (fileId: string) => {
+    if (file) {
+      try {
+        // let formattedMessage = message.trim();
+        let formattedMessage = '';
+        // formattedMessage = message.replace(/\n/g, '<br>');
+        setMessage('');
+        if (mode === 'REPLY') {
+          setMessageContent('');
+          setMode(null);
+        }
+        const docId = uuidv4();
+        // if (mode === 'EDIT') {
+        //   //find id with messageId
+        //   const queryData = (prevData: any) => {
+        //     const messageIndex = prevData.findIndex(
+        //       (message: any) => message.$id === messageId
+        //     );
+        //     if (messageIndex !== -1) {
+        //       // prevData[messageIndex].content = formattedMessage;
+        //       prevData[messageIndex].edited = true;
+        //     }
+        //     return prevData;
+        //   };
+        //   queryClient.setQueryData([`teamMessages-${id}`], queryData);
+        //   const promise = await account.createJWT();
+        //   await axios.post('/api/editchat', {
+        //     jwt: promise.jwt,
+        //     content: formattedMessage,
+        //     $id: messageId,
+        //   });
+        //   return;
+        // }
+        // edit flow ends here
+        // normal message and reply flow
+        const queryData = (prevData: any) => {
+          const newMessage = {
+            sender: currentUser.$id,
+            content: formattedMessage,
+            team: id,
+            $id: docId,
+            sender_name: currentUser.name,
+            $createdAt: Date.now(),
+            file: fileId,
+            ...(mode === 'REPLY' && {
+              reference: messageId,
+              referenceContent: messageContent,
+              referenceUser: messageUser,
+            }),
+            edited: false,
+            delivered: false,
+          };
+          return [...prevData, newMessage];
+        };
+        queryClient.setQueryData([`teamMessages-${id}`], queryData);
+        const promise = await account.createJWT();
+        await axios.post('/api/postchat', {
+          jwt: promise.jwt,
+          content: formattedMessage,
+          team: id,
+          file: fileId,
+          $id: docId,
+          ...(mode === 'REPLY' && {
+            reference: messageId,
+            referenceContent: messageContent,
+            referenceUser: messageUser,
+          }),
+        });
+        // Mark the message as delivered
+        queryClient.setQueryData([`teamMessages-${id}`], (prevData: any) => {
+          const updatedData = prevData.map((msg: any) => {
+            if (msg.$id === docId && msg.sender === currentUser.$id) {
+              return {
+                ...msg,
+                delivered: true,
+              };
+            }
+            return msg;
+          });
+          return updatedData;
+        });
+
         //here we set that as delivered
       } catch (error) {
         console.error(error);
@@ -623,7 +858,6 @@ function TeamChat() {
             `databases.${process.env.NEXT_PUBLIC_DATABASE_ID}.collections.${process.env.NEXT_PUBLIC_CHATS_NOTIFICATION_COLLECTION_ID}.documents.*.update`
           )
         ) {
-          console.log(response);
           if (
             (
               response.payload as {
@@ -673,18 +907,71 @@ function TeamChat() {
     }
   }, [message]);
 
+  const {
+    data: teamMembersProfileImages,
+    isLoading: isLoadingTeamMembersProfileImages,
+    isError: isErrorTeamMembersProfileImages,
+    isSuccess: isSuccessTeamMembersProfileImages,
+  } = useQuery(
+    [`teamMembersProfileImages-${id}`],
+    async () => {
+      const response = await teamsClient.listMemberships(id as string);
+      const memberIds = response.memberships.map((member) => member.userId);
+
+      const memberImageUrls: { [key: string]: string } = {};
+
+      for (const memberId of memberIds) {
+        let userResponse;
+        try {
+          userResponse = await axios.post('/api/getuser', {
+            userId: memberId,
+          });
+
+          const prefs = userResponse?.data?.prefs;
+          if (prefs && prefs.profileImageId) {
+            const promise = await storage.getFile(
+              process.env.NEXT_PUBLIC_USER_PROFILE_BUCKET_ID as string,
+              prefs.profileImageId
+            );
+            const imageUrl = storage.getFilePreview(
+              process.env.NEXT_PUBLIC_USER_PROFILE_BUCKET_ID as string,
+              prefs.profileImageId
+            );
+            memberImageUrls[memberId] = imageUrl.toString();
+          } else {
+            throw new Error('no profile image id');
+          }
+        } catch (error) {
+          const prefs = userResponse?.data?.prefs;
+          const result = avatars.getInitials(
+            userResponse?.data?.name as string,
+            240,
+            240,
+            tinycolor(prefs?.profileColor).lighten(20).toHex()
+          );
+          memberImageUrls[memberId] = result.toString();
+        }
+      }
+
+      return memberImageUrls;
+    },
+    { staleTime: 3600000, cacheTime: 3600000 }
+  );
+
   return (
     <Layout>
+      <ChatFileSender
+        sendFileMessage={sendFileMessage}
+        isOpen={isOpen}
+        onClose={onClose}
+        file={file}
+      />
       <Box
         pos="fixed"
         left={flexWidth}
         right="0"
         bottom="20"
         top="16"
-        // my={16}
-        // mb={-16}
-        // mt={-16}
-        // h="calc(100% - 100px)"
         display="flex"
         flexDirection="column"
       >
@@ -720,11 +1007,16 @@ function TeamChat() {
                   setMessage={setMessage}
                   referenceUser={msg.referenceUser}
                   edited={msg.edited}
+                  fileId={msg.file}
                   referenceToScroll={referenceToScroll}
                   handleOriginalMessageClick={handleOriginalMessageClick}
                   originalMessageRef={componentRefs[msg.$id]}
                   marginY={isSameSender && index !== 0 ? 1 : 8}
                   delivered={msg.delivered}
+                  profileImage={
+                    teamMembersProfileImages &&
+                    teamMembersProfileImages[msg.sender]
+                  }
                 />
               );
             })}
@@ -800,13 +1092,47 @@ function TeamChat() {
         >
           <Flex align="center">
             <IconButton
+              {...getRootProps()}
+              // onClick={onOpen}
               icon={<FiPaperclip size="24px" color="white" />}
               bg="transparent"
               fontSize="20px"
               aria-label="Attach File"
               mr={2}
-              onClick={() => {}}
-            />
+            >
+              {/* <Box
+                bg="gray.500"
+                borderStyle={isDragActive ? 'dashed' : 'solid'}
+                borderColor={
+                  isDragAccept
+                    ? 'blue.200'
+                    : isDragReject
+                    ? 'red.500'
+                    : 'gray.400'
+                }
+                alignItems="center"
+                cursor="pointer"
+                position="relative"
+              > */}
+              {/* {imageUrl && (
+                <Image
+                  // borderRadius="full"
+                  boxShadow="xl"
+                  width="100"
+                  height="100"
+                  src={imageUrl}
+                  alt=""
+                />
+              )} */}
+              <input
+                type="file"
+                {...getInputProps()}
+                accept="image/*"
+                placeholder="Choose an image"
+              />
+              {/* </Box> */}
+            </IconButton>
+
             <Textarea
               placeholder="Type your message..."
               value={message.replace(/<br\s*\/?>/gi, '\n')}
@@ -826,7 +1152,6 @@ function TeamChat() {
               mr={2}
               onKeyDown={handleKeyDown}
             />
-
             <IconButton
               icon={<BsSend size="24px" />}
               colorScheme="teal"

@@ -18,10 +18,18 @@ import {
   SliderTrack,
   Text,
   useDisclosure,
-  VStack,
+  VStack
 } from '@chakra-ui/react';
 import { useQueryClient } from '@tanstack/react-query';
-import { Databases, ID, Permission, Role, Storage, Teams } from 'appwrite';
+import {
+  Databases,
+  ID,
+  Models,
+  Permission,
+  Role,
+  Storage,
+  Teams
+} from 'appwrite';
 import { useRouter } from 'next/router';
 import { useCallback, useContext, useState } from 'react';
 import Cropper from 'react-easy-crop';
@@ -30,25 +38,25 @@ import { useNotification } from '../context/NotificationContext';
 import { client } from '../utils/appwriteConfig';
 import getCroppedImg from './cropImage.js';
 // Example theme color picker library import
+import { Account } from 'appwrite';
+import { useMemo } from 'react';
 import { HuePicker } from 'react-color';
 import { useDropzone } from 'react-dropzone';
 import { FiArrowLeft } from 'react-icons/fi';
-
-import { useMemo } from 'react';
 interface EditUserImageModalProps {
   isOpen: boolean;
   onClose: () => void;
   userProfileImage: string;
-  userThemeColor: string;
+  prefs: any;
 }
 
 const EditUserImageModal: React.FC<EditUserImageModalProps> = ({
   isOpen,
   onClose,
-  userThemeColor,
   userProfileImage,
+  prefs,
 }) => {
-  const [themeColor, setThemeColor] = useState<string>(userThemeColor); // Initial theme color
+  const [themeColor, setThemeColor] = useState<string>(prefs.profileColor); // Initial theme color
   const router = useRouter();
   const { id } = router.query;
   const { showNotification } = useNotification();
@@ -58,6 +66,7 @@ const EditUserImageModal: React.FC<EditUserImageModalProps> = ({
   const [imageUrl, setImageUrl] = useState<string | undefined>(
     userProfileImage
   );
+  const account = useMemo(() => new Account(client), []);
   const queryClient = useQueryClient();
   const [cropMode, setCropMode] = useState<boolean>(false);
   const onDrop = (acceptedFiles: any) => {
@@ -108,45 +117,49 @@ const EditUserImageModal: React.FC<EditUserImageModalProps> = ({
 
   const handleSavePreferences = async () => {
     try {
-      // const teams = new Teams(client);
-      // await teams.update(id as string, name as string);
-      // queryClient.setQueryData([`currentTeam-${id}`], (prevData: any) => {
-      //   return response;
-      // });
+      let response1: Models.File | undefined;
       if (file) {
-        const reader = new FileReader();
-        reader.onload = async (event) => {
-          const binaryFile = event.target?.result;
-          if (binaryFile instanceof ArrayBuffer) {
-            const blob = new Blob([binaryFile]);
-            const convertedFile = new File([blob], id as string, {
-              type: file.type,
-            });
+        const binaryFile = await new Promise<ArrayBuffer | null>((resolve) => {
+          const reader = new FileReader();
+          reader.onload = (event) =>
+            resolve(event.target?.result as ArrayBuffer | null);
+          reader.readAsArrayBuffer(file);
+        });
 
-            const response = await storage.createFile(
-              process.env.NEXT_PUBLIC_TEAM_PROFILE_BUCKET_ID as string,
-              id as string,
-              convertedFile,
-              [
-                Permission.read(Role.team(id as string)),
-                Permission.update(Role.team(id as string)),
-                Permission.delete(Role.team(id as string)),
-              ]
+        if (binaryFile instanceof ArrayBuffer) {
+          const blob = new Blob([binaryFile]);
+          const convertedFile = new File([blob], file.name, {
+            type: file.type,
+          });
+
+          if (prefs.profileImageId) {
+            const promise = storage.deleteFile(
+              process.env.NEXT_PUBLIC_USER_PROFILE_BUCKET_ID as string,
+              prefs.profileImageId
             );
           }
-        };
-        reader.readAsArrayBuffer(file);
+
+          response1 = await storage.createFile(
+            process.env.NEXT_PUBLIC_USER_PROFILE_BUCKET_ID as string,
+            ID.unique(),
+            convertedFile,
+            [
+              Permission.read(Role.users()),
+              Permission.update(Role.user(id as string)),
+              Permission.delete(Role.user(id as string)),
+            ]
+          );
+        }
       }
 
-      const updatedDocument = await databases.updateDocument(
-        process.env.NEXT_PUBLIC_DATABASE_ID as string,
-        process.env.NEXT_PUBLIC_TEAMS_COLLECTION_ID as string,
-        id as string,
-        { bg: themeColor }
-      );
-      queryClient.setQueryData([`userData-${id}`], (prevData: any) => {
-        return updatedDocument;
+      const response2 = await account.updatePrefs({
+        ...prefs,
+        profileColor: String(themeColor),
+        profileImageId: response1?.$id,
       });
+
+      queryClient.refetchQueries([`userData-${id}`]);
+      queryClient.removeQueries([`userProfileImage-${id}`]);
 
       onClose();
     } catch (error) {

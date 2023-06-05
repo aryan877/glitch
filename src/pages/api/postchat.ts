@@ -14,6 +14,7 @@ const postChat = async (req: NextApiRequest, res: NextApiResponse) => {
     reference,
     referenceContent,
     referenceUser,
+    file,
   } = req.body;
   try {
     // Set up the Appwrite client
@@ -43,6 +44,7 @@ const postChat = async (req: NextApiRequest, res: NextApiResponse) => {
         sender: user.$id,
         content,
         team,
+        ...(file && { file }),
         sender_name: user.name,
         ...(referenceContent &&
           reference && {

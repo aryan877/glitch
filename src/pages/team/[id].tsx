@@ -21,7 +21,6 @@ import {
 } from '@chakra-ui/react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Avatars, Databases, Storage, Teams } from 'appwrite';
-import { isEmpty } from 'lodash';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useEffect, useMemo, useState } from 'react';
@@ -114,7 +113,7 @@ function Team() {
 
   useEffect(() => {
     const unsubscribe = client.subscribe('memberships', (response) => {
-      console.log(response);
+
       if (response.events.includes(`teams.${id}.memberships.*.delete`)) {
         queryClient.setQueryData([`teamMembers-${id}`], (prevData: any) => {
           const deletedMember: any = response.payload;
@@ -186,7 +185,7 @@ function Team() {
     {
       staleTime: 600000,
       cacheTime: 600000,
-      enabled: !isEmpty(teamPreference),
+      enabled: !!teamPreference,
     }
   );
 
@@ -221,7 +220,7 @@ function Team() {
           membershipId as string
         );
 
-        queryClient.removeQueries({ queryKey: ['teamPreferencesData'] });
+        queryClient.removeQueries({ queryKey: ['teamsList'] });
         router.push('/');
       } catch (error) {
         // Handle error

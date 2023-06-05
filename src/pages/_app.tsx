@@ -6,6 +6,7 @@ import type { AppProps } from 'next/app';
 import { NotificationProvider } from '../../context/NotificationContext';
 import { SidebarProvider } from '../../context/SidebarContext';
 import { UserContextProvider } from '../../context/UserContext';
+import '../../styles/styles.css';
 import theme from '../../theme';
 
 const queryClient = new QueryClient();

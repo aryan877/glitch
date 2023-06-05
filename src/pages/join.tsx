@@ -27,11 +27,11 @@ const JoinTeamPage = () => {
             userId as string,
             secret as string
           );
-          console.log(response); // Success
+
           setInfo('Team joined successfully.');
           fetchAccount();
         } catch (error) {
-          console.log(error); // Log the error for debugging
+          console.error(error); // Log the error for debugging
           setError('Failed to join the team. Please try again.'); // Set the error message
           setInfo('');
         }

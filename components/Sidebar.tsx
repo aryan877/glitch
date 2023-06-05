@@ -1,5 +1,5 @@
 import { Link } from '@chakra-ui/next-js';
-import { Box, chakra, Flex, HStack, VStack } from '@chakra-ui/react';
+import { Box, chakra, Flex, HStack, Image, VStack } from '@chakra-ui/react';
 import { useRouter } from 'next/router';
 import React, { useEffect, useRef, useState } from 'react';
 import { DraggableCore } from 'react-draggable';
@@ -54,7 +54,7 @@ function Sidebar() {
         <VStack spacing={8} align="start" w="100%">
           <Link href="/" mb={4}>
             <chakra.span fontSize="2xl" fontWeight="bold" color="white">
-              Glitch
+              <Image src="/logo.png" alt="logo" />
             </chakra.span>
           </Link>
           <Link

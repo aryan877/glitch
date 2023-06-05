@@ -4,7 +4,8 @@ import sdk from 'node-appwrite';
 const deleteChat = async (req: NextApiRequest, res: NextApiResponse) => {
   const client = new sdk.Client();
   const databases = new sdk.Databases(client);
-  const { jwt, $id } = req.body;
+  const storage = new sdk.Storage(client);
+  const { jwt, $id, file } = req.body;
 
   try {
     // Set up the Appwrite client
@@ -19,6 +20,12 @@ const deleteChat = async (req: NextApiRequest, res: NextApiResponse) => {
         process.env.NEXT_PUBLIC_CHATS_COLLECTION_ID as string,
         $id
       );
+      if (file) {
+        const promise = storage.deleteFile(
+          process.env.NEXT_PUBLIC_CHATS_FILES_BUCKET_ID,
+          file
+        );
+      }
       return res.status(201).json({
         message: 'Document deleted successfully',
         document: response,

@@ -1,5 +1,13 @@
-import { Image } from '@chakra-ui/next-js';
-import { Box, Button, Flex, HStack, Text, VStack } from '@chakra-ui/react';
+import {
+  Box,
+  Button,
+  Flex,
+  HStack,
+  Icon,
+  Image,
+  Text,
+  VStack,
+} from '@chakra-ui/react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Avatars, Locale, Storage } from 'appwrite';
 import axios from 'axios';
@@ -13,9 +21,11 @@ import {
   AiFillEye,
   AiFillStar,
   AiOutlineFork,
+  AiOutlineGithub,
   AiOutlineLink,
   AiOutlineUser,
 } from 'react-icons/ai';
+import { IoIosInformationCircleOutline } from 'react-icons/io';
 import tinycolor from 'tinycolor2';
 import Layout from '../../../components/Layout';
 import { useUser } from '../../../context/UserContext';
@@ -27,11 +37,6 @@ function Profile() {
   const storage = useMemo(() => new Storage(client), []);
   const avatars: any = useMemo(() => new Avatars(client), []);
   const queryClient = useQueryClient();
-  const repositories = [
-    { name: 'Repo 1', forks: 10, stars: 20, watchers: 30 },
-    { name: 'Repo 2', forks: 5, stars: 15, watchers: 25 },
-    { name: 'Repo 3', forks: 3, stars: 8, watchers: 12 },
-  ];
   const { currentUser } = useUser();
   const router = useRouter();
   const { id } = router.query;
@@ -50,6 +55,57 @@ function Profile() {
   );
 
   const {
+    data: userStats,
+    isLoading: isLoadingStats,
+    isError: isErrorStats,
+    error: errorStats,
+  } = useQuery(
+    ['userStats'],
+    async (username) => {
+      try {
+        const response = await axios.get(
+          `https://api.github.com/users/${data.prefs.githubUsername}`
+        );
+        return response.data;
+      } catch (error) {
+        throw new Error('Failed to fetch user stats');
+      }
+    },
+    {
+      staleTime: 600000,
+      cacheTime: 600000,
+      enabled: !!data,
+    }
+  );
+
+  const {
+    data: githubData,
+    isLoading: isLoadingGithub,
+    isError: isErrorGithub,
+    error: errorGithub,
+  } = useQuery(
+    ['userData'],
+    async () => {
+      try {
+        const response = await axios.get(
+          `https://api.github.com/users/${data.prefs.githubUsername}/repos?sort=stars&per_page=10`
+        );
+        return response.data;
+      } catch (error) {
+        throw new Error('Failed to fetch user repositories');
+      }
+    },
+    {
+      staleTime: 600000,
+      cacheTime: 600000,
+      enabled: !!data,
+    }
+  );
+
+  console.log(githubData);
+  console.log(userStats);
+
+  const {
     data: result = '',
     isLoading: resultLoading,
     isError: resultError,
@@ -59,12 +115,12 @@ function Profile() {
       try {
         const promise = await storage.getFile(
           process.env.NEXT_PUBLIC_USER_PROFILE_BUCKET_ID as string,
-          id as string
+          data.prefs.profileImageId
         );
         const timestamp = Date.now(); // Get the current timestamp
         const imageUrl = storage.getFilePreview(
           process.env.NEXT_PUBLIC_USER_PROFILE_BUCKET_ID as string,
-          id as string
+          data.prefs.profileImageId
         );
 
         return `${imageUrl.toString()}&timestamp=${timestamp}`;
@@ -78,7 +134,7 @@ function Profile() {
         return result.toString();
       }
     },
-    { staleTime: 600000, cacheTime: 600000 }
+    { staleTime: 600000, cacheTime: 600000, enabled: !!data }
   );
 
   // const {
@@ -100,12 +156,12 @@ function Profile() {
   // );
 
   // Dummy GitHub user data
-  const githubUsername = 'aryankumar877';
-  const githubFollowers = 100;
-  const githubFollowing = 50;
-  const website = 'https://example.com';
-  const country = 'United States';
-  const joinedDate = 'May 2022';
+  // const githubUsername = 'aryankumar877';
+  // const githubFollowers = 100;
+  // const githubFollowing = 50;
+  // const website = 'https://example.com';
+  // const country = 'United States';
+  // const joinedDate = 'May 2022';
 
   return (
     <Layout>
@@ -136,7 +192,7 @@ function Profile() {
             boxShadow="xl"
             borderRadius="full"
             height="240"
-            alt="team profile"
+            alt="user profile"
             mr={8}
           />
           {data && (
@@ -144,7 +200,7 @@ function Profile() {
               <Box>
                 <Text mb="-4">Username</Text>
                 <Text fontWeight="extrabold" fontSize="6xl">
-                  {data.name ? data.name : 'username does not exist'}
+                  {data.name ? data.name : 'No Username'}
                 </Text>
               </Box>
               <Box fontSize="lg">
@@ -157,7 +213,7 @@ function Profile() {
                       <Text>Country</Text>{' '}
                       <Text fontWeight="extrabold">{data.prefs.country}</Text>
                     </HStack>
-                    <Text>•</Text>
+                    <Text mx={2}>•</Text>
                   </>
                 )}
                 <HStack>
@@ -237,117 +293,131 @@ function Profile() {
                   {/* <Text>Username: {githubUsername}</Text>
             <Text>Followers: {githubFollowers}</Text>
             <Text>Following: {githubFollowing}</Text> */}
-                  <HStack spacing={2}>
-                    <HStack>
-                      <Text>Public Repos</Text>
-                      <Text fontWeight="bold">2</Text>
+                  {!!userStats && (
+                    <HStack spacing={2}>
+                      <HStack>
+                        <Text>Public Repos</Text>
+                        <Text fontWeight="bold">{userStats.public_repos}</Text>
+                      </HStack>
+                      <Text>•</Text>
+                      <HStack>
+                        <Text>Followers</Text>
+                        <Text fontWeight="bold">{userStats.followers}</Text>
+                      </HStack>
+                      <Text>•</Text>
+                      <HStack>
+                        <Text>Following</Text>
+                        <Text fontWeight="bold">{userStats.following}</Text>
+                      </HStack>
                     </HStack>
-                    <Text>•</Text>
-                    <HStack>
-                      <Text>Followers</Text>
-                      <Text fontWeight="bold">{githubFollowers}</Text>
-                    </HStack>
-                    <Text>•</Text>
-                    <HStack>
-                      <Text>Following</Text>
-                      <Text fontWeight="bold">{githubFollowing}</Text>
-                    </HStack>
-                  </HStack>
+                  )}
                 </Box>
               </Box>
               <Box w="full">
                 <Text mb={4} fontWeight="bold" fontSize="xl" w="full">
-                  GitHub Repositories
+                  [GitHub Repositories]
                 </Text>
-                {repositories.map((repo) => (
-                  <Box
-                    key={repo.name}
-                    borderRadius="md"
-                    bg="gray.700"
-                    p={4}
-                    w="full"
-                    display="flex"
-                    mb={4}
-                    justifyContent="space-between"
-                    alignItems="center"
-                  >
-                    <VStack align="start" gap={2}>
-                      <Text fontWeight="bold" fontSize="lg">
-                        {repo.name}
-                      </Text>
-                      <Text mb={4}>
-                        Lorem ipsum dolor sit amet consectetur adipisicing elit.
-                        Architecto quam pariatur eligendi repellendus maxime
-                        illum saepe corporis fugit neque animi molestiae,
-                        temporibus, dolorum debitis libero nam delectus placeat
-                        enim expedita?
-                      </Text>
-                      <HStack spacing={4}>
-                        <Button
-                          as="a"
-                          href={`https://github.com/${githubUsername}/${repo.name}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          colorScheme="gray"
-                          leftIcon={<AiFillStar />}
-                          size="sm"
-                          borderRadius="full"
-                        >
-                          <HStack>
-                            <Text>Stars</Text>
-                            <Text fontWeight="bold" fontSize="md">
-                              {repo.stars}
-                            </Text>
-                          </HStack>
-                        </Button>
-                        <Button
-                          as="a"
-                          href={`https://github.com/${githubUsername}/${repo.name}/network/members`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          colorScheme="blue"
-                          leftIcon={<AiFillEye />}
-                          size="sm"
-                          borderRadius="full"
-                        >
-                          <HStack>
-                            <Text>Watchers</Text>
-                            <Text fontWeight="bold" fontSize="md">
-                              {repo.watchers}
-                            </Text>
-                          </HStack>
-                        </Button>
-                        <Button
-                          as="a"
-                          href={`https://github.com/${githubUsername}/${repo.name}/network/members`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          colorScheme="green"
-                          leftIcon={<AiOutlineFork />}
-                          size="sm"
-                          borderRadius="full"
-                        >
-                          <HStack>
-                            <Text>Forks</Text>
-                            <Text fontWeight="bold" fontSize="md">
-                              {repo.forks}
-                            </Text>
-                          </HStack>
-                        </Button>
-                      </HStack>
-                    </VStack>
-                    {/* <Button
-                as="a"
-                href={`https://github.com/${githubUsername}/${repo.name}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                colorScheme="teal"
-                size="sm"
-              >
-                View
-              </Button> */}
-                  </Box>
-                ))}
+                <Flex alignItems="center" mb={4}>
+                  <IoIosInformationCircleOutline color="#666" />
+
+                  <Text fontSize="sm" color="gray.400" ml={2}>
+                    Sorted by stars. Top 10 repositories.
+                  </Text>
+                </Flex>
+                {!!githubData &&
+                  githubData.map((repo: any) => (
+                    <Box
+                      key={repo.name}
+                      borderRadius="md"
+                      bg="gray.700"
+                      p={4}
+                      w="full"
+                      display="flex"
+                      mb={4}
+                      justifyContent="space-between"
+                      alignItems="center"
+                    >
+                      <VStack align="start" gap={2}>
+                        <Text fontWeight="bold" fontSize="lg">
+                          {repo.name}
+                        </Text>
+                        <Text mb={4}>
+                          {repo.description || 'No description available.'}
+                        </Text>
+                        <HStack spacing={4}>
+                          <Button
+                            as="a"
+                            href={`https://github.com/${data.prefs.githubUsername}/${repo.name}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            colorScheme="gray"
+                            leftIcon={<AiFillStar />}
+                            size="sm"
+                            borderRadius="full"
+                          >
+                            <HStack>
+                              <Text>Stars</Text>
+                              <Text>{repo.stargazers_count}</Text>
+                            </HStack>
+                          </Button>
+                          <Button
+                            as="a"
+                            href={`https://github.com/${data.prefs.githubUsername}/${repo.name}/network/members`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            colorScheme="blue"
+                            leftIcon={<AiFillEye />}
+                            size="sm"
+                            borderRadius="full"
+                          >
+                            <HStack>
+                              <Text>Watchers</Text>
+                              <Text>{repo.watchers_count}</Text>
+                            </HStack>
+                          </Button>
+                          <Button
+                            as="a"
+                            href={`https://github.com/${data.prefs.githubUsername}/${repo.name}/network/members`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            colorScheme="green"
+                            leftIcon={<AiOutlineFork />}
+                            size="sm"
+                            borderRadius="full"
+                          >
+                            <HStack>
+                              <Text>Forks</Text>
+                              <Text>{repo.forks_count}</Text>
+                            </HStack>
+                          </Button>
+                          <Button
+                            as="a"
+                            href={repo.homepage}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            colorScheme="teal"
+                            leftIcon={<AiOutlineLink />}
+                            size="sm"
+                            borderRadius="full"
+                          >
+                            <Text>Live Site</Text>
+                          </Button>
+                          <Button
+                            as="a"
+                            href={`https://github.com/${data.prefs.githubUsername}/${repo.name}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            colorScheme="purple"
+                            leftIcon={<AiOutlineGithub />}
+                            size="sm"
+                            borderRadius="full"
+                          >
+                            <Text>GitHub</Text>
+                          </Button>
+                        </HStack>
+                      </VStack>
+                    </Box>
+                  ))}
               </Box>
             </>
           ) : (

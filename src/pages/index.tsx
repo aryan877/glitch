@@ -12,7 +12,6 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Avatars, Databases, Query, Teams } from 'appwrite';
 import dayjs from 'dayjs';
 import 'dayjs/locale/en';
-import { isEmpty } from 'lodash';
 import { Nunito_Sans } from 'next/font/google';
 import Head from 'next/head';
 import Link from 'next/link';
