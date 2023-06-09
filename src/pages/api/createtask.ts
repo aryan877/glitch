@@ -68,7 +68,6 @@ const createTask = async (req: NextApiRequest, res: NextApiResponse) => {
         sdk.Permission.update(sdk.Role.team(team as string, 'admin')),
         sdk.Permission.delete(sdk.Role.team(team as string, 'owner')),
         sdk.Permission.delete(sdk.Role.team(team as string, 'admin')),
-        // sdk.Permission.update(sdk.Role.user(user.$id)),
       ]
     );
 

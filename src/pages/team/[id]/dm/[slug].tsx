@@ -59,10 +59,12 @@ import { FaCheck, FaCheckDouble, FaEllipsisH, FaXing } from 'react-icons/fa';
 import { FiEdit, FiPaperclip } from 'react-icons/fi';
 import { HiEllipsisHorizontal } from 'react-icons/hi2';
 import { MdClose, MdSend } from 'react-icons/md';
+import { useInView } from 'react-intersection-observer';
 import ResizeTextarea from 'react-textarea-autosize';
 import tinycolor from 'tinycolor2';
 import { v4 as uuidv4 } from 'uuid';
 import ChatFileSender from '../../../../../components/ChatFileSender';
+import useKeepScrollPosition from '../../../../../components/hooks/useKeepScrollPosition';
 import Layout from '../../../../../components/Layout';
 import { useSidebar } from '../../../../../context/SidebarContext';
 import { useUser } from '../../../../../context/UserContext';
@@ -216,6 +218,7 @@ function ChatMessage({
     link.download = 'filename'; // Set the desired filename here
     link.click();
   };
+
   return (
     <Flex
       ref={originalMessageRef}
@@ -495,7 +498,7 @@ function DirectChat() {
           process.env.NEXT_PUBLIC_DIRECT_CHATS_COLLECTION_ID as string,
           [
             Query.equal('channel', [hash as string]),
-            Query.limit(8),
+            Query.limit(15),
             Query.orderDesc('$createdAt'),
           ]
         );
@@ -993,8 +996,6 @@ function DirectChat() {
     { staleTime: 3600000, cacheTime: 3600000 }
   );
 
-  
-
   const renderDateDisplay = (createdAt) => {
     const today = dayjs().startOf('day');
     const messageDate = dayjs(createdAt);
@@ -1005,6 +1006,75 @@ function DirectChat() {
       return messageDate.format('MMM D, YYYY');
     }
   };
+
+  const [ref, inView] = useInView({
+    triggerOnce: false,
+    rootMargin: '0px 0px 300px 0px', // Adjust the rootMargin as needed
+  });
+
+  const isLoadingRef = useRef(false);
+
+  const { containerRef } = useKeepScrollPosition([data]);
+
+  useEffect(() => {
+    async function fetchData() {
+      if (!data || isLoadingRef.current) {
+        return;
+      }
+      isLoadingRef.current = true;
+
+      try {
+        const response = await databases.listDocuments(
+          process.env.NEXT_PUBLIC_DATABASE_ID as string,
+          process.env.NEXT_PUBLIC_CHATS_COLLECTION_ID as string,
+          [
+            Query.equal('channel', [hash as string]),
+            Query.cursorAfter(data[0].$id as string),
+            Query.limit(15),
+            Query.orderDesc('$createdAt'),
+          ]
+        );
+        const sortedDocuments = response.documents.sort((a, b) => {
+          const dateA = new Date(a.$createdAt);
+          const dateB = new Date(b.$createdAt);
+          return dateA.getTime() - dateB.getTime();
+        });
+
+        const updatedDocuments = sortedDocuments.map((document) => {
+          if (document.sender === currentUser.$id) {
+            return { ...document, delivered: true };
+          }
+          return document;
+        });
+
+        queryClient.setQueryData(
+          [`directMessages-${slug}-${currentUser.$id}`],
+          (prevData: any) => {
+            const updatedData = [...updatedDocuments, ...prevData];
+            return updatedData;
+          }
+        );
+      } catch (error) {
+        // Handle error
+      } finally {
+        isLoadingRef.current = false;
+      }
+      // Dispatch the request in useQuery
+    }
+    if (inView) {
+      fetchData();
+    }
+  }, [
+    currentUser.$id,
+    databases,
+    id,
+    queryClient,
+    data,
+    isLoadingRef,
+    hash,
+    inView,
+    slug,
+  ]);
 
   return (
     <Layout>
@@ -1029,7 +1099,7 @@ function DirectChat() {
           bg="gray.700"
           // bgGradient={`linear(to top, gray.700 99%, ${teamPreference.bg})`}
           py={4}
-          ref={chatContainerRef}
+          ref={containerRef}
         >
           {data &&
             data.map((msg: any, index: number) => {
@@ -1054,35 +1124,37 @@ function DirectChat() {
                       <Divider flex="1" ml={2} />
                     </HStack>
                   )}
-                  <ChatMessage
-                    key={msg.$id}
-                    docId={msg.$id}
-                    sender={msg.sender}
-                    content={msg.content}
-                    senderName={msg.sender_name}
-                    display={isSameSender && index !== 0 ? false : true}
-                    createdAt={msg.$createdAt}
-                    reference={msg.reference}
-                    referenceContent={msg.referenceContent}
-                    setMessageContent={setMessageContent}
-                    setMessageUser={setMessageUser}
-                    setMessageId={setMessageId}
-                    inputRef={textAreaRef}
-                    setMode={setMode}
-                    setMessage={setMessage}
-                    referenceUser={msg.referenceUser}
-                    edited={msg.edited}
-                    fileId={msg.file}
-                    referenceToScroll={referenceToScroll}
-                    handleOriginalMessageClick={handleOriginalMessageClick}
-                    originalMessageRef={componentRefs[msg.$id]}
-                    marginY={isSameSender && index !== 0 ? 1 : 8}
-                    delivered={msg.delivered}
-                    profileImage={
-                      teamMembersProfileImages &&
-                      teamMembersProfileImages[msg.sender]
-                    }
-                  />
+                  <Box ref={index === 0 ? ref : null}>
+                    <ChatMessage
+                      key={msg.$id}
+                      docId={msg.$id}
+                      sender={msg.sender}
+                      content={msg.content}
+                      senderName={msg.sender_name}
+                      display={isSameSender && index !== 0 ? false : true}
+                      createdAt={msg.$createdAt}
+                      reference={msg.reference}
+                      referenceContent={msg.referenceContent}
+                      setMessageContent={setMessageContent}
+                      setMessageUser={setMessageUser}
+                      setMessageId={setMessageId}
+                      inputRef={textAreaRef}
+                      setMode={setMode}
+                      setMessage={setMessage}
+                      referenceUser={msg.referenceUser}
+                      edited={msg.edited}
+                      fileId={msg.file}
+                      referenceToScroll={referenceToScroll}
+                      handleOriginalMessageClick={handleOriginalMessageClick}
+                      originalMessageRef={componentRefs[msg.$id]}
+                      marginY={isSameSender && index !== 0 ? 1 : 8}
+                      delivered={msg.delivered}
+                      profileImage={
+                        teamMembersProfileImages &&
+                        teamMembersProfileImages[msg.sender]
+                      }
+                    />
+                  </Box>
                 </>
               );
             })}

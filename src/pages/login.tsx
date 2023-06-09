@@ -130,15 +130,17 @@ const LoginPage = () => {
         >
           Log In
         </Button>
-        <Button
-          variant="link"
-          colorScheme="white"
-          _hover={{ color: 'green.500' }}
-          w="full"
-          my={8}
-        >
-          Forgot your password?
-        </Button>
+        <Link href="/password_recovery">
+          <Button
+            variant="link"
+            colorScheme="white"
+            _hover={{ color: 'green.500' }}
+            w="full"
+            my={8}
+          >
+            Forgot your password?
+          </Button>
+        </Link>
         <Divider bgColor="gray.300" />
         <HStack spacing={2} my={8} justifyContent="center">
           <Text color="gray.300">Don&apos;t have an account?</Text>

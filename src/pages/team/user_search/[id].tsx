@@ -1,6 +1,7 @@
 import {
   Avatar,
   Box,
+  Button,
   Center,
   HStack,
   Input,
@@ -14,8 +15,9 @@ import {
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import React, { useState } from 'react';
-import { AiOutlineUser, AiOutlineUserAdd } from 'react-icons/ai';
+import { AiOutlineEye, AiOutlineUser, AiOutlineUserAdd } from 'react-icons/ai';
 import { useDebounce } from 'usehooks-ts';
+import withAuth from 'utils/withAuth';
 import Layout from '../../../../components/Layout';
 
 const UserSearch = () => {
@@ -83,8 +85,8 @@ const UserSearch = () => {
                     <Text color="white">{user.name}</Text>
                     <HStack ml="auto" spacing={4}>
                       <Tooltip label="View Profile" hasArrow>
-                        <Box
-                          as={AiOutlineUser}
+                        <Button
+                          leftIcon={<AiOutlineEye />}
                           cursor="pointer"
                           color="white"
                           fontSize="24px"
@@ -92,8 +94,8 @@ const UserSearch = () => {
                         />
                       </Tooltip>
                       <Tooltip label="Add to Team" hasArrow>
-                        <Box
-                          as={AiOutlineUserAdd}
+                        <Button
+                          leftIcon={<AiOutlineUserAdd />}
                           cursor="pointer"
                           color="white"
                           fontSize="24px"
@@ -112,4 +114,4 @@ const UserSearch = () => {
   );
 };
 
-export default UserSearch;
+export default withAuth(UserSearch);

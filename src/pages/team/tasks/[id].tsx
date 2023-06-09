@@ -21,6 +21,7 @@ import React, { useMemo, useState } from 'react';
 import { IoMdAdd } from 'react-icons/io';
 import tinycolor from 'tinycolor2';
 import { client } from 'utils/appwriteConfig';
+import withAuth from 'utils/withAuth';
 import Layout from '../../../../components/Layout';
 import { getBadgeColor } from '../[id]';
 // Dummy task data with colors
@@ -197,8 +198,10 @@ function TeamTasks() {
           {teamTasksData &&
             teamTasksData.map((task) => (
               <Box
+                borderWidth={2}
+                borderColor={task.isComplete ? 'green.700' : 'yellow.700'}
                 key={task.$id}
-                bg={task.isComplete ? 'green.600' : 'yellow.600'}
+                bg={task.isComplete ? 'green.700' : 'gray.700'}
                 p={8}
                 borderRadius="md"
                 boxShadow="sm"
@@ -209,7 +212,7 @@ function TeamTasks() {
                   p={2}
                   px={4}
                   borderRadius="md"
-                  bg={task.isComplete ? 'green.500' : 'yellow.500'}
+                  bg={task.isComplete ? 'green.600' : 'gray.600'}
                   gap={2}
                   align="baseline"
                   mb={2}
@@ -223,7 +226,7 @@ function TeamTasks() {
                   p={2}
                   px={4}
                   borderRadius="md"
-                  bg={task.isComplete ? 'green.500' : 'yellow.500'}
+                  bg={task.isComplete ? 'green.600' : 'gray.600'}
                   gap={2}
                   mb={2}
                   align="baseline"
@@ -239,7 +242,7 @@ function TeamTasks() {
                   p={2}
                   px={4}
                   borderRadius="md"
-                  bg={task.isComplete ? 'green.500' : 'yellow.500'}
+                  bg={task.isComplete ? 'green.600' : 'gray.600'}
                   gap={2}
                   mb={2}
                   align="center"
@@ -281,7 +284,7 @@ function TeamTasks() {
                 <Badge
                   color="white"
                   mr={2}
-                  bg={task.isComplete ? 'green.500' : 'yellow.500'}
+                  bg={task.isComplete ? 'green.600' : 'gray.600'}
                 >
                   {task.isComplete ? 'Complete' : 'Pending'}
                 </Badge>
@@ -314,4 +317,4 @@ function TeamTasks() {
   );
 }
 
-export default TeamTasks;
+export default withAuth(TeamTasks);

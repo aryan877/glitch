@@ -489,7 +489,7 @@ function TeamChat() {
           process.env.NEXT_PUBLIC_CHATS_COLLECTION_ID as string,
           [
             Query.equal('team', [id as string]),
-            Query.limit(5),
+            Query.limit(15),
             Query.orderDesc('$createdAt'),
           ]
         );
@@ -519,7 +519,7 @@ function TeamChat() {
     }
   );
 
-  const chatContainerRef = useRef<HTMLDivElement>(null);
+  // const chatContainerRef = useRef<HTMLDivElement>(null);
 
   // const chatScrollRef = useRef<HTMLDivElement | null>(null);
 
@@ -982,43 +982,12 @@ function TeamChat() {
     }
   };
 
-  useEffect(() => {
-    // if (data && isSuccess) {
-    //   if (chatContainerRef.current) {
-    //     chatContainerRef.current.scrollTop =
-    //       chatContainerRef.current.scrollHeight - 32;
-    //   }
-    // }
-  }, [data, isSuccess]);
-
   const [ref, inView] = useInView({
     triggerOnce: false,
     rootMargin: '0px 0px 300px 0px', // Adjust the rootMargin as needed
   });
 
   const isLoadingRef = useRef(false);
-
-  // useEffect(() => {
-  //   const chatContainer = chatContainerRef.current;
-  //   console.log('chatContainer:', chatContainer);
-
-  //   const handleScroll = () => {
-  //     const prevScrollHeight = chatContainer?.scrollHeight;
-  //     console.log('prevScrollHeight:', prevScrollHeight);
-
-  //     const prevClientHeight = chatContainer?.clientHeight;
-  //     console.log('prevClientHeight:', prevClientHeight);
-
-  //     const prevScrollTop = chatContainer?.scrollTop;
-  //     console.log('prevScrollTop:', prevScrollTop);
-  //   };
-
-  //   chatContainer?.addEventListener('scroll', handleScroll);
-
-  //   return () => {
-  //     chatContainer?.removeEventListener('scroll', handleScroll);
-  //   };
-  // }, []);
 
   const { containerRef } = useKeepScrollPosition([data]);
 
@@ -1037,7 +1006,7 @@ function TeamChat() {
           [
             Query.equal('team', [id as string]),
             Query.cursorAfter(data[0].$id as string),
-            Query.limit(5),
+            Query.limit(15),
             Query.orderDesc('$createdAt'),
           ]
         );
@@ -1063,11 +1032,19 @@ function TeamChat() {
       }
       // Dispatch the request in useQuery
     }
-
     if (inView) {
       fetchData();
     }
   }, [currentUser.$id, databases, id, queryClient, data, isLoadingRef, inView]);
+
+  // useEffect(() => {
+  // if (data && isSuccess) {
+  //   if (chatContainerRef.current) {
+  //     chatContainerRef.current.scrollTop =
+  //       chatContainerRef.current.scrollHeight - 32;
+  //   }
+  // }
+  // }, [data, isSuccess]);
 
   // const scrollPos = async () => {
   //   const h = chatContainerRef.current?.scrollHeight;
@@ -1079,6 +1056,28 @@ function TeamChat() {
   //     behavior: 'smooth',
   //   });
   // };
+
+  // useEffect(() => {
+  //   const chatContainer = chatContainerRef.current;
+  //   console.log('chatContainer:', chatContainer);
+
+  //   const handleScroll = () => {
+  //     const prevScrollHeight = chatContainer?.scrollHeight;
+  //     console.log('prevScrollHeight:', prevScrollHeight);
+
+  //     const prevClientHeight = chatContainer?.clientHeight;
+  //     console.log('prevClientHeight:', prevClientHeight);
+
+  //     const prevScrollTop = chatContainer?.scrollTop;
+  //     console.log('prevScrollTop:', prevScrollTop);
+  //   };
+
+  //   chatContainer?.addEventListener('scroll', handleScroll);
+
+  //   return () => {
+  //     chatContainer?.removeEventListener('scroll', handleScroll);
+  //   };
+  // }, []);
 
   return (
     <Layout>

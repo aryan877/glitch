@@ -24,6 +24,7 @@ import { useState } from 'react';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import { client } from 'utils/appwriteConfig';
+import withAuth from 'utils/withAuth';
 import Layout from '../../../../../components/Layout';
 
 const ReactQuillWithNoSSR = dynamic(() => import('react-quill'), {
@@ -218,4 +219,4 @@ const CreateTaskPage: React.FC = () => {
   );
 };
 
-export default CreateTaskPage;
+export default withAuth(CreateTaskPage);
