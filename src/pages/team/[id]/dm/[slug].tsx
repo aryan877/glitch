@@ -2,7 +2,6 @@ import {
   Avatar,
   Box,
   Button,
-  Center,
   Divider,
   Flex,
   HStack,
@@ -40,7 +39,8 @@ import {
 } from 'appwrite';
 import axios from 'axios';
 import dayjs from 'dayjs';
-import { isEmpty, random } from 'lodash';
+import hashSum from 'hash-sum';
+import { random } from 'lodash';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { createRef, useEffect, useMemo, useRef, useState } from 'react';
@@ -59,16 +59,20 @@ import { FaCheck, FaCheckDouble, FaEllipsisH, FaXing } from 'react-icons/fa';
 import { FiEdit, FiPaperclip } from 'react-icons/fi';
 import { HiEllipsisHorizontal } from 'react-icons/hi2';
 import { MdClose, MdSend } from 'react-icons/md';
-import { useInView } from 'react-intersection-observer';
 import ResizeTextarea from 'react-textarea-autosize';
 import tinycolor from 'tinycolor2';
 import { v4 as uuidv4 } from 'uuid';
-import ChatFileSender from '../../../../components/ChatFileSender';
-import Layout from '../../../../components/Layout';
-import { useSidebar } from '../../../../context/SidebarContext';
-import { useUser } from '../../../../context/UserContext';
-import { client } from '../../../../utils/appwriteConfig';
-import withAuth from '../../../../utils/withAuth';
+import ChatFileSender from '../../../../../components/ChatFileSender';
+import Layout from '../../../../../components/Layout';
+import { useSidebar } from '../../../../../context/SidebarContext';
+import { useUser } from '../../../../../context/UserContext';
+import { client } from '../../../../../utils/appwriteConfig';
+import withAuth from '../../../../../utils/withAuth';
+const generateHash = (a: string, b: string): string => {
+  const sortedValues = [a, b].sort();
+  const hash = hashSum(sortedValues);
+  return hash;
+};
 
 function ChatMessage({
   sender,
@@ -120,7 +124,7 @@ function ChatMessage({
   profileImage: string | undefined;
 }) {
   const router = useRouter();
-  const { id } = router.query;
+
   const { currentUser } = useUser();
   const account = useMemo(() => new Account(client), []);
   const databases = useMemo(() => new Databases(client), []);
@@ -138,7 +142,7 @@ function ChatMessage({
     }
 
     try {
-      await axios.post('/api/deletechat', postData);
+      await axios.post('/api/deletedirectchat', postData);
     } catch (error) {
       // Handle the error
     }
@@ -174,7 +178,6 @@ function ChatMessage({
     {
       staleTime: 3600000,
       cacheTime: 3600000,
-      enabled: !isEmpty(fileId),
     }
   );
 
@@ -183,7 +186,8 @@ function ChatMessage({
     async () => {
       const response = await databases.listDocuments(
         process.env.NEXT_PUBLIC_DATABASE_ID as string,
-        process.env.NEXT_PUBLIC_CHATS_NOTIFICATION_COLLECTION_ID as string,
+        process.env
+          .NEXT_PUBLIC_DIRECT_CHATS_NOTIFICATION_COLLECTION_ID as string,
         [Query.equal('isRead', true), Query.equal('messageId', docId)]
       );
       // Extract reader names from the response
@@ -230,7 +234,7 @@ function ChatMessage({
         }}
       >
         {
-          <Link href={`/profile/${sender}}`}>
+          <Link href={`/profile/${sender}`}>
             <Avatar
               name={senderName as string}
               size="md"
@@ -396,9 +400,9 @@ function ChatMessage({
                       Delete
                     </MenuItem>
                   )}
-
-                  {data?.map((reader: any, index: number) => (
-                    <MenuItem key={index}>
+                  {/* 
+                  {data?.map((reader: any) => (
+                    <MenuItem key={random()}>
                       <Text fontSize="sm" mr={2}>
                         {reader.readerName}
                       </Text>
@@ -406,7 +410,7 @@ function ChatMessage({
                         Read at {dayjs(reader.readTime).format('HH:mm')}
                       </Text>
                     </MenuItem>
-                  ))}
+                  ))} */}
                 </MenuList>
               </Menu>
             </HStack>
@@ -428,9 +432,10 @@ function ChatMessage({
   );
 }
 
-function TeamChat() {
+function DirectChat() {
   const { flexWidth, setFlexWidth } = useSidebar();
   const [message, setMessage] = useState<string>('');
+
   const databases = useMemo(() => new Databases(client), []);
   const avatars = useMemo(() => new Avatars(client), []);
   const storage = useMemo(() => new Storage(client), []);
@@ -449,8 +454,11 @@ function TeamChat() {
   const ChatSectionRef = useRef<HTMLDivElement>(null);
   const account = useMemo(() => new Account(client), []);
   const router = useRouter();
-  const { id } = router.query;
-
+  const { id, slug } = router.query;
+  const hash = useMemo(
+    () => generateHash(slug as string, currentUser.$id),
+    [slug, currentUser.$id]
+  );
   const onDrop = (acceptedFiles: any) => {
     if (acceptedFiles) {
       const file = acceptedFiles[0];
@@ -479,19 +487,18 @@ function TeamChat() {
   //here we implement infinite query and we move up and load previous messages not the next ones,
   // we start with the latest and go back
   const { data, isSuccess } = useQuery(
-    [`teamMessages-${id}`],
+    [`directMessages-${slug}-${currentUser.$id}`],
     async () => {
       try {
         const response = await databases.listDocuments(
           process.env.NEXT_PUBLIC_DATABASE_ID as string,
-          process.env.NEXT_PUBLIC_CHATS_COLLECTION_ID as string,
+          process.env.NEXT_PUBLIC_DIRECT_CHATS_COLLECTION_ID as string,
           [
-            Query.equal('team', [id as string]),
-            Query.limit(5),
+            Query.equal('channel', [hash as string]),
+            Query.limit(8),
             Query.orderDesc('$createdAt'),
           ]
         );
-
         const sortedDocuments = response.documents.sort((a, b) => {
           const dateA = new Date(a.$createdAt);
           const dateB = new Date(b.$createdAt);
@@ -507,28 +514,23 @@ function TeamChat() {
 
         return updatedDocuments;
       } catch (error) {
-        console.error('Error fetching team messages:', error);
+        console.error('Error fetching direct messages:', error);
         throw error;
       }
     },
     {
-      staleTime: 3600000,
-      cacheTime: 3600000,
+      // staleTime: 3600000,
+      // cacheTime: 3600000,
     }
   );
 
   const chatContainerRef = useRef<HTMLDivElement>(null);
-
-  // const chatScrollRef = useRef<HTMLDivElement | null>(null);
-
-  // useEffect(() => {
-  //   if (chatScrollRef.current) {
-  //     chatScrollRef.current.scrollIntoView({
-  //       behavior: 'auto',
-  //       block: 'end',
-  //     });
-  //   }
-  // }, [data, isSuccess]);
+  useEffect(() => {
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop =
+        chatContainerRef.current.scrollHeight - 32;
+    }
+  }, [data, isSuccess]);
 
   const handleKeyDown = (e: any) => {
     if (e.keyCode === 13) {
@@ -565,7 +567,10 @@ function TeamChat() {
             }
             return prevData;
           };
-          queryClient.setQueryData([`teamMessages-${id}`], queryData);
+          queryClient.setQueryData(
+            [`directMessages-${slug}-${currentUser.$id}`],
+            queryData
+          );
           const promise = await account.createJWT();
           await axios.post('/api/editchat', {
             jwt: promise.jwt,
@@ -580,9 +585,10 @@ function TeamChat() {
           const newMessage = {
             sender: currentUser.$id,
             content: formattedMessage,
-            team: id,
+            channel: hash as string,
             $id: docId,
             sender_name: currentUser.name,
+            receiver: slug,
             $createdAt: Date.now(),
             ...(mode === 'REPLY' && {
               reference: messageId,
@@ -594,13 +600,18 @@ function TeamChat() {
           };
           return [...prevData, newMessage];
         };
-        queryClient.setQueryData([`teamMessages-${id}`], queryData);
+        queryClient.setQueryData(
+          [`directMessages-${slug}-${currentUser.$id}`],
+          queryData
+        );
         const promise = await account.createJWT();
-        await axios.post('/api/postchat', {
+        await axios.post('/api/postdirectchat', {
           jwt: promise.jwt,
           content: formattedMessage,
-          team: id,
+          channel: hash as string,
           $id: docId,
+          sender_name: currentUser.name,
+          receiver: slug,
           ...(mode === 'REPLY' && {
             reference: messageId,
             referenceContent: messageContent,
@@ -608,18 +619,21 @@ function TeamChat() {
           }),
         });
         // Mark the message as delivered
-        queryClient.setQueryData([`teamMessages-${id}`], (prevData: any) => {
-          const updatedData = prevData.map((msg: any) => {
-            if (msg.$id === docId && msg.sender === currentUser.$id) {
-              return {
-                ...msg,
-                delivered: true,
-              };
-            }
-            return msg;
-          });
-          return updatedData;
-        });
+        queryClient.setQueryData(
+          [`directMessages-${slug}-${currentUser.$id}`],
+          (prevData: any) => {
+            const updatedData = prevData.map((msg: any) => {
+              if (msg.$id === docId && msg.sender === currentUser.$id) {
+                return {
+                  ...msg,
+                  delivered: true,
+                };
+              }
+              return msg;
+            });
+            return updatedData;
+          }
+        );
 
         //here we set that as delivered
       } catch (error) {
@@ -667,9 +681,10 @@ function TeamChat() {
           const newMessage = {
             sender: currentUser.$id,
             content: formattedMessage,
-            team: id,
+            channel: hash,
             $id: docId,
             sender_name: currentUser.name,
+            receiver: slug,
             $createdAt: Date.now(),
             file: fileId,
             ...(mode === 'REPLY' && {
@@ -682,14 +697,19 @@ function TeamChat() {
           };
           return [...prevData, newMessage];
         };
-        queryClient.setQueryData([`teamMessages-${id}`], queryData);
+        queryClient.setQueryData(
+          [`directMessages-${slug}-${currentUser.$id}`],
+          queryData
+        );
         const promise = await account.createJWT();
-        await axios.post('/api/postchat', {
+        await axios.post('/api/postdirectchat', {
           jwt: promise.jwt,
           content: formattedMessage,
-          team: id,
+          channel: hash as string,
           file: fileId,
           $id: docId,
+          sender_name: currentUser.name,
+          receiver: slug,
           ...(mode === 'REPLY' && {
             reference: messageId,
             referenceContent: messageContent,
@@ -697,18 +717,21 @@ function TeamChat() {
           }),
         });
         // Mark the message as delivered
-        queryClient.setQueryData([`teamMessages-${id}`], (prevData: any) => {
-          const updatedData = prevData.map((msg: any) => {
-            if (msg.$id === docId && msg.sender === currentUser.$id) {
-              return {
-                ...msg,
-                delivered: true,
-              };
-            }
-            return msg;
-          });
-          return updatedData;
-        });
+        queryClient.setQueryData(
+          [`directMessages-${slug}-${currentUser.$id}`],
+          (prevData: any) => {
+            const updatedData = prevData.map((msg: any) => {
+              if (msg.$id === docId && msg.sender === currentUser.$id) {
+                return {
+                  ...msg,
+                  delivered: true,
+                };
+              }
+              return msg;
+            });
+            return updatedData;
+          }
+        );
 
         //here we set that as delivered
       } catch (error) {
@@ -720,23 +743,23 @@ function TeamChat() {
   //Subscriptions
   useEffect(() => {
     const unsubscribe = client.subscribe(
-      `databases.${process.env.NEXT_PUBLIC_DATABASE_ID}.collections.${process.env.NEXT_PUBLIC_CHATS_COLLECTION_ID}.documents`,
+      `databases.${process.env.NEXT_PUBLIC_DATABASE_ID}.collections.${process.env.NEXT_PUBLIC_DIRECT_CHATS_COLLECTION_ID}.documents`,
       (response) => {
         if (
           response.events.includes(
-            `databases.${process.env.NEXT_PUBLIC_DATABASE_ID}.collections.${process.env.NEXT_PUBLIC_CHATS_COLLECTION_ID}.documents.*.create`
+            `databases.${process.env.NEXT_PUBLIC_DATABASE_ID}.collections.${process.env.NEXT_PUBLIC_DIRECT_CHATS_COLLECTION_ID}.documents.*.create`
           )
         ) {
           // queryClient.invalidateQueries(['allTeams']);
           if (
-            (response.payload as { team?: string; sender?: string })?.team ===
-              id &&
-            (response.payload as { team?: string; sender?: string })?.sender !==
-              currentUser?.$id
+            (response.payload as { channel?: string; sender?: string })
+              ?.channel === (hash as string) &&
+            (response.payload as { channel?: string; sender?: string })
+              ?.sender !== currentUser?.$id
           ) {
             setMessage('');
             queryClient.setQueryData(
-              [`teamMessages-${id}`],
+              [`directMessages-${slug}-${currentUser.$id}`],
               (prevData: any) => {
                 const newMessage = response.payload;
                 return [...prevData, newMessage];
@@ -745,15 +768,15 @@ function TeamChat() {
           }
         } else if (
           response.events.includes(
-            `databases.${process.env.NEXT_PUBLIC_DATABASE_ID}.collections.${process.env.NEXT_PUBLIC_CHATS_COLLECTION_ID}.documents.*.delete`
+            `databases.${process.env.NEXT_PUBLIC_DATABASE_ID}.collections.${process.env.NEXT_PUBLIC_DIRECT_CHATS_COLLECTION_ID}.documents.*.delete`
           )
         ) {
           if (
-            (response.payload as { team?: string; sender?: string })?.team ===
-            id
+            (response.payload as { channel?: string; sender?: string })
+              ?.channel === (hash as string)
           ) {
             queryClient.setQueryData(
-              [`teamMessages-${id}`],
+              [`directMessages-${slug}-${currentUser.$id}`],
               (prevData: any) => {
                 const deletedMessage = response.payload as {
                   $id: string;
@@ -771,7 +794,7 @@ function TeamChat() {
     return () => {
       unsubscribe();
     };
-  }, [queryClient, id, currentUser]);
+  }, [queryClient, hash, currentUser, id, slug]);
 
   const componentRefs =
     data?.reduce(
@@ -807,9 +830,10 @@ function TeamChat() {
         }
         const response = await databases.listDocuments(
           process.env.NEXT_PUBLIC_DATABASE_ID as string,
-          process.env.NEXT_PUBLIC_CHATS_NOTIFICATION_COLLECTION_ID as string,
+          process.env
+            .NEXT_PUBLIC_DIRECT_CHATS_NOTIFICATION_COLLECTION_ID as string,
           [
-            Query.equal('teamId', id as string),
+            Query.equal('channel', hash as string),
             Query.equal('readerId', currentUser.$id),
             Query.equal('isRead', false),
           ]
@@ -820,7 +844,7 @@ function TeamChat() {
             await databases.updateDocument(
               process.env.NEXT_PUBLIC_DATABASE_ID as string,
               process.env
-                .NEXT_PUBLIC_CHATS_NOTIFICATION_COLLECTION_ID as string,
+                .NEXT_PUBLIC_DIRECT_CHATS_NOTIFICATION_COLLECTION_ID as string,
               document.$id,
               { isRead: true, readTime: new Date().toISOString() }
             );
@@ -828,15 +852,15 @@ function TeamChat() {
             console.error('Failed to update notification:', error);
           }
         }
-        queryClient.refetchQueries({ queryKey: ['unreadChats'] });
+        queryClient.refetchQueries({ queryKey: ['unreadDirectChats'] });
         // TODO: Mark notifications as read
       } catch (error) {
-        console.error('Error fetching team messages:', error);
+        console.error('Error fetching direct messages:', error);
         throw error;
       }
     };
     markNotificationsAsRead();
-  }, [databases, currentUser.$id, id, data, queryClient]);
+  }, [databases, currentUser.$id, hash, data, queryClient]);
 
   const { data: teamPreference = { bg: '', description: '', name: '' } } =
     useQuery(
@@ -862,11 +886,11 @@ function TeamChat() {
 
   useEffect(() => {
     const unsubscribe = client.subscribe(
-      `databases.${process.env.NEXT_PUBLIC_DATABASE_ID}.collections.${process.env.NEXT_PUBLIC_CHATS_NOTIFICATION_COLLECTION_ID}.documents`,
+      `databases.${process.env.NEXT_PUBLIC_DATABASE_ID}.collections.${process.env.NEXT_PUBLIC_DIRECT_CHATS_NOTIFICATION_COLLECTION_ID}.documents`,
       (response) => {
         if (
           response.events.includes(
-            `databases.${process.env.NEXT_PUBLIC_DATABASE_ID}.collections.${process.env.NEXT_PUBLIC_CHATS_NOTIFICATION_COLLECTION_ID}.documents.*.update`
+            `databases.${process.env.NEXT_PUBLIC_DATABASE_ID}.collections.${process.env.NEXT_PUBLIC_DIRECT_CHATS_NOTIFICATION_COLLECTION_ID}.documents.*.update`
           )
         ) {
           if (
@@ -969,6 +993,8 @@ function TeamChat() {
     { staleTime: 3600000, cacheTime: 3600000 }
   );
 
+  
+
   const renderDateDisplay = (createdAt) => {
     const today = dayjs().startOf('day');
     const messageDate = dayjs(createdAt);
@@ -978,111 +1004,6 @@ function TeamChat() {
     } else {
       return messageDate.format('MMM D, YYYY');
     }
-  };
-
-  useEffect(() => {
-    // if (data && isSuccess) {
-    //   if (chatContainerRef.current) {
-    //     chatContainerRef.current.scrollTop =
-    //       chatContainerRef.current.scrollHeight - 32;
-    //   }
-    // }
-  }, [data, isSuccess]);
-
-  const [ref, inView] = useInView({
-    triggerOnce: false,
-    rootMargin: '0px 0px 300px 0px', // Adjust the rootMargin as needed
-  });
-
-  const isLoadingRef = useRef(false);
-
-  // useEffect(() => {
-  //   const chatContainer = chatContainerRef.current;
-  //   console.log('chatContainer:', chatContainer);
-
-  //   const handleScroll = () => {
-  //     const prevScrollHeight = chatContainer?.scrollHeight;
-  //     console.log('prevScrollHeight:', prevScrollHeight);
-
-  //     const prevClientHeight = chatContainer?.clientHeight;
-  //     console.log('prevClientHeight:', prevClientHeight);
-
-  //     const prevScrollTop = chatContainer?.scrollTop;
-  //     console.log('prevScrollTop:', prevScrollTop);
-  //   };
-
-  //   chatContainer?.addEventListener('scroll', handleScroll);
-
-  //   return () => {
-  //     chatContainer?.removeEventListener('scroll', handleScroll);
-  //   };
-  // }, []);
-
-  useEffect(() => {
-    async function fetchData() {
-      if (!data || isLoadingRef.current) {
-        return;
-      }
-      isLoadingRef.current = true;
-      const ch = chatContainerRef.current?.scrollTop;
-      chatContainerRef.current?.scrollTo({
-        //@ts-ignore
-        top: ch + 40,
-        behavior: 'auto',
-      });
-
-      try {
-        const response = await databases.listDocuments(
-          process.env.NEXT_PUBLIC_DATABASE_ID as string,
-          process.env.NEXT_PUBLIC_CHATS_COLLECTION_ID as string,
-          [
-            Query.equal('team', [id as string]),
-            Query.cursorAfter(data[0].$id as string),
-            Query.limit(5),
-            Query.orderDesc('$createdAt'),
-          ]
-        );
-
-        const sortedDocuments = response.documents.sort((a, b) => {
-          const dateA = new Date(a.$createdAt);
-          const dateB = new Date(b.$createdAt);
-          return dateA.getTime() - dateB.getTime();
-        });
-
-        const updatedDocuments = sortedDocuments.map((document) => {
-          if (document.sender === currentUser.$id) {
-            return { ...document, delivered: true };
-          }
-          return document;
-        });
-
-        queryClient.setQueryData([`teamMessages-${id}`], (prevData: any) => {
-          const updatedData = [...updatedDocuments, ...prevData];
-          return updatedData;
-        });
-      } catch (error) {
-        // Handle error
-      } finally {
-        isLoadingRef.current = false;
-      }
-      // Dispatch the request in useQuery
-    }
-
-    if (inView) {
-      console.log('cs');
-      fetchData();
-    }
-  }, [currentUser.$id, databases, id, queryClient, data, inView, isLoadingRef]);
-
-  const scrollPos = async () => {
-    const h = chatContainerRef.current?.scrollHeight;
-    if (!h) {
-      return;
-    }
-    chatContainerRef.current?.scrollTo({
-      top: h - 1000,
-      behavior: 'smooth',
-    });
   };
 
   return (
@@ -1105,11 +1026,11 @@ function TeamChat() {
         <Box
           overflowY="scroll"
           flex="1"
-          bgGradient={`linear(to top, gray.700 99%, ${teamPreference.bg})`}
+          bg="gray.700"
+          // bgGradient={`linear(to top, gray.700 99%, ${teamPreference.bg})`}
           py={4}
           ref={chatContainerRef}
         >
-          <Box ref={ref} h="10px" w="full"></Box>
           {data &&
             data.map((msg: any, index: number) => {
               const previousMsg = index > 0 ? data[index - 1] : data[index];
@@ -1123,7 +1044,7 @@ function TeamChat() {
                 );
 
               return (
-                <Box key={msg.$id}>
+                <>
                   {displayDate && (
                     <HStack w="full" my={8} px={4}>
                       <Divider flex="1" mr={2} />
@@ -1133,7 +1054,6 @@ function TeamChat() {
                       <Divider flex="1" ml={2} />
                     </HStack>
                   )}
-                  {/* <Box ref={index === 9 ? chatScrollRef : null}> */}
                   <ChatMessage
                     key={msg.$id}
                     docId={msg.$id}
@@ -1163,12 +1083,11 @@ function TeamChat() {
                       teamMembersProfileImages[msg.sender]
                     }
                   />
-                  {/* </Box> */}
-                </Box>
+                </>
               );
             })}
         </Box>
-        {/* <h1>{`Header inside viewport ${inView}.`}</h1> */}
+
         {messageContent && mode === 'REPLY' && (
           <Flex
             justifyContent="space-between"
@@ -1306,13 +1225,6 @@ function TeamChat() {
               aria-label="Send Message"
               onClick={sendMessage}
             />
-            <IconButton
-              icon={<BsSend size="24px" />}
-              colorScheme="teal"
-              borderRadius="full"
-              aria-label="Send Message"
-              onClick={scrollPos}
-            />
           </Flex>
         </Box>
       </Box>
@@ -1320,4 +1232,4 @@ function TeamChat() {
   );
 }
 
-export default withAuth(TeamChat);
+export default withAuth(DirectChat);

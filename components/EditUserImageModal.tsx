@@ -18,7 +18,7 @@ import {
   SliderTrack,
   Text,
   useDisclosure,
-  VStack
+  VStack,
 } from '@chakra-ui/react';
 import { useQueryClient } from '@tanstack/react-query';
 import {
@@ -28,7 +28,7 @@ import {
   Permission,
   Role,
   Storage,
-  Teams
+  Teams,
 } from 'appwrite';
 import { useRouter } from 'next/router';
 import { useCallback, useContext, useState } from 'react';
@@ -159,8 +159,7 @@ const EditUserImageModal: React.FC<EditUserImageModalProps> = ({
       });
 
       queryClient.refetchQueries([`userData-${id}`]);
-      queryClient.removeQueries([`userProfileImage-${id}`]);
-
+      // queryClient.refetchQueries([`userProfileImage-${id}`]);
       onClose();
     } catch (error) {
       console.error('Error saving preferences:', error);
@@ -171,12 +170,7 @@ const EditUserImageModal: React.FC<EditUserImageModalProps> = ({
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
       <ModalOverlay />
-      <ModalContent
-        maxH="80vh"
-        overflowY="auto"
-        zIndex="99999999"
-        bg="gray.700"
-      >
+      <ModalContent maxH="80vh" overflowY="auto" zIndex="9999" bg="gray.700">
         <ModalHeader>User Image and Theme</ModalHeader>
         <ModalBody>
           {cropMode ? (
@@ -235,6 +229,7 @@ const EditUserImageModal: React.FC<EditUserImageModalProps> = ({
           ) : (
             <VStack align="flex-start" spacing={4}>
               <Box py={4}>
+                {/* @ts-ignore */}
                 <HuePicker
                   color={themeColor}
                   onChange={handleThemeColorChange}

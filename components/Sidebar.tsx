@@ -2,7 +2,7 @@ import { Link } from '@chakra-ui/next-js';
 import { Box, chakra, Flex, HStack, Image, VStack } from '@chakra-ui/react';
 import { useRouter } from 'next/router';
 import React, { useEffect, useRef, useState } from 'react';
-import { DraggableCore } from 'react-draggable';
+import { DraggableCore, DraggableCoreProps } from 'react-draggable';
 import { AiFillHome } from 'react-icons/ai';
 import { MdSettings } from 'react-icons/md';
 import { useSidebar } from '../context/SidebarContext';
@@ -35,6 +35,7 @@ function Sidebar() {
   }, [setFlexWidth]);
 
   return (
+    // @ts-ignore
     <DraggableCore
       onDrag={handleDrag}
       onStart={handleDragStart}
@@ -43,7 +44,7 @@ function Sidebar() {
       <Box
         bg="black"
         p={8}
-        zIndex="99999999"
+        zIndex="999"
         pos="fixed"
         as="nav"
         h="full"
@@ -54,7 +55,7 @@ function Sidebar() {
         <VStack spacing={8} align="start" w="100%">
           <Link href="/" mb={4}>
             <chakra.span fontSize="2xl" fontWeight="bold" color="white">
-              <Image src="/logo.png" alt="logo" />
+              <Image maxW="100" src="/logo.png" alt="logo" />
             </chakra.span>
           </Link>
           <Link

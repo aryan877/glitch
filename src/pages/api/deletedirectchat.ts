@@ -1,7 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import sdk from 'node-appwrite';
 
-const deleteChat = async (req: NextApiRequest, res: NextApiResponse) => {
+const deleteDirectChat = async (req: NextApiRequest, res: NextApiResponse) => {
   const client = new sdk.Client();
   const databases = new sdk.Databases(client);
   const storage = new sdk.Storage(client);
@@ -17,7 +17,7 @@ const deleteChat = async (req: NextApiRequest, res: NextApiResponse) => {
     try {
       const response = await databases.deleteDocument(
         process.env.NEXT_PUBLIC_DATABASE_ID as string,
-        process.env.NEXT_PUBLIC_CHATS_COLLECTION_ID as string,
+        process.env.NEXT_PUBLIC_DIRECT_CHATS_COLLECTION_ID as string,
         $id
       );
       if (file) {
@@ -42,4 +42,4 @@ const deleteChat = async (req: NextApiRequest, res: NextApiResponse) => {
   }
 };
 
-export default deleteChat;
+export default deleteDirectChat;

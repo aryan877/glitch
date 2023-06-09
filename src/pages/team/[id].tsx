@@ -10,6 +10,7 @@ import {
   Icon,
   IconButton,
   Image,
+  Input,
   Menu,
   MenuButton,
   MenuItem,
@@ -21,7 +22,9 @@ import {
 } from '@chakra-ui/react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Avatars, Databases, Storage, Teams } from 'appwrite';
+import axios from 'axios';
 import Link from 'next/link';
+
 import { useRouter } from 'next/router';
 import { useEffect, useMemo, useState } from 'react';
 import {
@@ -31,14 +34,24 @@ import {
   AiOutlineUserAdd,
 } from 'react-icons/ai';
 import { FiArrowLeft } from 'react-icons/fi';
-import { MdMail } from 'react-icons/md';
+import { MdAdd, MdClose, MdMail } from 'react-icons/md';
+import stringHash from 'string-hash';
 import tinycolor from 'tinycolor2';
 import EditTeamDataModal from '../../../components/EditTeamDataModal';
 import InviteMemberModal from '../../../components/InviteMemberModal';
 import Layout from '../../../components/Layout';
+import RoleInput from '../../../components/RoleInput';
 import { useUser } from '../../../context/UserContext';
 import { client } from '../../../utils/appwriteConfig';
-import withAuth from '../../../utils/withAuth';
+import { default as withAuth } from '../../../utils/withAuth';
+export const getBadgeColor = (word: string) => {
+  const hash = stringHash(word || '');
+  const red = hash % 256;
+  const green = (hash >> 8) % 256;
+  const blue = (hash >> 16) % 256;
+  return `rgb(${red}, ${green}, ${blue})`;
+};
+
 function Team() {
   const router = useRouter();
   const { id } = router.query;
@@ -113,7 +126,6 @@ function Team() {
 
   useEffect(() => {
     const unsubscribe = client.subscribe('memberships', (response) => {
-
       if (response.events.includes(`teams.${id}.memberships.*.delete`)) {
         queryClient.setQueryData([`teamMembers-${id}`], (prevData: any) => {
           const deletedMember: any = response.payload;
@@ -228,6 +240,74 @@ function Team() {
     }
   };
 
+  const {
+    data: teamMembersProfileImages,
+    isLoading: isLoadingTeamMembersProfileImages,
+    isError: isErrorTeamMembersProfileImages,
+    isSuccess: isSuccessTeamMembersProfileImages,
+  } = useQuery(
+    [`teamMembersProfileImages-${id}`],
+    async () => {
+      const response = await teamsClient.listMemberships(id as string);
+      const memberIds = response.memberships.map((member) => member.userId);
+
+      const memberImageUrls: { [key: string]: string } = {};
+
+      for (const memberId of memberIds) {
+        let userResponse;
+        try {
+          userResponse = await axios.post('/api/getuser', {
+            userId: memberId,
+          });
+
+          const prefs = userResponse?.data?.prefs;
+          if (prefs && prefs.profileImageId) {
+            const promise = await storage.getFile(
+              process.env.NEXT_PUBLIC_USER_PROFILE_BUCKET_ID as string,
+              prefs.profileImageId
+            );
+            const imageUrl = storage.getFilePreview(
+              process.env.NEXT_PUBLIC_USER_PROFILE_BUCKET_ID as string,
+              prefs.profileImageId
+            );
+            memberImageUrls[memberId] = imageUrl.toString();
+          } else {
+            throw new Error('no profile image id');
+          }
+        } catch (error) {
+          const prefs = userResponse?.data?.prefs;
+          const result = avatars.getInitials(
+            userResponse?.data?.name as string,
+            240,
+            240,
+            tinycolor(prefs?.profileColor).lighten(20).toHex()
+          );
+          memberImageUrls[memberId] = result.toString();
+        }
+      }
+
+      return memberImageUrls;
+    },
+    { staleTime: 3600000, cacheTime: 3600000 }
+  );
+
+  
+  const [roleInputState, setRoleInputState] = useState<{ isOpen: boolean }[]>(
+    []
+  );
+
+  const handleRoleInputClose = (index: number) => {
+    const updatedState = [...roleInputState];
+    updatedState[index] = { ...updatedState[index], isOpen: false };
+    setRoleInputState(updatedState);
+  };
+
+  const handleRoleInputOpen = (index: number) => {
+    const updatedState = [...roleInputState];
+    updatedState[index] = { ...updatedState[index], isOpen: true };
+    setRoleInputState(updatedState);
+  };
+
   return (
     <Layout>
       {isOpen && <InviteMemberModal isOpen={isOpen} onClose={onClose} />}
@@ -305,6 +385,7 @@ function Team() {
           >
             Invite Member
           </Button>
+
           <Menu>
             <MenuButton
               as={Button}
@@ -337,7 +418,7 @@ function Team() {
             </Text>
           </HStack>
           {teamMembersData &&
-            teamMembersData.map((teamMember: any) => (
+            teamMembersData.map((teamMember: any, index: number) => (
               <Flex
                 _hover={{ bg: 'gray.700' }}
                 align="center"
@@ -351,23 +432,41 @@ function Team() {
                 <>
                   <Link href={`/profile/${teamMember.userId}`}>
                     <Flex direction="row" align="center">
-                      <Avatar
-                        borderRadius="none"
-                        name={teamMember.userName}
-                        src="/path/to/avatar1.jpg"
-                        mr={4}
-                      />
+                      {teamMembersProfileImages && (
+                        <Avatar
+                          borderRadius="none"
+                          name={teamMember.userName}
+                          src={
+                            teamMembersProfileImages[
+                              teamMember.userId
+                            ] as string
+                          }
+                          mr={4}
+                        />
+                      )}
                       <VStack align="start">
                         <Text _hover={{ textDecoration: 'underline' }}>
                           {teamMember.userName}
                         </Text>{' '}
-                        {teamMember.roles.map((role: string, index: number) => {
-                          return (
-                            <Badge mr={1} key="index" fontSize="sm">
-                              {role}
-                            </Badge>
-                          );
-                        })}
+                        <HStack gap={1}>
+                          {teamMember.roles.map(
+                            (role: string, index: number) => {
+                              return (
+                                <Badge
+                                  mr={2}
+                                  key={role}
+                                  size="sm"
+                                  px={2}
+                                  colorScheme="white"
+                                  bg={getBadgeColor(role)}
+                                  fontSize="sm"
+                                >
+                                  {role}
+                                </Badge>
+                              );
+                            }
+                          )}
+                        </HStack>
                       </VStack>
                       {/* Use the appropriate property for the team member's name */}
                     </Flex>
@@ -381,6 +480,15 @@ function Team() {
                         </Flex>
                       </Badge>
                     )}
+                    {teamMember.roles && owner && (
+                      <RoleInput
+                        memberRoles={teamMember.roles}
+                        memberId={teamMember.$id}
+                        isOpen={roleInputState[index]?.isOpen}
+                        onClose={() => handleRoleInputClose(index)}
+                        onOpen={() => handleRoleInputOpen(index)}
+                      />
+                    )}
                     <Menu>
                       <MenuButton
                         as={Button}
@@ -392,6 +500,9 @@ function Team() {
                         rightIcon={<AiOutlineEllipsis size="48px" />}
                       ></MenuButton>
                       <MenuList borderRadius="md" p={2} border="none">
+                        <Link href={`/profile/${teamMember.userId}`}>
+                          <MenuItem borderRadius="md">View Profile</MenuItem>
+                        </Link>
                         {owner && teamMember.userId !== currentUser.$id && (
                           <MenuItem
                             onClick={() => {
@@ -403,14 +514,6 @@ function Team() {
                             Remove
                           </MenuItem>
                         )}
-                        <MenuItem
-                          onClick={() => {
-                            // cancelMembershipHandler(teamMember.$id);
-                          }}
-                          borderRadius="md"
-                        >
-                          View Profile
-                        </MenuItem>
                       </MenuList>
                     </Menu>
                   </Flex>

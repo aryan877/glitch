@@ -75,7 +75,7 @@ const CreateTeamModal: React.FC<CreateTeamModalProps> = ({
   return (
     <Modal isOpen={isOpen} onClose={onClose} isCentered>
       <ModalOverlay />
-      <ModalContent zIndex="99999999" bg="blue.500">
+      <ModalContent zIndex="9999" bg="blue.500">
         <ModalHeader>Create New Team</ModalHeader>
 
         <ModalBody>

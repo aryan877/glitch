@@ -93,12 +93,7 @@ const ChatFileSender: React.FC<ChatFileSenderProps> = ({
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
       <ModalOverlay />
-      <ModalContent
-        maxH="80vh"
-        overflowY="auto"
-        zIndex="99999999"
-        bg="gray.700"
-      >
+      <ModalContent maxH="80vh" overflowY="auto" zIndex="99" bg="gray.700">
         <ModalHeader>Send File</ModalHeader>
         <ModalBody color="white">
           <Flex alignItems="center" mb={4}>

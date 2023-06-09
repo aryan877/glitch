@@ -84,7 +84,7 @@ function Profile() {
     isError: isErrorGithub,
     error: errorGithub,
   } = useQuery(
-    ['userData'],
+    ['userData', data],
     async () => {
       try {
         const response = await axios.get(
@@ -101,9 +101,6 @@ function Profile() {
       enabled: !!data,
     }
   );
-
-  console.log(githubData);
-  console.log(userStats);
 
   const {
     data: result = '',
@@ -123,7 +120,7 @@ function Profile() {
           data.prefs.profileImageId
         );
 
-        return `${imageUrl.toString()}&timestamp=${timestamp}`;
+        return `${imageUrl.toString()}`;
       } catch (error) {
         const result = avatars.getInitials(
           data.name as string,
@@ -136,6 +133,8 @@ function Profile() {
     },
     { staleTime: 600000, cacheTime: 600000, enabled: !!data }
   );
+
+  console.log(githubData);
 
   // const {
   //   data: userCountryData,
@@ -324,7 +323,7 @@ function Profile() {
                     Sorted by stars. Top 10 repositories.
                   </Text>
                 </Flex>
-                {!!githubData &&
+                {githubData &&
                   githubData.map((repo: any) => (
                     <Box
                       key={repo.name}

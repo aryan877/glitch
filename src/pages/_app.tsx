@@ -22,6 +22,7 @@ function App({ Component, pageProps }: AppProps) {
           <SidebarProvider>
             <NotificationProvider>
               <UserContextProvider>
+                {/* @ts-ignore// */}
                 <Component {...pageProps} />
               </UserContextProvider>
             </NotificationProvider>

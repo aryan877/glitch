@@ -5,9 +5,9 @@ const Loader = () => {
     <Center height="100vh">
       <div className="container">
         <p className="glitch">
-          <span aria-hidden="true">loading</span>
-          loading
-          <span aria-hidden="true">loading</span>
+          <span aria-hidden="true">glitch</span>
+          glitch
+          <span aria-hidden="true">glitch</span>
         </p>
       </div>
     </Center>

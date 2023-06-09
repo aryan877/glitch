@@ -124,11 +124,6 @@ const EditTeamDataModal: React.FC<EditTeamDataModalProps> = ({
 
   const handleSavePreferences = async () => {
     try {
-      // const teams = new Teams(client);
-      // await teams.update(id as string, name as string);
-      // queryClient.setQueryData([`currentTeam-${id}`], (prevData: any) => {
-      //   return response;
-      // });
       if (file) {
         const reader = new FileReader();
         reader.onload = async (event) => {
@@ -175,12 +170,7 @@ const EditTeamDataModal: React.FC<EditTeamDataModalProps> = ({
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
       <ModalOverlay />
-      <ModalContent
-        maxH="80vh"
-        overflowY="auto"
-        zIndex="99999999"
-        bg="gray.700"
-      >
+      <ModalContent maxH="80vh" overflowY="auto" zIndex="9999" bg="gray.700">
         <ModalHeader>Team Preferences</ModalHeader>
         <ModalBody>
           {cropMode ? (
@@ -257,6 +247,7 @@ const EditTeamDataModal: React.FC<EditTeamDataModalProps> = ({
                 onChange={handleTeamDescriptionChange}
               />
               <Box py={4}>
+                {/* @ts-ignore */}
                 <HuePicker
                   color={themeColor}
                   onChange={handleThemeColorChange}
