@@ -22,6 +22,8 @@ import {
   VStack,
 } from '@chakra-ui/react';
 import { isNotEmptyObject } from '@chakra-ui/utils';
+import useKeepScrollPosition from '../../../../components/hooks/useKeepScrollPosition';
+
 import {
   useInfiniteQuery,
   useQuery,
@@ -1018,18 +1020,15 @@ function TeamChat() {
   //   };
   // }, []);
 
+  const { containerRef } = useKeepScrollPosition([data]);
+
   useEffect(() => {
     async function fetchData() {
       if (!data || isLoadingRef.current) {
         return;
       }
+
       isLoadingRef.current = true;
-      const ch = chatContainerRef.current?.scrollTop;
-      chatContainerRef.current?.scrollTo({
-        //@ts-ignore
-        top: ch + 40,
-        behavior: 'auto',
-      });
 
       try {
         const response = await databases.listDocuments(
@@ -1042,20 +1041,17 @@ function TeamChat() {
             Query.orderDesc('$createdAt'),
           ]
         );
-
         const sortedDocuments = response.documents.sort((a, b) => {
           const dateA = new Date(a.$createdAt);
           const dateB = new Date(b.$createdAt);
           return dateA.getTime() - dateB.getTime();
         });
-
         const updatedDocuments = sortedDocuments.map((document) => {
           if (document.sender === currentUser.$id) {
             return { ...document, delivered: true };
           }
           return document;
         });
-
         queryClient.setQueryData([`teamMessages-${id}`], (prevData: any) => {
           const updatedData = [...updatedDocuments, ...prevData];
           return updatedData;
@@ -1069,21 +1065,20 @@ function TeamChat() {
     }
 
     if (inView) {
-      console.log('cs');
       fetchData();
     }
-  }, [currentUser.$id, databases, id, queryClient, data, inView, isLoadingRef]);
+  }, [currentUser.$id, databases, id, queryClient, data, isLoadingRef, inView]);
 
-  const scrollPos = async () => {
-    const h = chatContainerRef.current?.scrollHeight;
-    if (!h) {
-      return;
-    }
-    chatContainerRef.current?.scrollTo({
-      top: h - 1000,
-      behavior: 'smooth',
-    });
-  };
+  // const scrollPos = async () => {
+  //   const h = chatContainerRef.current?.scrollHeight;
+  //   if (!h) {
+  //     return;
+  //   }
+  //   chatContainerRef.current?.scrollTo({
+  //     top: h - 1000,
+  //     behavior: 'smooth',
+  //   });
+  // };
 
   return (
     <Layout>
@@ -1107,9 +1102,9 @@ function TeamChat() {
           flex="1"
           bgGradient={`linear(to top, gray.700 99%, ${teamPreference.bg})`}
           py={4}
-          ref={chatContainerRef}
+          ref={containerRef}
         >
-          <Box ref={ref} h="10px" w="full"></Box>
+          {/* <Box ref={ref} h="1px" w="full"></Box> */}
           {data &&
             data.map((msg: any, index: number) => {
               const previousMsg = index > 0 ? data[index - 1] : data[index];
@@ -1133,37 +1128,37 @@ function TeamChat() {
                       <Divider flex="1" ml={2} />
                     </HStack>
                   )}
-                  {/* <Box ref={index === 9 ? chatScrollRef : null}> */}
-                  <ChatMessage
-                    key={msg.$id}
-                    docId={msg.$id}
-                    sender={msg.sender}
-                    content={msg.content}
-                    senderName={msg.sender_name}
-                    display={isSameSender && index !== 0 ? false : true}
-                    createdAt={msg.$createdAt}
-                    reference={msg.reference}
-                    referenceContent={msg.referenceContent}
-                    setMessageContent={setMessageContent}
-                    setMessageUser={setMessageUser}
-                    setMessageId={setMessageId}
-                    inputRef={textAreaRef}
-                    setMode={setMode}
-                    setMessage={setMessage}
-                    referenceUser={msg.referenceUser}
-                    edited={msg.edited}
-                    fileId={msg.file}
-                    referenceToScroll={referenceToScroll}
-                    handleOriginalMessageClick={handleOriginalMessageClick}
-                    originalMessageRef={componentRefs[msg.$id]}
-                    marginY={isSameSender && index !== 0 ? 1 : 8}
-                    delivered={msg.delivered}
-                    profileImage={
-                      teamMembersProfileImages &&
-                      teamMembersProfileImages[msg.sender]
-                    }
-                  />
-                  {/* </Box> */}
+                  <Box ref={index === 0 ? ref : null}>
+                    <ChatMessage
+                      key={msg.$id}
+                      docId={msg.$id}
+                      sender={msg.sender}
+                      content={msg.content}
+                      senderName={msg.sender_name}
+                      display={isSameSender && index !== 0 ? false : true}
+                      createdAt={msg.$createdAt}
+                      reference={msg.reference}
+                      referenceContent={msg.referenceContent}
+                      setMessageContent={setMessageContent}
+                      setMessageUser={setMessageUser}
+                      setMessageId={setMessageId}
+                      inputRef={textAreaRef}
+                      setMode={setMode}
+                      setMessage={setMessage}
+                      referenceUser={msg.referenceUser}
+                      edited={msg.edited}
+                      fileId={msg.file}
+                      referenceToScroll={referenceToScroll}
+                      handleOriginalMessageClick={handleOriginalMessageClick}
+                      originalMessageRef={componentRefs[msg.$id]}
+                      marginY={isSameSender && index !== 0 ? 1 : 8}
+                      delivered={msg.delivered}
+                      profileImage={
+                        teamMembersProfileImages &&
+                        teamMembersProfileImages[msg.sender]
+                      }
+                    />
+                  </Box>
                 </Box>
               );
             })}
@@ -1305,13 +1300,6 @@ function TeamChat() {
               borderRadius="full"
               aria-label="Send Message"
               onClick={sendMessage}
-            />
-            <IconButton
-              icon={<BsSend size="24px" />}
-              colorScheme="teal"
-              borderRadius="full"
-              aria-label="Send Message"
-              onClick={scrollPos}
             />
           </Flex>
         </Box>
