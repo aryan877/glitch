@@ -53,6 +53,7 @@
     "@types/tinycolor2": "^1.4.3",
     "@types/uuid": "^9.0.1"
   },
+  "optionalDependencies": { "@types/react": "^17.0.44" },
   "resolutions": {
     "@types/react": "18.2.0",
     "@types/react-dom": "18.2.0"
