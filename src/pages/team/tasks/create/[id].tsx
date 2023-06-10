@@ -141,9 +141,11 @@ const CreateTaskPage: React.FC = () => {
   };
 
   const modules = {
-    toolbar: [['bold', 'italic', 'underline']],
+    toolbar: [
+      ['bold', 'italic', 'underline'],
+      [{ link: 'link' }], // Add the 'link' module to the toolbar
+    ],
   };
-
   return (
     <Layout>
       <Box maxW="6xl" mx="auto" my={8} w="50%">
