@@ -18,6 +18,7 @@ import axios from 'axios';
 import { useUser } from 'context/UserContext';
 import { useRouter } from 'next/router';
 import React, { useMemo, useState } from 'react';
+import { AiFillEdit } from 'react-icons/ai';
 import { IoMdAdd } from 'react-icons/io';
 import tinycolor from 'tinycolor2';
 import { client } from 'utils/appwriteConfig';
@@ -289,21 +290,38 @@ function TeamTasks() {
                   {task.isComplete ? 'Complete' : 'Pending'}
                 </Badge>
                 <Badge color="white">PRIORITY: {task.priority}</Badge>
-                {(ownerOrAdmin || task.assignee === currentUser.$id) && (
+                {
                   <Box mt={4}>
-                    <Button
-                      borderRadius="md"
-                      bg="transparent"
-                      color="white"
-                      border="1px solid white"
-                      _hover={{ bg: 'white', color: 'gray.900' }}
-                      px={4}
-                      py={2}
-                    >
-                      Mark Complete
-                    </Button>
+                    {(ownerOrAdmin || task.assignee === currentUser.$id) && (
+                      <Button
+                        borderRadius="md"
+                        bg="transparent"
+                        color="white"
+                        border="1px solid white"
+                        _hover={{ bg: 'white', color: 'gray.900' }}
+                        px={4}
+                        py={2}
+                      >
+                        Mark Complete
+                      </Button>
+                    )}
+                    {ownerOrAdmin && (
+                      <Button
+                        borderRadius="md"
+                        bg="transparent"
+                        color="white"
+                        ml={4}
+                        leftIcon={<AiFillEdit />}
+                        border="1px solid white"
+                        _hover={{ bg: 'white', color: 'gray.900' }}
+                        px={4}
+                        py={2}
+                      >
+                        Edit Task
+                      </Button>
+                    )}
                   </Box>
-                )}
+                }
               </Box>
             ))}
         </Grid>
