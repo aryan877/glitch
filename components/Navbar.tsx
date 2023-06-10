@@ -572,7 +572,7 @@ const Navbar = ({ flexWidth }: { flexWidth: number }) => {
             )}
           </MenuList>
         </Menu>
-        <Menu>
+        {/* <Menu>
           <MenuButton
             as={IconButton}
             aria-label="notifications"
@@ -635,7 +635,7 @@ const Navbar = ({ flexWidth }: { flexWidth: number }) => {
               <Box p={4}>You have no new task notifications!</Box>
             )}
           </MenuList>
-        </Menu>
+        </Menu> */}
         <Menu>
           <MenuButton
             as={IconButton}

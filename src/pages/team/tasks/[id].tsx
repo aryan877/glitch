@@ -8,6 +8,10 @@ import {
   Grid,
   HStack,
   Input,
+  Menu,
+  MenuButton,
+  MenuItem,
+  MenuList,
   Text,
   Tooltip,
   VStack,
@@ -16,6 +20,10 @@ import { useQuery } from '@tanstack/react-query';
 import { Avatars, Databases, Query, Storage, Teams } from 'appwrite';
 import axios from 'axios';
 import { useUser } from 'context/UserContext';
+import dayjs from 'dayjs';
+import 'dayjs/locale/en'; // Import the locale you want to use (e.g., 'en' for English)
+import customParseFormat from 'dayjs/plugin/customParseFormat';
+import relativeTime from 'dayjs/plugin/relativeTime'; // Import the relativeTime plugin
 import { useRouter } from 'next/router';
 import React, { useMemo, useState } from 'react';
 import { AiFillEdit } from 'react-icons/ai';
@@ -26,7 +34,8 @@ import withAuth from 'utils/withAuth';
 import Layout from '../../../../components/Layout';
 import { getBadgeColor } from '../[id]';
 // Dummy task data with colors
-
+dayjs.extend(relativeTime);
+dayjs.extend(customParseFormat);
 function TeamTasks() {
   const [searchQuery, setSearchQuery] = useState('');
   const router = useRouter();
@@ -38,7 +47,8 @@ function TeamTasks() {
   const teamsClient = useMemo(() => new Teams(client), []);
   const avatars = useMemo(() => new Avatars(client), []);
   const databases = useMemo(() => new Databases(client), []);
-
+  const [sortType, setSortType] = useState<string | null>(null);
+  const [showSortType, setShowSortType] = useState(false);
   const {
     data: teamMembersData,
     isLoading: teamMembersLoading,
@@ -54,10 +64,12 @@ function TeamTasks() {
   );
 
   const { data: teamTasksData, isSuccess: isSuccessTeamTasksData } = useQuery(
-    [`teamTasks-${id}`, filterType],
+    [`teamTasks-${id}`, filterType, searchQuery, sortType],
     async () => {
       try {
         let filters = [];
+
+        // Apply filters based on filterType
         if (filterType === 'pending') {
           //@ts-ignore
           filters.push(Query.equal('isComplete', false));
@@ -68,23 +80,38 @@ function TeamTasks() {
           //@ts-ignore
           filters.push(Query.equal('isComplete', true));
         }
-        //@ts-ignore
-        filters.push(Query.equal('team', id as string));
+
+        if (!searchQuery) {
+          //@ts-ignore
+          filters.push(Query.equal('team', id as string));
+        } else if (searchQuery) {
+          //@ts-ignore
+          filters.push(Query.search('taskName', searchQuery as string));
+        }
+
+        let sortBy = null;
+        if (sortType === 'dateCreated') {
+          //@ts-ignore
+          sortBy = Query.orderDesc('$createdAt');
+        } else if (sortType === 'deadline') {
+          //@ts-ignore
+          sortBy = Query.orderAsc('deadline');
+        }
+
         const response = await databases.listDocuments(
           process.env.NEXT_PUBLIC_DATABASE_ID as string,
+          //@ts-ignore
           process.env.NEXT_PUBLIC_TASKS_COLLECTION_ID as string,
-          filters
+          //@ts-ignore
+          [...filters, sortBy].filter(Boolean) // Remove null/undefined filters
         );
+
         return response.documents;
       } catch (error) {
         console.error('Error fetching team messages:', error);
         throw error;
       }
     }
-    // {
-    //   staleTime: 3600000,
-    //   cacheTime: 3600000,
-    // }
   );
 
   const {
@@ -148,12 +175,31 @@ function TeamTasks() {
       ),
     [teamMembersData, currentUser]
   );
+
+  const handleSortByChange = (sortType: string) => {
+    setSortType(sortType);
+    setShowSortType(true);
+  };
+
+  const clearSortType = () => {
+    setSortType(null);
+    setShowSortType(false);
+  };
+
+  const taskMarkCompleteHandler = () => {
+    if (ownerOrAdmin) {
+      //if you are owner or admin you already have the permissions to mark complete/edit
+    } else {
+      //else you don not have updation persmissions, an as assignee you can only mark complete, not edit, so delegate this task to serverless functions
+    }
+  };
+
   return (
     <Layout>
       <Box mx={8} mt={-8}>
         <Box>
           <Input
-            placeholder="Search tasks..."
+            placeholder="Search tasks with name..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -194,8 +240,30 @@ function TeamTasks() {
           >
             Complete
           </Button>
+          <Menu>
+            <MenuButton as={Button} borderRadius="full" variant="outline">
+              {showSortType ? sortType : 'Sort By'}
+            </MenuButton>
+            <MenuList border="none">
+              <MenuItem onClick={() => handleSortByChange('dateCreated')}>
+                Date Created ( Latest to Oldest )
+              </MenuItem>
+              <MenuItem onClick={() => handleSortByChange('priority')}>
+                Priority ( High to Low)
+              </MenuItem>
+              <MenuItem onClick={() => handleSortByChange('deadline')}>
+                Deadline ( Shortest to Longest )
+              </MenuItem>
+            </MenuList>
+          </Menu>
+          {showSortType && (
+            <Button bg="red" borderRadius="full" onClick={clearSortType}>
+              {' '}
+              Clear Sort
+            </Button>
+          )}
         </HStack>
-        <Grid templateColumns="repeat(1,1fr)" gap={4} my={0}>
+        <Grid templateColumns="repeat(1,1fr)" minH={300} gap={4} my={0}>
           {teamTasksData &&
             teamTasksData.map((task) => (
               <Box
@@ -282,20 +350,62 @@ function TeamTasks() {
                     </Link>
                   )}
                 </HStack>
+
+                <HStack
+                  p={2}
+                  px={4}
+                  borderRadius="md"
+                  bg={task.isComplete ? 'green.600' : 'gray.600'}
+                  gap={2}
+                  mb={2}
+                  align="center"
+                >
+                  <>
+                    {' '}
+                    <Text fontWeight="semibold" fontSize="lg" mr={0}>
+                      Deadline
+                    </Text>
+                    {task.deadline ? (
+                      <>
+                        {' '}
+                        <Text mr={4}>
+                          {dayjs(task.deadline).format('dddd, MMMM D, h:mm A')}
+                        </Text>
+                        <Badge>
+                          Time Left: {dayjs(task.deadline).fromNow(true)}
+                        </Badge>
+                      </>
+                    ) : (
+                      <Text mr={4}>No deadline</Text>
+                    )}
+                  </>
+                </HStack>
                 <Badge
                   color="white"
                   mr={2}
-                  bg={task.isComplete ? 'green.600' : 'gray.600'}
+                  fontSize="sm"
+                  variant="outline"
+                  bg={task.isComplete ? 'green.600' : 'yellow.600'}
                 >
                   {task.isComplete ? 'Complete' : 'Pending'}
                 </Badge>
-                <Badge color="white">PRIORITY: {task.priority}</Badge>
+                <Badge mr={2} fontSize="sm" variant="outline" color="white">
+                  PRIORITY: {task.priority}
+                </Badge>
+                <Badge fontSize="sm" color="white">
+                  CREATED:{' '}
+                  {dayjs(task.$createdAt, 'YYYY-MM-DD HH:mm:ss')
+                    .locale('en')
+                    .format('dddd, MMMM D, YYYY, h:mm A')}
+                </Badge>
+
                 {
                   <Box mt={4}>
                     {(ownerOrAdmin || task.assignee === currentUser.$id) && (
                       <Button
                         borderRadius="md"
                         bg="transparent"
+                        onClick={taskMarkCompleteHandler}
                         color="white"
                         border="1px solid white"
                         _hover={{ bg: 'white', color: 'gray.900' }}

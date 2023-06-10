@@ -20,12 +20,14 @@ import axios from 'axios';
 import { useNotification } from 'context/NotificationContext';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/router';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import { client } from 'utils/appwriteConfig';
 import withAuth from 'utils/withAuth';
-import { default as Layout } from '../../../../../components/Layout';
+import Layout from '../../../../../components/Layout';
 
 const ReactQuillWithNoSSR = dynamic(() => import('react-quill'), {
   ssr: false,
@@ -41,12 +43,24 @@ const EditTaskPage: React.FC = () => {
   const teamsClient = new Teams(client);
   const account = new Account(client);
   const router = useRouter();
-  const { id, taskId } = router.query;
+  const { id } = router.query;
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [prompt, setPrompt] = useState('');
   const [generatedDescription, setGeneratedDescription] = useState('');
   const [inputError, setInputError] = useState('');
   const { showNotification } = useNotification();
+  const roundOffToNearest15Minutes = (date: Date): Date => {
+    const minutes = date.getMinutes();
+    const roundedMinutes = Math.floor(minutes / 15) * 15;
+    return new Date(
+      date.getFullYear(),
+      date.getMonth(),
+      date.getDate(),
+      date.getHours(),
+      roundedMinutes
+    );
+  };
+  const [endDate, setEndDate] = useState<Date | null>(null);
 
   const {
     data: teamMembersData,
@@ -62,34 +76,11 @@ const EditTaskPage: React.FC = () => {
     { staleTime: 3600000, cacheTime: 3600000 }
   );
 
-  const {
-    data: taskData,
-    isLoading: taskLoading,
-    isError: taskError,
-    isSuccess: taskSuccess,
-  } = useQuery(
-    [`task-${id}-${taskId}`],
-    async () => {
-      const response = await axios.get(`/api/gettask/${taskId}`);
-      return response.data;
-    },
-    { enabled: !!taskId, staleTime: 3600000, cacheTime: 3600000 }
-  );
-
-  useEffect(() => {
-    if (taskSuccess) {
-      setTaskName(taskData.taskName);
-      setTaskDescription(taskData.taskDescription);
-      setAssignedTo(taskData.assignee);
-      setTaskPriority(taskData.taskPriority);
-    }
-  }, [taskSuccess, taskData]);
-
   const handleTaskSubmit = async (): Promise<void> => {
     try {
       // Input validation
       if (!taskName || !taskDescription || !assignedTo || !taskPriority) {
-        setInputError('Please fill in all fields.');
+        setInputError('Please fill in all required fields.');
         return;
       }
 
@@ -103,6 +94,7 @@ const EditTaskPage: React.FC = () => {
         assignee: string;
         taskPriority: string;
         team: string;
+        deadline: string | null;
       } = {
         taskName: taskName,
         taskDescription: taskDescription,
@@ -110,10 +102,12 @@ const EditTaskPage: React.FC = () => {
         assignee: assignedTo,
         taskPriority: taskPriority,
         team: id as string,
+        deadline: endDate ? endDate.toISOString() : null,
       };
-      await axios.put(`/api/updatetask/${taskId}`, taskData);
+
+      await axios.post('/api/createtask', taskData);
       queryClient.invalidateQueries([`teamTasks-${id}`]);
-      showNotification('Task updated');
+      showNotification('Task added');
       setTimeout(() => {
         router.back();
       }, 1000);
@@ -150,20 +144,12 @@ const EditTaskPage: React.FC = () => {
     toolbar: [['bold', 'italic', 'underline']],
   };
 
-  if (taskLoading || teamMembersLoading) {
-    // Handle loading state
-  }
-
-  if (taskError || teamMembersError) {
-    // Handle error state
-  }
-
   return (
     <Layout>
-      <Box mx="auto" my={8} w="50%">
+      <Box maxW="6xl" mx="auto" my={8} w="50%">
         <VStack spacing={4}>
           <Text textAlign="center" fontWeight="bold" fontSize="2xl">
-            Edit Task
+            Create Task
           </Text>
           <Input
             placeholder="Task Name"
@@ -181,6 +167,20 @@ const EditTaskPage: React.FC = () => {
           <Button onClick={handleGenerateDescription}>
             Generate Description with AI
           </Button>
+
+          <VStack w="full" align="start" mb={2} spacing={2}>
+            <Text fontSize="lg" color="#575757">
+              Pick Deadline (optional)
+            </Text>
+            <DatePicker
+              selected={endDate}
+              onChange={(date: any) => setEndDate(date)}
+              showTimeSelect
+              timeIntervals={60}
+              dateFormat="yyyy-MM-dd hh:mm aa"
+              placeholderText="pick deadline"
+            />
+          </VStack>
 
           <Select
             value={assignedTo}
@@ -208,7 +208,7 @@ const EditTaskPage: React.FC = () => {
           {inputError && <Text color="red">{inputError}</Text>}
 
           <Button mt={8} colorScheme="whatsapp" onClick={handleTaskSubmit}>
-            Update Task
+            Create Task
           </Button>
         </VStack>
       </Box>
@@ -233,6 +233,7 @@ const EditTaskPage: React.FC = () => {
           </ModalBody>
           <ModalFooter>
             <Button
+              // disabled={loading}
               isLoading={loading}
               colorScheme="whatsapp"
               onClick={handleModalSubmit}

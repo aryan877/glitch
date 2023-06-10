@@ -68,7 +68,7 @@ function Sidebar() {
               <chakra.span fontWeight="bold">Home</chakra.span>
             </HStack>
           </Link>
-          <Link
+          {/* <Link
             href="/settings"
             color={router.pathname === '/settings' ? 'white' : 'gray.300'}
             _hover={{ color: 'white' }}
@@ -77,7 +77,7 @@ function Sidebar() {
               <MdSettings size={24} />
               <chakra.span fontWeight="bold">Settings</chakra.span>
             </HStack>
-          </Link>
+          </Link> */}
         </VStack>
       </Box>
     </DraggableCore>

@@ -21,6 +21,8 @@ import { useNotification } from 'context/NotificationContext';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/router';
 import { useState } from 'react';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import { client } from 'utils/appwriteConfig';
@@ -47,6 +49,18 @@ const CreateTaskPage: React.FC = () => {
   const [generatedDescription, setGeneratedDescription] = useState('');
   const [inputError, setInputError] = useState('');
   const { showNotification } = useNotification();
+  const roundOffToNearest15Minutes = (date: Date): Date => {
+    const minutes = date.getMinutes();
+    const roundedMinutes = Math.floor(minutes / 15) * 15;
+    return new Date(
+      date.getFullYear(),
+      date.getMonth(),
+      date.getDate(),
+      date.getHours(),
+      roundedMinutes
+    );
+  };
+  const [endDate, setEndDate] = useState<Date | null>(null);
 
   const {
     data: teamMembersData,
@@ -66,7 +80,7 @@ const CreateTaskPage: React.FC = () => {
     try {
       // Input validation
       if (!taskName || !taskDescription || !assignedTo || !taskPriority) {
-        setInputError('Please fill in all fields.');
+        setInputError('Please fill in all required fields.');
         return;
       }
 
@@ -80,6 +94,7 @@ const CreateTaskPage: React.FC = () => {
         assignee: string;
         taskPriority: string;
         team: string;
+        deadline: string | null;
       } = {
         taskName: taskName,
         taskDescription: taskDescription,
@@ -87,7 +102,9 @@ const CreateTaskPage: React.FC = () => {
         assignee: assignedTo,
         taskPriority: taskPriority,
         team: id as string,
+        deadline: endDate ? endDate.toISOString() : null,
       };
+
       await axios.post('/api/createtask', taskData);
       queryClient.invalidateQueries([`teamTasks-${id}`]);
       showNotification('Task added');
@@ -129,7 +146,7 @@ const CreateTaskPage: React.FC = () => {
 
   return (
     <Layout>
-      <Box mx="auto" my={8} w="50%">
+      <Box maxW="6xl" mx="auto" my={8} w="50%">
         <VStack spacing={4}>
           <Text textAlign="center" fontWeight="bold" fontSize="2xl">
             Create Task
@@ -150,6 +167,20 @@ const CreateTaskPage: React.FC = () => {
           <Button onClick={handleGenerateDescription}>
             Generate Description with AI
           </Button>
+
+          <VStack w="full" align="start" mb={2} spacing={2}>
+            <Text fontSize="lg" color="#575757">
+              Pick Deadline (optional)
+            </Text>
+            <DatePicker
+              selected={endDate}
+              onChange={(date: any) => setEndDate(date)}
+              showTimeSelect
+              timeIntervals={60}
+              dateFormat="yyyy-MM-dd hh:mm aa"
+              placeholderText="pick deadline"
+            />
+          </VStack>
 
           <Select
             value={assignedTo}
