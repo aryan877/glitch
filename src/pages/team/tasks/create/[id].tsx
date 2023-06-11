@@ -50,17 +50,7 @@ const CreateTaskPage: React.FC = () => {
   const [generatedDescription, setGeneratedDescription] = useState('');
   const [inputError, setInputError] = useState('');
   const { showNotification } = useNotification();
-  const roundOffToNearest15Minutes = (date: Date): Date => {
-    const minutes = date.getMinutes();
-    const roundedMinutes = Math.floor(minutes / 15) * 15;
-    return new Date(
-      date.getFullYear(),
-      date.getMonth(),
-      date.getDate(),
-      date.getHours(),
-      roundedMinutes
-    );
-  };
+
   const [endDate, setEndDate] = useState<Date | null>(null);
 
   const {
@@ -105,16 +95,17 @@ const CreateTaskPage: React.FC = () => {
         team: id as string,
         deadline: endDate ? endDate.toISOString() : null,
       };
-
+      setLoading(true);
       await axios.post('/api/createtask', taskData);
       queryClient.invalidateQueries([`teamTasks-${id}`]);
+      setLoading(false);
       showNotification('Task added');
       setTimeout(() => {
         router.back();
       }, 1000);
     } catch (error) {
-      // @ts-ignore
-      showNotification(error?.response.data.error);
+      setLoading(false);
+      showNotification('could not create task, something went wrong');
     }
   };
 
@@ -133,18 +124,27 @@ const CreateTaskPage: React.FC = () => {
     try {
       setLoading(true);
       const response = await axios.post('/api/gettaskdescription', { prompt });
-      setLoading(false);
-      setGeneratedDescription(response.data.description);
+
+      const text = response.data.description;
+      let typedText = '';
+
+      for (let i = 0; i < text.length; i++) {
+        typedText += text.charAt(i);
+        setGeneratedDescription(typedText);
+        await new Promise((resolve) => setTimeout(resolve, 2));
+      }
     } catch (error) {
       console.log(error);
       // Handle error
+    } finally {
+      setLoading(false);
     }
   };
 
   const modules = {
     toolbar: [
-      [{ header: '1' }, { header: '2' }],
-      [{ size: [] }],
+      // [{ header: '1' }, { header: '2' }],
+      // [{ size: [] }],
       ['bold', 'italic', 'underline', 'strike', 'code'],
       [
         { list: 'ordered' },
@@ -229,13 +229,18 @@ const CreateTaskPage: React.FC = () => {
 
           {inputError && <Text color="red">{inputError}</Text>}
 
-          <Button mt={8} colorScheme="whatsapp" onClick={handleTaskSubmit}>
+          <Button
+            mt={8}
+            colorScheme="whatsapp"
+            onClick={handleTaskSubmit}
+            isLoading={loading}
+          >
             Create Task
           </Button>
         </VStack>
       </Box>
 
-      <Modal isCentered isOpen={isOpen} onClose={handleModalClose}>
+      <Modal isCentered isOpen={isOpen} onClose={onClose}>
         <ModalOverlay />
         <ModalContent>
           <ModalHeader>Generate Description with AI</ModalHeader>
@@ -247,11 +252,16 @@ const CreateTaskPage: React.FC = () => {
               rows={4}
             />
             {generatedDescription && (
-              <Text my={4} fontWeight="bold">
-                Generated Description:
-              </Text>
+              <>
+                <Text my={4} fontWeight="bold">
+                  Generated Description:
+                </Text>
+                <div
+                  className="bullet-list"
+                  dangerouslySetInnerHTML={{ __html: generatedDescription }}
+                />
+              </>
             )}
-            <Text dangerouslySetInnerHTML={{ __html: generatedDescription }} />
           </ModalBody>
           <ModalFooter>
             <Button onClick={handleModalClose}>Use Response</Button>

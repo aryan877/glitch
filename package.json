@@ -11,6 +11,8 @@
   "dependencies": {
     "@chakra-ui/next-js": "^2.1.3",
     "@chakra-ui/react": "^2.6.1",
+    "@emoji-mart/data": "^1.1.2",
+    "@emoji-mart/react": "^1.1.1",
     "@emotion/react": "^11.11.0",
     "@emotion/styled": "^11.11.0",
     "@tanstack/react-query": "^4.29.7",
@@ -21,6 +23,7 @@
     "appwrite": "^10.1.0",
     "axios": "^1.4.0",
     "dayjs": "^1.11.7",
+    "emoji-mart": "^5.5.2",
     "eslint": "8.41.0",
     "eslint-config-next": "13.4.3",
     "force-resolutions": "^1.0.11",

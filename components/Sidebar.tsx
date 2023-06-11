@@ -1,9 +1,10 @@
 import { Link } from '@chakra-ui/next-js';
 import { Box, chakra, Flex, HStack, Image, VStack } from '@chakra-ui/react';
+import { useUser } from 'context/UserContext';
 import { useRouter } from 'next/router';
 import React, { useEffect, useRef, useState } from 'react';
 import { DraggableCore, DraggableCoreProps } from 'react-draggable';
-import { AiFillHome } from 'react-icons/ai';
+import { AiFillHome, AiOutlineProfile, AiOutlineUser } from 'react-icons/ai';
 import { MdSettings } from 'react-icons/md';
 import { useSidebar } from '../context/SidebarContext';
 
@@ -18,6 +19,7 @@ function Sidebar() {
     const limitedWidth = Math.max(minWidth, newWidth);
     setFlexWidth(limitedWidth);
   };
+  const { currentUser } = useUser();
 
   const handleDragStart = () => {
     setIsDragging(true);
@@ -66,6 +68,16 @@ function Sidebar() {
             <HStack spacing={4} alignItems="center" w="100%">
               <AiFillHome size={24} />
               <chakra.span fontWeight="bold">Home</chakra.span>
+            </HStack>
+          </Link>
+          <Link
+            href={`/profile/${currentUser.$id}`}
+            color={router.pathname === '/profile/[id]' ? 'white' : 'gray.300'}
+            _hover={{ color: 'white' }}
+          >
+            <HStack spacing={4} alignItems="center" w="100%">
+              <AiOutlineUser size={24} />
+              <chakra.span fontWeight="bold">Profile</chakra.span>
             </HStack>
           </Link>
           {/* <Link

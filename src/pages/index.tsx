@@ -174,13 +174,14 @@ function Home() {
         <Flex direction="column" mx={8} align="flex-start">
           <Box>
             <Button
-              mb={16}
+              mb={8}
               variant="outline"
               borderRadius="md"
               color="white"
               borderWidth={1}
               _hover={{
-                bg: 'transparent',
+                bg: 'black',
+                borderColor: 'black',
               }}
               borderColor="white"
               leftIcon={<IoMdAdd size={18} />}
@@ -213,6 +214,7 @@ function Home() {
                     <Box
                       cursor="pointer"
                       // p={4}
+                      mb={2}
                       // borderRadius="md"
                       boxShadow="md"
                       overflow="hidden"
@@ -221,19 +223,23 @@ function Home() {
                     >
                       {/* Background box */}
                       <Box
-                        bg="gray.700"
+                        bg="black"
+                        bgGradient={`linear-gradient(to right, gray.600, ${
+                          teamPreferencesData[team.$id]?.bg
+                        })`}
                         // position="absolute"
                         // top={0}
                         // left={0}
                         // right={0}
                         // bottom={0}
                         // borderRadius="md"
+
                         display="flex"
                         flexDirection="row"
                         alignItems="center"
                         transition="background-color 0.2s ease"
                         _hover={{
-                          bg: 'gray.600',
+                          bg: 'black',
                         }}
                       >
                         {teamAvatarData[team.$id] && (
@@ -272,7 +278,7 @@ function Home() {
                       </Box>
 
                       {/* Cut-out circle */}
-                      <Box
+                      {/* <Box
                         position="absolute"
                         bottom={0}
                         right={0}
@@ -281,7 +287,7 @@ function Home() {
                         h="100px"
                         borderRadius="50%"
                         bg={teamPreferencesData[team.$id]?.bg}
-                      />
+                      /> */}
                     </Box>
                   </Link>
                 );

@@ -20,8 +20,9 @@ import axios from 'axios';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useContext, useEffect, useMemo } from 'react';
+import { AiOutlineLogout, AiOutlineUser } from 'react-icons/ai';
 import { BsBellFill } from 'react-icons/bs';
-import { FiArrowLeft } from 'react-icons/fi';
+import { FiArrowLeft, FiLogOut } from 'react-icons/fi';
 import { MdMessage, MdTask } from 'react-icons/md';
 import tinycolor from 'tinycolor2';
 import { UserContext, useUser } from '../context/UserContext';
@@ -44,28 +45,35 @@ const Navbar = ({ flexWidth }: { flexWidth: number }) => {
     []
   );
   const databases = useMemo(() => new Databases(client), []);
-  const { data: teamPreference = { bg: '', description: '', name: '' } } =
-    useQuery(
-      [`teamPreferences-${id}`],
-      async () => {
-        try {
-          const response = await databases.getDocument(
-            process.env.NEXT_PUBLIC_DATABASE_ID as string,
-            process.env.NEXT_PUBLIC_TEAMS_COLLECTION_ID as string,
-            id as string
-          );
-          return response;
-        } catch (error) {
-          console.error('Error fetching team preferences:', error);
-          throw error;
-        }
-      },
-      {
-        staleTime: 3600000,
-        cacheTime: 3600000,
-        enabled: !router.pathname.startsWith('/profile/[id]'),
+  const {
+    data: teamPreference = {
+      bg: '',
+      description: '',
+      name: '',
+      defaultRole: '',
+      teamImage: '',
+    },
+  } = useQuery(
+    [`teamPreferences-${id}`],
+    async () => {
+      try {
+        const response = await databases.getDocument(
+          process.env.NEXT_PUBLIC_DATABASE_ID as string,
+          process.env.NEXT_PUBLIC_TEAMS_COLLECTION_ID as string,
+          id as string
+        );
+        return response;
+      } catch (error) {
+        console.error('Error fetching team preferences:', error);
+        throw error;
       }
-    );
+    },
+    {
+      staleTime: 3600000,
+      cacheTime: 3600000,
+      enabled: !router.pathname.startsWith('/profile/[id]'),
+    }
+  );
 
   const {
     data: result = '',
@@ -75,14 +83,10 @@ const Navbar = ({ flexWidth }: { flexWidth: number }) => {
     [`teamProfileImage-${id}`, teamPreference],
     async () => {
       try {
-        const promise = await storage.getFile(
-          process.env.NEXT_PUBLIC_TEAM_PROFILE_BUCKET_ID as string,
-          id as string
-        );
         const timestamp = Date.now(); // Get the current timestamp
         const imageUrl = storage.getFilePreview(
           process.env.NEXT_PUBLIC_TEAM_PROFILE_BUCKET_ID as string,
-          id as string
+          teamPreference.teamImage
         );
 
         return `${imageUrl.toString()}&timestamp=${timestamp}`;
@@ -99,7 +103,7 @@ const Navbar = ({ flexWidth }: { flexWidth: number }) => {
     {
       staleTime: 3600000,
       cacheTime: 3600000,
-      enabled: !router.pathname.startsWith('/profile/[id]'),
+      enabled: router.pathname.startsWith('/profile/[id]'),
     }
   );
 
@@ -369,11 +373,6 @@ const Navbar = ({ flexWidth }: { flexWidth: number }) => {
     [`userProfileImage-${currentUser.$id}`, data],
     async () => {
       try {
-        const promise = await storage.getFile(
-          process.env.NEXT_PUBLIC_USER_PROFILE_BUCKET_ID as string,
-          data.prefs.profileImageId
-        );
-        const timestamp = Date.now(); // Get the current timestamp
         const imageUrl = storage.getFilePreview(
           process.env.NEXT_PUBLIC_USER_PROFILE_BUCKET_ID as string,
           data.prefs.profileImageId
@@ -422,11 +421,6 @@ const Navbar = ({ flexWidth }: { flexWidth: number }) => {
     [`dmUserProfileImage-${slug}`],
     async () => {
       try {
-        const promise = await storage.getFile(
-          process.env.NEXT_PUBLIC_USER_PROFILE_BUCKET_ID as string,
-          dmUserData.prefs.profileImageId
-        );
-        const timestamp = Date.now(); // Get the current timestamp
         const imageUrl = storage.getFilePreview(
           process.env.NEXT_PUBLIC_USER_PROFILE_BUCKET_ID as string,
           dmUserData.prefs.profileImageId
@@ -461,13 +455,13 @@ const Navbar = ({ flexWidth }: { flexWidth: number }) => {
     >
       <HStack>
         {router.pathname !== '/' && (
-          <Tooltip label="Go Back" color="white">
+          <Tooltip label="Go Back" bg="gray.900" color="white">
             <IconButton
               ml={8}
               aria-label="Go Back"
               icon={<FiArrowLeft />}
               onClick={goBack}
-              bg="gray.800"
+              bg="black"
               _hover={{ bg: 'gray.700' }}
               _active={{ bg: 'gray.700' }}
               borderRadius="full"
@@ -509,39 +503,41 @@ const Navbar = ({ flexWidth }: { flexWidth: number }) => {
       {!isDarkButtonRoute && <Spacer />}
       <HStack gap={4}>
         <Menu>
-          <MenuButton
-            as={IconButton}
-            aria-label="notifications"
-            icon={
-              <Flex position="relative">
-                <MdMessage size="24px" />
-                {unreadDirectChatsData.length > 0 && (
-                  <Box
-                    position="absolute"
-                    top="0px"
-                    right="-4px"
-                    px={2}
-                    py={1}
-                    borderRadius="full"
-                    bg="red.500"
-                    color="white"
-                    fontSize="xs"
-                    fontWeight="bold"
-                    transform="translate(50%, -50%)"
-                  >
-                    {unreadDirectChatsData.length.toString()}
-                  </Box>
-                )}
-              </Flex>
-            }
-            bg="gray.800"
-            _hover={{ bg: 'gray.700' }}
-            _active={{ bg: 'gray.700' }}
-            variant="outline"
-            border="none"
-            size="md"
-            borderRadius="full"
-          />
+          <Tooltip bg="gray.900" color="white" label="direct chat notifications">
+            <MenuButton
+              as={IconButton}
+              aria-label="notifications"
+              icon={
+                <Flex position="relative">
+                  <MdMessage size="24px" />
+                  {unreadDirectChatsData.length > 0 && (
+                    <Box
+                      position="absolute"
+                      top="0px"
+                      right="-4px"
+                      px={2}
+                      py={1}
+                      borderRadius="full"
+                      bg="red.500"
+                      color="white"
+                      fontSize="xs"
+                      fontWeight="bold"
+                      transform="translate(50%, -50%)"
+                    >
+                      {unreadDirectChatsData.length.toString()}
+                    </Box>
+                  )}
+                </Flex>
+              }
+              bg="gray.800"
+              _hover={{ bg: 'gray.700' }}
+              _active={{ bg: 'gray.700' }}
+              variant="outline"
+              border="none"
+              size="md"
+              borderRadius="full"
+            />
+          </Tooltip>
           <MenuList p={2} border="none" borderRadius="md">
             {unreadDirectChatsData.length > 0 ? (
               unreadDirectChatsData.map((unreadChat) => (
@@ -637,39 +633,41 @@ const Navbar = ({ flexWidth }: { flexWidth: number }) => {
           </MenuList>
         </Menu> */}
         <Menu>
-          <MenuButton
-            as={IconButton}
-            aria-label="notifications"
-            icon={
-              <Flex position="relative">
-                <BsBellFill size="24px" />
-                {unreadChatsData.length > 0 && (
-                  <Box
-                    position="absolute"
-                    top="0px"
-                    right="-4px"
-                    px={2}
-                    py={1}
-                    borderRadius="full"
-                    bg="red.500"
-                    color="white"
-                    fontSize="xs"
-                    fontWeight="bold"
-                    transform="translate(50%, -50%)"
-                  >
-                    {unreadChatsData.length.toString()}
-                  </Box>
-                )}
-              </Flex>
-            }
-            bg="gray.800"
-            _hover={{ bg: 'gray.700' }}
-            _active={{ bg: 'gray.700' }}
-            variant="outline"
-            border="none"
-            size="md"
-            borderRadius="full"
-          />
+          <Tooltip bg="gray.900" color="white" label="group chat notifications">
+            <MenuButton
+              as={IconButton}
+              aria-label="notifications"
+              icon={
+                <Flex position="relative">
+                  <BsBellFill size="24px" />
+                  {unreadChatsData.length > 0 && (
+                    <Box
+                      position="absolute"
+                      top="0px"
+                      right="-4px"
+                      px={2}
+                      py={1}
+                      borderRadius="full"
+                      bg="red.500"
+                      color="white"
+                      fontSize="xs"
+                      fontWeight="bold"
+                      transform="translate(50%, -50%)"
+                    >
+                      {unreadChatsData.length.toString()}
+                    </Box>
+                  )}
+                </Flex>
+              }
+              bg="gray.800"
+              _hover={{ bg: 'gray.700' }}
+              _active={{ bg: 'gray.700' }}
+              variant="outline"
+              border="none"
+              size="md"
+              borderRadius="full"
+            />
+          </Tooltip>
           <MenuList p={2} border="none" borderRadius="md">
             {unreadChatsData.length > 0 ? (
               unreadChatsData.map((unreadChat) => (
@@ -717,10 +715,14 @@ const Navbar = ({ flexWidth }: { flexWidth: number }) => {
           </MenuButton>
           <MenuList p={2} border="none" borderRadius="md">
             <Link href={`/profile/${currentUser.$id}`}>
-              <MenuItem borderRadius="md">Profile</MenuItem>
+              <MenuItem borderRadius="md">
+                <AiOutlineUser size="24px" />
+                <Text ml={4}>Profile</Text>
+              </MenuItem>
             </Link>
             <MenuItem onClick={handleLogOut} borderRadius="md">
-              Logout
+              <FiLogOut color="red" size="24px" />
+              <Text ml={4}>Logout</Text>
             </MenuItem>
           </MenuList>
         </Menu>

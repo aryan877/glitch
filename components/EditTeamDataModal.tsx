@@ -21,7 +21,15 @@ import {
   VStack,
 } from '@chakra-ui/react';
 import { useQueryClient } from '@tanstack/react-query';
-import { Databases, ID, Permission, Role, Storage, Teams } from 'appwrite';
+import {
+  Databases,
+  ID,
+  Models,
+  Permission,
+  Role,
+  Storage,
+  Teams,
+} from 'appwrite';
 import { useRouter } from 'next/router';
 import { useCallback, useContext, useState } from 'react';
 import Cropper from 'react-easy-crop';
@@ -42,6 +50,7 @@ interface EditTeamDataModalProps {
   teamName: string;
   teamDescription: string;
   teamThemeColor: string;
+  defaultRole: string;
 }
 
 const EditTeamDataModal: React.FC<EditTeamDataModalProps> = ({
@@ -51,15 +60,19 @@ const EditTeamDataModal: React.FC<EditTeamDataModalProps> = ({
   teamThemeColor,
   teamDescription,
   teamName,
+  defaultRole,
 }) => {
   const [name, setName] = useState<string>(teamName);
   const [description, setDescription] = useState<string>(teamDescription);
   const [themeColor, setThemeColor] = useState<string>(teamThemeColor); // Initial theme color
+  const [teamDefaultRole, setTeamDefaultRole] = useState<string>(defaultRole);
   const router = useRouter();
   const { id } = router.query;
   const { showNotification } = useNotification();
   const databases = useMemo(() => new Databases(client), []);
   const storage = useMemo(() => new Storage(client), []);
+  const teamsClient = useMemo(() => new Teams(client), []);
+  const [loading, setLoading] = useState(false);
   const [file, setFile] = useState<File | undefined>(undefined);
   const [imageUrl, setImageUrl] = useState<string | undefined>(
     teamProfileImage
@@ -124,6 +137,7 @@ const EditTeamDataModal: React.FC<EditTeamDataModalProps> = ({
 
   const handleSavePreferences = async () => {
     try {
+      setLoading(true);
       if (file) {
         const reader = new FileReader();
         reader.onload = async (event) => {
@@ -136,7 +150,7 @@ const EditTeamDataModal: React.FC<EditTeamDataModalProps> = ({
 
             const response = await storage.createFile(
               process.env.NEXT_PUBLIC_TEAM_PROFILE_BUCKET_ID as string,
-              id as string,
+              ID.unique(),
               convertedFile,
               [
                 Permission.read(Role.team(id as string)),
@@ -144,27 +158,75 @@ const EditTeamDataModal: React.FC<EditTeamDataModalProps> = ({
                 Permission.delete(Role.team(id as string)),
               ]
             );
+
+            const currentDocument = await databases.getDocument(
+              process.env.NEXT_PUBLIC_DATABASE_ID as string,
+              process.env.NEXT_PUBLIC_TEAMS_COLLECTION_ID as string,
+              id as string
+            );
+            if (currentDocument.teamImage) {
+              await storage.deleteFile(
+                process.env.NEXT_PUBLIC_TEAM_PROFILE_BUCKET_ID as string,
+                currentDocument.teamImage
+              );
+            }
+            const updatedDocument = await databases.updateDocument(
+              process.env.NEXT_PUBLIC_DATABASE_ID as string,
+              process.env.NEXT_PUBLIC_TEAMS_COLLECTION_ID as string,
+              id as string,
+              {
+                bg: themeColor,
+                description: description,
+                name: name,
+                defaultRole: teamDefaultRole,
+                teamImage: response.$id,
+              }
+            );
+            await teamsClient.update(id as string, name);
+            queryClient.setQueryData(
+              [`teamPreferences-${id}`],
+              (prevData: any) => {
+                return updatedDocument;
+              }
+            );
+
+            queryClient.removeQueries({ queryKey: ['teamPreferencesData'] });
+            onClose();
           }
         };
         reader.readAsArrayBuffer(file);
+      } else {
+        const updatedDocument = await databases.updateDocument(
+          process.env.NEXT_PUBLIC_DATABASE_ID as string,
+          process.env.NEXT_PUBLIC_TEAMS_COLLECTION_ID as string,
+          id as string,
+          {
+            bg: themeColor,
+            description: description,
+            name: name,
+            defaultRole: teamDefaultRole,
+          }
+        );
+        await teamsClient.update(id as string, name);
+        queryClient.setQueryData([`teamPreferences-${id}`], (prevData: any) => {
+          return updatedDocument;
+        });
+
+        queryClient.removeQueries({ queryKey: ['teamPreferencesData'] });
+        onClose();
       }
-
-      const updatedDocument = await databases.updateDocument(
-        process.env.NEXT_PUBLIC_DATABASE_ID as string,
-        process.env.NEXT_PUBLIC_TEAMS_COLLECTION_ID as string,
-        id as string,
-        { bg: themeColor, description: description, name: name }
-      );
-      queryClient.setQueryData([`teamPreferences-${id}`], (prevData: any) => {
-        return updatedDocument;
-      });
-
-      queryClient.removeQueries({ queryKey: ['teamPreferencesData'] });
-      onClose();
     } catch (error) {
       console.error('Error saving preferences:', error);
       onClose();
+    } finally {
+      setLoading(false);
     }
+  };
+
+  const handleTeamDefaultRoleChange = (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    setTeamDefaultRole(event.target.value);
   };
 
   return (
@@ -245,6 +307,15 @@ const EditTeamDataModal: React.FC<EditTeamDataModalProps> = ({
                 type="text"
                 autoComplete="on"
                 onChange={handleTeamDescriptionChange}
+              />
+              <Input
+                variant="outline"
+                color="white"
+                placeholder="Default Role"
+                value={teamDefaultRole}
+                type="text"
+                autoComplete="on"
+                onChange={handleTeamDefaultRoleChange}
               />
               <Box py={4}>
                 {/* @ts-ignore */}
@@ -366,6 +437,7 @@ const EditTeamDataModal: React.FC<EditTeamDataModalProps> = ({
                 borderRadius="full"
                 _hover={{ transform: 'scale(1.05)' }}
                 onClick={handleSavePreferences}
+                isLoading={loading}
               >
                 Save
               </Button>

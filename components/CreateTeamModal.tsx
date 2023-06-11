@@ -43,7 +43,10 @@ const CreateTeamModal: React.FC<CreateTeamModalProps> = ({
             process.env.NEXT_PUBLIC_DATABASE_ID as string,
             process.env.NEXT_PUBLIC_TEAMS_COLLECTION_ID as string,
             response.$id,
-            { bg: randomColor({ luminosity: 'dark' }), name: teamName },
+            {
+              bg: randomColor({ luminosity: 'dark' }),
+              name: teamName,
+            },
             [
               Permission.read(Role.team(response.$id)),
               Permission.update(Role.team(response.$id)),

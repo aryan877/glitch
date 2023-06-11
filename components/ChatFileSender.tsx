@@ -78,7 +78,7 @@ const ChatFileSender: React.FC<ChatFileSenderProps> = ({
               Permission.delete(Role.user(currentUser.$id as string)),
             ]
           );
-          setLoading(false);
+
           onClose();
         }
       }
@@ -87,6 +87,8 @@ const ChatFileSender: React.FC<ChatFileSenderProps> = ({
       }
     } catch (error) {
       // Handle error
+    } finally {
+      setLoading(false);
     }
   };
 

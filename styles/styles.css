@@ -150,3 +150,13 @@ a {
 code {
   background-color: #111 !important;
 }
+
+.bullet-list ul {
+  padding-left: 0;
+  margin-left: 0;
+}
+
+.bullet-list ul li {
+  list-style: disc;
+  margin-left: 1.25em;
+}

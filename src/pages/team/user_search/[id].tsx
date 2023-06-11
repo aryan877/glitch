@@ -15,9 +15,13 @@ import {
   Tooltip,
   VStack,
 } from '@chakra-ui/react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { Account, Avatars, Storage } from 'appwrite';
 import axios from 'axios';
-import React, { useState } from 'react';
+import { useNotification } from 'context/NotificationContext';
+import Link from 'next/link';
+import { useRouter } from 'next/router';
+import React, { useMemo, useState } from 'react';
 import {
   AiOutlineEye,
   AiOutlineSearch,
@@ -25,14 +29,22 @@ import {
   AiOutlineUserAdd,
 } from 'react-icons/ai';
 import { FaSearch } from 'react-icons/fa';
+import tinycolor from 'tinycolor2';
 import { useDebounce } from 'usehooks-ts';
+import { client } from 'utils/appwriteConfig';
 import withAuth from 'utils/withAuth';
 import Layout from '../../../../components/Layout';
 
 const UserSearch = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const debouncedSearchTerm = useDebounce<string>(searchTerm, 300);
-
+  const avatars = useMemo(() => new Avatars(client), []);
+  const storage = useMemo(() => new Storage(client), []);
+  const queryClient = useQueryClient();
+  const account = useMemo(() => new Account(client), []);
+  const router = useRouter();
+  const { showNotification } = useNotification();
+  const { id } = router.query;
   const fetchSearchResults = async () => {
     if (debouncedSearchTerm.trim() === '') {
       return []; // Return an empty array if the search term is blank
@@ -52,12 +64,57 @@ const UserSearch = () => {
     }
   );
 
-  const handleViewProfile = (userId) => {
-    console.log(`View profile for user with ID: ${userId}`);
-  };
+  const {
+    data: searchedUsersProfileImages,
+    isLoading: isLoadingSearchedUsersProfileImages,
+    isError: isErrorSearchedUsersProfileImages,
+    isSuccess: isSuccessSearchedUsersProfileImages,
+  } = useQuery(
+    [`searchedUserProfileImages`, searchResults],
+    async () => {
+      console.log(searchResults);
+      const userImageUrls: { [key: string]: string } = {};
+      for (const user of searchResults) {
+        try {
+          const profileImageId = user?.prefs.profileImageId;
+          if (profileImageId) {
+            const imageUrl = storage.getFilePreview(
+              process.env.NEXT_PUBLIC_USER_PROFILE_BUCKET_ID as string,
+              profileImageId
+            );
+            userImageUrls[user.$id] = imageUrl.toString();
+          } else {
+            throw new Error('no profile image id');
+          }
+        } catch (error) {
+          // const prefs = userResponse?.data?.prefs;
+          const result = avatars.getInitials(
+            user.name as string,
+            240,
+            240,
+            tinycolor(user?.prefs?.profileColor).lighten(20).toHex()
+          );
+          userImageUrls[user.$id] = result.toString();
+        }
+      }
 
-  const handleAddToTeam = (userId) => {
-    console.log(`Add user with ID: ${userId} to the team`);
+      return userImageUrls;
+    },
+    {
+      // staleTime: 3600000, cacheTime: 3600000
+    }
+  );
+
+  const handleAddToTeam = async (userEmail: string) => {
+    const promise = await account.createJWT();
+    await axios.post('/api/addtoteam', {
+      jwt: promise.jwt,
+      team: id as string,
+      userEmail,
+    });
+    showNotification('user added to team');
+    queryClient.invalidateQueries([`teamMembers-${id}`]);
+    router.replace(`/team/${id}`);
   };
 
   return (
@@ -95,7 +152,7 @@ const UserSearch = () => {
                 searchResults?.map((user) => (
                   <ListItem
                     w="full"
-                    key={user.id}
+                    key={user.$id}
                     bg="gray.700"
                     borderRadius="md"
                     px={4}
@@ -103,25 +160,47 @@ const UserSearch = () => {
                     display="flex"
                     alignItems="center"
                   >
-                    <Avatar size="sm" name={user.name} mr={2} />
-                    <Text color="white">{user.name}</Text>
+                    <Link href={`/profile/${user.$id}`}>
+                      <HStack spacing={2}>
+                        {searchedUsersProfileImages && (
+                          <Avatar
+                            size="sm"
+                            src={searchedUsersProfileImages[user.$id]}
+                            name={user.name}
+                            mr={2}
+                          />
+                        )}
+                        <Text color="white">{user.name}</Text>
+                      </HStack>
+                    </Link>
                     <HStack ml="auto" spacing={4}>
-                      <Tooltip label="View Profile" hasArrow>
-                        <Button
-                          leftIcon={<AiOutlineEye />}
-                          cursor="pointer"
-                          color="white"
-                          fontSize="24px"
-                          onClick={() => handleViewProfile(user.id)}
-                        />
+                      <Tooltip
+                        bg="gray.900"
+                        color="white"
+                        label="View Profile"
+                        hasArrow
+                      >
+                        <Link href={`/profile/${user.$id}`}>
+                          <Button
+                            leftIcon={<AiOutlineEye />}
+                            cursor="pointer"
+                            color="white"
+                            fontSize="24px"
+                          />
+                        </Link>
                       </Tooltip>
-                      <Tooltip label="Add to Team" hasArrow>
+                      <Tooltip
+                        bg="gray.900"
+                        color="white"
+                        label="Add to Team"
+                        hasArrow
+                      >
                         <Button
                           leftIcon={<AiOutlineUserAdd />}
                           cursor="pointer"
                           color="white"
                           fontSize="24px"
-                          onClick={() => handleAddToTeam(user.id)}
+                          onClick={() => handleAddToTeam(user.email)}
                         />
                       </Tooltip>
                     </HStack>

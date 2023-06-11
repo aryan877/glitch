@@ -21,6 +21,7 @@ import {
   VStack,
 } from '@chakra-ui/react';
 import { isNotEmptyObject } from '@chakra-ui/utils';
+import Picker from '@emoji-mart/react';
 import {
   useInfiniteQuery,
   useQuery,
@@ -45,11 +46,13 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { createRef, useEffect, useMemo, useRef, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
+import { AiOutlineSend } from 'react-icons/ai';
 import {
   BsArrowDown,
   BsArrowLeftShort,
   BsCheck2,
   BsCheck2All,
+  BsEmojiSmileFill,
   BsReply,
   BsSend,
   BsThreeDots,
@@ -453,6 +456,7 @@ function DirectChat() {
   const [file, setFile] = useState<File | undefined>(undefined);
   const [messageContent, setMessageContent] = useState<string | null>(null);
   const [messageUser, setMessageUser] = useState<string | null>(null);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
   const ChatSectionRef = useRef<HTMLDivElement>(null);
   const account = useMemo(() => new Account(client), []);
@@ -967,10 +971,6 @@ function DirectChat() {
 
           const prefs = userResponse?.data?.prefs;
           if (prefs && prefs.profileImageId) {
-            const promise = await storage.getFile(
-              process.env.NEXT_PUBLIC_USER_PROFILE_BUCKET_ID as string,
-              prefs.profileImageId
-            );
             const imageUrl = storage.getFilePreview(
               process.env.NEXT_PUBLIC_USER_PROFILE_BUCKET_ID as string,
               prefs.profileImageId
@@ -1228,13 +1228,15 @@ function DirectChat() {
           right="0"
           // h={20}
         >
-          <Flex align="center">
+          <Flex align="center" pos="relative">
             <IconButton
               {...getRootProps()}
               // onClick={onOpen}
               icon={<FiPaperclip size="24px" color="white" />}
               bg="transparent"
               fontSize="20px"
+              h={12}
+              w={16}
               aria-label="Attach File"
               mr={2}
             >
@@ -1273,7 +1275,7 @@ function DirectChat() {
 
             <Textarea
               placeholder="Type your message..."
-              value={message.replace(/<br\s*\/?>/gi, '\n')}
+              value={message}
               onChange={(e) => setMessage(e.target.value)}
               // bg="white"
               minH="12"
@@ -1290,11 +1292,37 @@ function DirectChat() {
               mr={2}
               onKeyDown={handleKeyDown}
             />
+
             <IconButton
-              icon={<BsSend size="24px" />}
+              aria-label="emoji-picker"
+              mr={2}
+              h={12}
+              w={16}
+              _hover={{ bg: showEmojiPicker ? 'gray.900' : 'gray.600' }}
+              bg={showEmojiPicker ? 'gray.900' : 'gray.600'}
+              icon={<BsEmojiSmileFill size="24px" />}
+              // ...other button props
+              onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+            />
+            {showEmojiPicker && (
+              <Box pos="absolute" zIndex={1} bottom="20" right="20">
+                <Picker
+                  onEmojiSelect={(emoji) => {
+                    setMessage((prev) => prev + emoji.native); // Append emoji to the existing message
+                    setShowEmojiPicker(false);
+                  }}
+                  emojiSize={24}
+                  title="Pick an emoji"
+                />
+              </Box>
+            )}
+
+            <IconButton
+              icon={<AiOutlineSend size="24px" />}
               colorScheme="teal"
-              borderRadius="full"
-              aria-label="Send Message"
+              h={12}
+              w={16}
+              aria-label="send-message"
               onClick={sendMessage}
             />
           </Flex>

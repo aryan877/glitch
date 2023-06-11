@@ -15,12 +15,13 @@ import {
   VStack,
 } from '@chakra-ui/react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Account, Teams } from 'appwrite';
+import { Account, Databases, Teams } from 'appwrite';
 import axios from 'axios';
 import { useNotification } from 'context/NotificationContext';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/router';
-import { useState } from 'react';
+import { setPriority } from 'os';
+import { useEffect, useMemo, useState } from 'react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import ReactQuill from 'react-quill';
@@ -40,27 +41,18 @@ const EditTaskPage: React.FC = () => {
   const [charCount, setCharCount] = useState(0);
   const [loading, setLoading] = useState<boolean>(false);
   const [taskPriority, setTaskPriority] = useState('');
+  const databases = useMemo(() => new Databases(client), []);
   const queryClient = useQueryClient();
-  const teamsClient = new Teams(client);
+  const teamsClient = useMemo(() => new Teams(client), []);
   const account = new Account(client);
   const router = useRouter();
-  const { id } = router.query;
+  const { id, slug } = router.query;
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [prompt, setPrompt] = useState('');
   const [generatedDescription, setGeneratedDescription] = useState('');
   const [inputError, setInputError] = useState('');
   const { showNotification } = useNotification();
-  const roundOffToNearest15Minutes = (date: Date): Date => {
-    const minutes = date.getMinutes();
-    const roundedMinutes = Math.floor(minutes / 15) * 15;
-    return new Date(
-      date.getFullYear(),
-      date.getMonth(),
-      date.getDate(),
-      date.getHours(),
-      roundedMinutes
-    );
-  };
+
   const [endDate, setEndDate] = useState<Date | null>(null);
 
   const {
@@ -77,6 +69,34 @@ const EditTaskPage: React.FC = () => {
     { staleTime: 3600000, cacheTime: 3600000 }
   );
 
+  const {
+    data: taskData,
+    isLoading: taskDataLoading,
+    isError: taskDataError,
+    isSuccess: taskDataSuccess,
+  } = useQuery(
+    [`teamData-${slug}`],
+    async () => {
+      const response = await databases.getDocument(
+        process.env.NEXT_PUBLIC_DATABASE_ID as string,
+        process.env.NEXT_PUBLIC_TASKS_COLLECTION_ID as string,
+        slug as string
+      );
+      return response;
+    }
+    // { staleTime: 3600000, cacheTime: 3600000 }
+  );
+
+  useEffect(() => {
+    if (taskData && taskDataSuccess) {
+      setTaskName(taskData.taskName);
+      setTaskDescription(taskData.taskDescription);
+      setAssignedTo(taskData.assignee);
+      setTaskPriority(taskData.priority);
+      setEndDate(taskData.deadline);
+    }
+  }, [taskData, taskDataSuccess]);
+
   const handleTaskSubmit = async (): Promise<void> => {
     try {
       // Input validation
@@ -87,34 +107,37 @@ const EditTaskPage: React.FC = () => {
 
       setInputError(''); // Clear input error
 
-      const promise = await account.createJWT();
+      // const promise = await account.createJWT();
       const taskData: {
         taskName: string;
-        jwt: string;
+        // jwt: string;
         taskDescription: string;
         assignee: string;
-        taskPriority: string;
-        team: string;
+        priority: string;
+        // team: string;
         deadline: string | null;
       } = {
         taskName: taskName,
         taskDescription: taskDescription,
-        jwt: promise.jwt,
         assignee: assignedTo,
-        taskPriority: taskPriority,
-        team: id as string,
+        priority: taskPriority,
         deadline: endDate ? endDate.toISOString() : null,
       };
 
-      await axios.post('/api/createtask', taskData);
+      // await axios.post('/api/edittask', taskData);
+      await databases.updateDocument(
+        process.env.NEXT_PUBLIC_DATABASE_ID as string,
+        process.env.NEXT_PUBLIC_TASKS_COLLECTION_ID as string,
+        slug as string,
+        taskData
+      );
       queryClient.invalidateQueries([`teamTasks-${id}`]);
-      showNotification('Task added');
+      showNotification('Task updated');
       setTimeout(() => {
         router.back();
       }, 1000);
     } catch (error) {
-      // @ts-ignore
-      showNotification(error?.response.data.error);
+      showNotification('could not update task, something went wrong');
     }
   };
 
@@ -133,18 +156,20 @@ const EditTaskPage: React.FC = () => {
     try {
       setLoading(true);
       const response = await axios.post('/api/gettaskdescription', { prompt });
-      setLoading(false);
+
       setGeneratedDescription(response.data.description);
     } catch (error) {
       console.log(error);
       // Handle error
+    } finally {
+      setLoading(false);
     }
   };
 
   const modules = {
     toolbar: [
-      [{ header: '1' }, { header: '2' }],
-      [{ size: [] }],
+      // [{ header: '1' }, { header: '2' }],
+      // [{ size: [] }],
       ['bold', 'italic', 'underline', 'strike', 'code'],
       [
         { list: 'ordered' },
@@ -247,11 +272,16 @@ const EditTaskPage: React.FC = () => {
               rows={4}
             />
             {generatedDescription && (
-              <Text my={4} fontWeight="bold">
-                Generated Description:
-              </Text>
+              <>
+                <Text my={4} fontWeight="bold">
+                  Generated Description:
+                </Text>
+                <div
+                  className="bullet-list"
+                  dangerouslySetInnerHTML={{ __html: generatedDescription }}
+                />
+              </>
             )}
-            <Text dangerouslySetInnerHTML={{ __html: generatedDescription }} />
           </ModalBody>
           <ModalFooter>
             <Button onClick={handleModalClose}>Use Response</Button>

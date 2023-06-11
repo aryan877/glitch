@@ -17,7 +17,7 @@ import { useUser } from 'context/UserContext';
 import { useRouter } from 'next/router';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { DraggableCore } from 'react-draggable';
-import { AiFillHome } from 'react-icons/ai';
+import { AiFillHome, AiFillMessage } from 'react-icons/ai';
 import {
   BsCameraVideoFill,
   BsChatDotsFill,
@@ -26,6 +26,11 @@ import {
   BsPeopleFill,
   BsSearch,
 } from 'react-icons/bs';
+import { FaSearch, FaTasks } from 'react-icons/fa';
+import { FiMessageCircle, FiMessageSquare, FiSearch } from 'react-icons/fi';
+import { IoMdSearch } from 'react-icons/io';
+import { MdSearchOff } from 'react-icons/md';
+import { RiMessage2Line, RiMessageLine } from 'react-icons/ri';
 import tinycolor from 'tinycolor2';
 import { useSidebar } from '../context/SidebarContext';
 import { client } from '../utils/appwriteConfig';
@@ -85,10 +90,6 @@ function TeamSidebar() {
 
           const prefs = userResponse?.data?.prefs;
           if (prefs && prefs.profileImageId) {
-            const promise = await storage.getFile(
-              process.env.NEXT_PUBLIC_USER_PROFILE_BUCKET_ID as string,
-              prefs.profileImageId
-            );
             const imageUrl = storage.getFilePreview(
               process.env.NEXT_PUBLIC_USER_PROFILE_BUCKET_ID as string,
               prefs.profileImageId
@@ -212,14 +213,14 @@ function TeamSidebar() {
             <HStack spacing={4} alignItems="center" w="100%">
               {/* <Tooltip color="white" label="Chat" placement="right"> */}
               <Box>
-                <BsChatDotsFill size={24} />
+                <FiMessageSquare size="24px" />
               </Box>
               {/* </Tooltip> */}
               <Text
                 display={shouldHideIcons ? 'none' : 'flex'}
                 fontWeight="bold"
               >
-                Chat
+                Team Chat
               </Text>
             </HStack>
           </Link>
@@ -235,7 +236,7 @@ function TeamSidebar() {
           >
             <HStack spacing={4} alignItems="center" w="100%">
               <Box>
-                <BsCheckSquareFill size={24} />
+                <FaTasks size="24px" />
               </Box>
 
               <Text
@@ -283,7 +284,7 @@ function TeamSidebar() {
           >
             <HStack spacing={4} alignItems="center" w="100%">
               <Box>
-                <BsSearch size={24} />{' '}
+                <FiSearch size="24px" />{' '}
               </Box>
 
               <Text

@@ -20,11 +20,13 @@ import { client } from '../utils/appwriteConfig';
 interface InviteMemberModalProps {
   isOpen: boolean;
   onClose: () => void;
+  defaultRole: string;
 }
 
 const InviteMemberModal: React.FC<InviteMemberModalProps> = ({
   isOpen,
   onClose,
+  defaultRole,
 }) => {
   const [email, setEmail] = useState('');
   const router = useRouter();
@@ -32,13 +34,22 @@ const InviteMemberModal: React.FC<InviteMemberModalProps> = ({
   const { showNotification } = useNotification();
   const teams = useMemo(() => new Teams(client), []);
   const addMemberHandler = async () => {
-    const promise = teams.createMembership(
-      id as string,
-      email,
-      [],
-      'http://localhost:3000/join'
-    );
-
+    let promise;
+    if (defaultRole) {
+      promise = teams.createMembership(
+        id as string,
+        email,
+        [defaultRole as string],
+        'http://localhost:3000/join'
+      );
+    } else {
+      promise = teams.createMembership(
+        id as string,
+        email,
+        [],
+        'http://localhost:3000/join'
+      );
+    }
     promise.then(
       function (response) {
         showNotification('e-mail sent successfully');

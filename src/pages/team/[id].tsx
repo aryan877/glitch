@@ -33,7 +33,8 @@ import {
   AiOutlineEllipsis,
   AiOutlineUserAdd,
 } from 'react-icons/ai';
-import { FiArrowLeft } from 'react-icons/fi';
+import { BsCircleFill, BsInfoCircle, BsInfoCircleFill } from 'react-icons/bs';
+import { FiArrowLeft, FiMessageSquare } from 'react-icons/fi';
 import { MdAdd, MdClose, MdMail } from 'react-icons/md';
 import stringHash from 'string-hash';
 import tinycolor from 'tinycolor2';
@@ -70,27 +71,34 @@ function Team() {
   const queryClient = useQueryClient();
   //team preferences in db collection
   //preferences has bg and description
-  const { data: teamPreference = { bg: '', description: '', name: '' } } =
-    useQuery(
-      [`teamPreferences-${id}`],
-      async () => {
-        try {
-          const response = await databases.getDocument(
-            process.env.NEXT_PUBLIC_DATABASE_ID as string,
-            process.env.NEXT_PUBLIC_TEAMS_COLLECTION_ID as string,
-            id as string
-          );
-          return response;
-        } catch (error) {
-          console.error('Error fetching team preferences:', error);
-          throw error;
-        }
-      },
-      {
-        staleTime: 600000,
-        cacheTime: 600000,
+  const {
+    data: teamPreference = {
+      bg: '',
+      description: '',
+      name: '',
+      defaultRole: '',
+      teamImage: '',
+    },
+  } = useQuery(
+    [`teamPreferences-${id}`],
+    async () => {
+      try {
+        const response = await databases.getDocument(
+          process.env.NEXT_PUBLIC_DATABASE_ID as string,
+          process.env.NEXT_PUBLIC_TEAMS_COLLECTION_ID as string,
+          id as string
+        );
+        return response;
+      } catch (error) {
+        console.error('Error fetching team preferences:', error);
+        throw error;
       }
-    );
+    },
+    {
+      staleTime: 600000,
+      cacheTime: 600000,
+    }
+  );
   //team api member list
   const {
     data: teamMembersData,
@@ -173,19 +181,13 @@ function Team() {
     [`teamProfileImage-${id}`, teamPreference],
     async () => {
       try {
-        const promise = await storage.getFile(
+        const imageUrl = await storage.getFilePreview(
           process.env.NEXT_PUBLIC_TEAM_PROFILE_BUCKET_ID as string,
-          id as string
+          teamPreference.teamImage
         );
-        const timestamp = Date.now(); // Get the current timestamp
-        const imageUrl = storage.getFilePreview(
-          process.env.NEXT_PUBLIC_TEAM_PROFILE_BUCKET_ID as string,
-          id as string
-        );
-
-        return `${imageUrl.toString()}&timestamp=${timestamp}`;
+        return `${imageUrl.toString()}`;
       } catch (error) {
-        const result = avatars.getInitials(
+        const result = await avatars.getInitials(
           teamPreference.name as string,
           240,
           240,
@@ -200,6 +202,33 @@ function Team() {
       enabled: !!teamPreference,
     }
   );
+
+  // const {
+  //   data: resultUserImage = '',
+  //   isLoading: resultUserImageLoading,
+  //   isError: resultUserImageError,
+  // } = useQuery(
+  //   [`userProfileImage-${currentUser.$id}`, data],
+  //   async () => {
+  //     try {
+  //       const imageUrl = storage.getFilePreview(
+  //         process.env.NEXT_PUBLIC_USER_PROFILE_BUCKET_ID as string,
+  //         data.prefs.profileImageId
+  //       );
+
+  //       return `${imageUrl.toString()}`;
+  //     } catch (error) {
+  //       const result = avatars.getInitials(
+  //         data.name as string,
+  //         240,
+  //         240,
+  //         tinycolor(data.prefs.profileColor).lighten(20).toHex()
+  //       );
+  //       return result.toString();
+  //     }
+  //   },
+  //   { staleTime: 600000, cacheTime: 600000, enabled: !!data }
+  // );
 
   const cancelMembershipHandler = async (membershipId: string) => {
     const promise = await teamsClient.deleteMembership(
@@ -262,10 +291,10 @@ function Team() {
 
           const prefs = userResponse?.data?.prefs;
           if (prefs && prefs.profileImageId) {
-            const promise = await storage.getFile(
-              process.env.NEXT_PUBLIC_USER_PROFILE_BUCKET_ID as string,
-              prefs.profileImageId
-            );
+            // const promise = await storage.getFile(
+            //   process.env.NEXT_PUBLIC_USER_PROFILE_BUCKET_ID as string,
+            //   prefs.profileImageId
+            // );
             const imageUrl = storage.getFilePreview(
               process.env.NEXT_PUBLIC_USER_PROFILE_BUCKET_ID as string,
               prefs.profileImageId
@@ -291,7 +320,6 @@ function Team() {
     { staleTime: 3600000, cacheTime: 3600000 }
   );
 
-  
   const [roleInputState, setRoleInputState] = useState<{ isOpen: boolean }[]>(
     []
   );
@@ -310,7 +338,13 @@ function Team() {
 
   return (
     <Layout>
-      {isOpen && <InviteMemberModal isOpen={isOpen} onClose={onClose} />}
+      {isOpen && (
+        <InviteMemberModal
+          defaultRole={teamPreference.defaultRole}
+          isOpen={isOpen}
+          onClose={onClose}
+        />
+      )}
       {isEditTeamModalOpen && (
         <EditTeamDataModal
           isOpen={isEditTeamModalOpen}
@@ -319,6 +353,7 @@ function Team() {
           teamThemeColor={teamPreference?.bg}
           teamProfileImage={result}
           teamDescription={teamPreference?.description}
+          defaultRole={teamPreference?.defaultRole}
         />
       )}
       <Box
@@ -330,7 +365,7 @@ function Team() {
         } 0%, ${tinycolor(teamPreference.bg).darken(20).toString()})`}
         backgroundSize="cover"
       >
-        <Flex mx={8} pt={32} align="center">
+        <Flex mx={8} pt={8} align="center">
           {result && (
             <Image
               bgGradient={`linear-gradient(to bottom right, ${
@@ -350,6 +385,7 @@ function Team() {
               mr={8}
             />
           )}
+
           <VStack gap={4} align="start">
             <Text fontWeight="extrabold" fontSize="6xl">
               {teamPreference?.name}
@@ -361,6 +397,38 @@ function Team() {
               {teamMembersData?.length}{' '}
               {teamMembersData?.length === 1 ? 'Member' : 'Members'}
             </Text>
+            <HStack spacing={0} align="center">
+              <Button
+                leftIcon={
+                  <Icon
+                    color={getBadgeColor(
+                      String(teamPreference.defaultRole) as string
+                    )}
+                    as={BsCircleFill}
+                    boxSize={6}
+                  />
+                }
+                variant="solid"
+              >
+                Default Role:{' '}
+                {teamPreference.defaultRole
+                  ? teamPreference.defaultRole
+                  : 'member'}
+              </Button>
+              <Tooltip
+                bg="gray.900"
+                color="white"
+                label="members will be assigned this role by default when they join"
+              >
+                <Button
+                  variant="ghost"
+                  _hover={{ bg: 'transparent' }}
+                  _focus={{ boxShadow: 'none' }}
+                >
+                  <BsInfoCircleFill />
+                </Button>
+              </Tooltip>
+            </HStack>
             <Button
               leftIcon={<AiFillEdit size="24px" />}
               variant="solid"
@@ -397,14 +465,14 @@ function Team() {
               rightIcon={<AiOutlineEllipsis size="48px" />}
             ></MenuButton>
             <MenuList borderRadius="md" p={2} border="none">
-              <MenuItem borderRadius="md">Chat</MenuItem>
+              <MenuItem borderRadius="md">Group Chat</MenuItem>
 
               <MenuItem
                 _hover={{ bg: 'red.500' }}
                 borderRadius="md"
                 onClick={leaveTeamHandler}
               >
-                {owner ? 'Leave and Delete Team' : 'Leave Team'}
+                Leave Team
               </MenuItem>
             </MenuList>
           </Menu>
@@ -480,6 +548,13 @@ function Team() {
                         </Flex>
                       </Badge>
                     )}
+                    <Tooltip label="direct message" color="white" bg="gray.900">
+                      <IconButton
+                        mr={4}
+                        icon={<FiMessageSquare />}
+                        aria-label="DM Message"
+                      />
+                    </Tooltip>
                     {teamMember.roles && owner && (
                       <RoleInput
                         memberRoles={teamMember.roles}

@@ -13,7 +13,7 @@ const getTaskDescription = async (
     2. Key deliverables and milestones.
     3. Specific requirements or dependencies.
     
-    Format your response using HTML tags for better readability. You can use <br> for line breaks, <b> for bold text, <i> for italic text, and <u> for underlined text. For bullet points, use the &#8226; symbol followed by a space.
+    Format your response using HTML tags for better readability.
     
     Prompt entered by the user: ${req.body.prompt}`;
 

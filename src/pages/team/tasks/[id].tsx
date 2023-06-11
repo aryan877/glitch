@@ -184,10 +184,6 @@ function TeamTasks() {
 
           const prefs = userResponse?.data?.prefs;
           if (prefs && prefs.profileImageId) {
-            const promise = await storage.getFile(
-              process.env.NEXT_PUBLIC_USER_PROFILE_BUCKET_ID as string,
-              prefs.profileImageId
-            );
             const imageUrl = storage.getFilePreview(
               process.env.NEXT_PUBLIC_USER_PROFILE_BUCKET_ID as string,
               prefs.profileImageId
@@ -502,7 +498,7 @@ function TeamTasks() {
               onClick={clearAssignee}
             >
               {' '}
-              Remove Member
+              Remove Filter
             </Button>
           )}
 
@@ -601,6 +597,8 @@ function TeamTasks() {
                   {teamMembersProfileImages && (
                     <Link href={`/profile/${task.assignee}`}>
                       <Tooltip
+                        bg="gray.900"
+                        color='white'
                         label={
                           teamMembersData &&
                           teamMembersData.map((teamMember) =>
@@ -642,7 +640,16 @@ function TeamTasks() {
                           {dayjs(task.deadline).format('dddd, MMMM D, h:mm A')}
                         </Text>
                         <Badge>
-                          Time Left: {dayjs(task.deadline).fromNow(true)}
+                          {`Time Left: ${Math.floor(
+                            dayjs(task.deadline).diff(dayjs(), 'minute') /
+                              (24 * 60)
+                          )} days, ${Math.floor(
+                            (dayjs(task.deadline).diff(dayjs(), 'minute') %
+                              (24 * 60)) /
+                              60
+                          )} hours, ${
+                            dayjs(task.deadline).diff(dayjs(), 'minute') % 60
+                          } minutes`}
                         </Badge>
                       </>
                     ) : (
