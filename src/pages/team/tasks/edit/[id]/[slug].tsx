@@ -27,7 +27,7 @@ import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import { client } from 'utils/appwriteConfig';
 import withAuth from 'utils/withAuth';
-import Layout from '../../../../../components/Layout';
+import Layout from '../../../../../../components/Layout';
 
 const ReactQuillWithNoSSR = dynamic(() => import('react-quill'), {
   ssr: false,
@@ -37,6 +37,7 @@ const EditTaskPage: React.FC = () => {
   const [taskName, setTaskName] = useState('');
   const [taskDescription, setTaskDescription] = useState('');
   const [assignedTo, setAssignedTo] = useState('');
+  const [charCount, setCharCount] = useState(0);
   const [loading, setLoading] = useState<boolean>(false);
   const [taskPriority, setTaskPriority] = useState('');
   const queryClient = useQueryClient();
@@ -141,7 +142,21 @@ const EditTaskPage: React.FC = () => {
   };
 
   const modules = {
-    toolbar: [['bold', 'italic', 'underline']],
+    toolbar: [
+      [{ header: '1' }, { header: '2' }],
+      [{ size: [] }],
+      ['bold', 'italic', 'underline', 'strike', 'code'],
+      [
+        { list: 'ordered' },
+        { list: 'bullet' },
+        { indent: '-1' },
+        { indent: '+1' },
+      ],
+      ['link'],
+    ],
+    clipboard: {
+      matchVisual: false,
+    },
   };
 
   return (
@@ -149,7 +164,7 @@ const EditTaskPage: React.FC = () => {
       <Box maxW="6xl" mx="auto" my={8} w="50%">
         <VStack spacing={4}>
           <Text textAlign="center" fontWeight="bold" fontSize="2xl">
-            Create Task
+            Edit Task
           </Text>
           <Input
             placeholder="Task Name"
@@ -157,8 +172,14 @@ const EditTaskPage: React.FC = () => {
             onChange={(e) => setTaskName(e.target.value)}
           />
           <ReactQuillWithNoSSR
+            theme="snow"
             value={taskDescription}
-            onChange={setTaskDescription}
+            onChange={(value) => {
+              if (value.length <= 2000) {
+                setTaskDescription(value);
+                setCharCount(value.length);
+              }
+            }}
             placeholder="Task Description"
             modules={modules}
             style={{ width: '100%' }}
@@ -168,17 +189,18 @@ const EditTaskPage: React.FC = () => {
             Generate Description with AI
           </Button>
 
-          <VStack w="full" align="start" mb={2} spacing={2}>
+          <VStack w="full" align="start">
             <Text fontSize="lg" color="#575757">
-              Pick Deadline (optional)
+              Set Deadline (optional)
             </Text>
             <DatePicker
+              enableTabLoop={false}
               selected={endDate}
               onChange={(date: any) => setEndDate(date)}
               showTimeSelect
               timeIntervals={60}
               dateFormat="yyyy-MM-dd hh:mm aa"
-              placeholderText="pick deadline"
+              placeholderText="Set Date and Time"
             />
           </VStack>
 
@@ -208,12 +230,12 @@ const EditTaskPage: React.FC = () => {
           {inputError && <Text color="red">{inputError}</Text>}
 
           <Button mt={8} colorScheme="whatsapp" onClick={handleTaskSubmit}>
-            Create Task
+            Update Task
           </Button>
         </VStack>
       </Box>
 
-      <Modal isOpen={isOpen} onClose={handleModalClose}>
+      <Modal isCentered isOpen={isOpen} onClose={handleModalClose}>
         <ModalOverlay />
         <ModalContent>
           <ModalHeader>Generate Description with AI</ModalHeader>
@@ -232,16 +254,15 @@ const EditTaskPage: React.FC = () => {
             <Text dangerouslySetInnerHTML={{ __html: generatedDescription }} />
           </ModalBody>
           <ModalFooter>
+            <Button onClick={handleModalClose}>Use Response</Button>
             <Button
+              ml={4}
               // disabled={loading}
               isLoading={loading}
               colorScheme="whatsapp"
               onClick={handleModalSubmit}
             >
               Generate
-            </Button>
-            <Button ml={4} onClick={handleModalClose}>
-              Use Response
             </Button>
           </ModalFooter>
         </ModalContent>

@@ -37,6 +37,7 @@ const CreateTaskPage: React.FC = () => {
   const [taskName, setTaskName] = useState('');
   const [taskDescription, setTaskDescription] = useState('');
   const [assignedTo, setAssignedTo] = useState('');
+  const [charCount, setCharCount] = useState(0);
   const [loading, setLoading] = useState<boolean>(false);
   const [taskPriority, setTaskPriority] = useState('');
   const queryClient = useQueryClient();
@@ -142,10 +143,22 @@ const CreateTaskPage: React.FC = () => {
 
   const modules = {
     toolbar: [
-      ['bold', 'italic', 'underline'],
-      [{ link: 'link' }], // Add the 'link' module to the toolbar
+      [{ header: '1' }, { header: '2' }],
+      [{ size: [] }],
+      ['bold', 'italic', 'underline', 'strike', 'code'],
+      [
+        { list: 'ordered' },
+        { list: 'bullet' },
+        { indent: '-1' },
+        { indent: '+1' },
+      ],
+      ['link'],
     ],
+    clipboard: {
+      matchVisual: false,
+    },
   };
+
   return (
     <Layout>
       <Box maxW="6xl" mx="auto" my={8} w="50%">
@@ -159,8 +172,14 @@ const CreateTaskPage: React.FC = () => {
             onChange={(e) => setTaskName(e.target.value)}
           />
           <ReactQuillWithNoSSR
+            theme="snow"
             value={taskDescription}
-            onChange={setTaskDescription}
+            onChange={(value) => {
+              if (value.length <= 2000) {
+                setTaskDescription(value);
+                setCharCount(value.length);
+              }
+            }}
             placeholder="Task Description"
             modules={modules}
             style={{ width: '100%' }}
@@ -170,17 +189,18 @@ const CreateTaskPage: React.FC = () => {
             Generate Description with AI
           </Button>
 
-          <VStack w="full" align="start" mb={2} spacing={2}>
+          <VStack w="full" align="start">
             <Text fontSize="lg" color="#575757">
-              Pick Deadline (optional)
+              Set Deadline (optional)
             </Text>
             <DatePicker
+              enableTabLoop={false}
               selected={endDate}
               onChange={(date: any) => setEndDate(date)}
               showTimeSelect
               timeIntervals={60}
               dateFormat="yyyy-MM-dd hh:mm aa"
-              placeholderText="pick deadline"
+              placeholderText="Set Date and Time"
             />
           </VStack>
 
@@ -215,7 +235,7 @@ const CreateTaskPage: React.FC = () => {
         </VStack>
       </Box>
 
-      <Modal isOpen={isOpen} onClose={handleModalClose}>
+      <Modal isCentered isOpen={isOpen} onClose={handleModalClose}>
         <ModalOverlay />
         <ModalContent>
           <ModalHeader>Generate Description with AI</ModalHeader>
@@ -234,16 +254,15 @@ const CreateTaskPage: React.FC = () => {
             <Text dangerouslySetInnerHTML={{ __html: generatedDescription }} />
           </ModalBody>
           <ModalFooter>
+            <Button onClick={handleModalClose}>Use Response</Button>
             <Button
+              ml={4}
               // disabled={loading}
               isLoading={loading}
               colorScheme="whatsapp"
               onClick={handleModalSubmit}
             >
               Generate
-            </Button>
-            <Button ml={4} onClick={handleModalClose}>
-              Use Response
             </Button>
           </ModalFooter>
         </ModalContent>

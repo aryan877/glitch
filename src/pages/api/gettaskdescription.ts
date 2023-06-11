@@ -6,7 +6,16 @@ const getTaskDescription = async (
   res: NextApiResponse
 ) => {
   try {
-    const prompt = `Create a task description for a new task in our task management app. The task should be a clear and concise description that outlines the objective, deliverables, and any specific requirements. Prompt entered by the user is: ${req.body.prompt}. Format the response with <br>, <b>, <i>, <u> where required as html. instead of using list, use manually written number 1,2,3 and so on...`;
+    const prompt = `Create a task description for a new task in our task management app. The task should be a clear and concise description that outlines the objective, deliverables, and any specific requirements, although exclude writing the title again, since it is already specified by the user.
+
+    Please include the following details:
+    1. Objective of the task.
+    2. Key deliverables and milestones.
+    3. Specific requirements or dependencies.
+    
+    Format your response using HTML tags for better readability. You can use <br> for line breaks, <b> for bold text, <i> for italic text, and <u> for underlined text. For bullet points, use the &#8226; symbol followed by a space.
+    
+    Prompt entered by the user: ${req.body.prompt}`;
 
     // Call the GPT API to generate the task description
     const response = await axios.post(

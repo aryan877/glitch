@@ -133,3 +133,20 @@ a {
   border-bottom-left-radius: 8px;
   border-bottom-right-radius: 8px;
 }
+
+.ql-snow .ql-tooltip input[type='text'] {
+  color: white;
+}
+
+.ql-editor ul,
+.ql-editor ol {
+  font-size: 16px; /* Adjust the font size as needed */
+}
+
+.react-datepicker__triangle {
+  display: none !important;
+}
+
+code {
+  background-color: #111 !important;
+}

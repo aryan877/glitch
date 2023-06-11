@@ -66,7 +66,7 @@ const createTask = async (req: NextApiRequest, res: NextApiResponse) => {
         assignee,
         team,
         priority: taskPriority,
-        action: 'CREATE',
+        // action: 'CREATE',
         isComplete: false,
         deadline,
       },

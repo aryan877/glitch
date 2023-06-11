@@ -1,81 +1,64 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import sdk from 'node-appwrite';
 
-const createTask = async (req: NextApiRequest, res: NextApiResponse) => {
+//endpoint for marking complete for the assignee only
+const updateTaskCompletion = async (
+  req: NextApiRequest,
+  res: NextApiResponse
+) => {
   const client = new sdk.Client();
+  const clientWithKey = new sdk.Client();
+  const databases = new sdk.Databases(clientWithKey);
   const account = new sdk.Account(client);
-  const databases = new sdk.Databases(client);
-  const teams = new sdk.Teams(client);
-  const { jwt, team, taskName, taskDescription, assignee, taskPriority } =
-    req.body;
+  const { taskId, jwt } = req.body;
+
   try {
     // Set up the Appwrite client
     client
-      .setEndpoint('https://cloud.appwrite.io/v1') // Your API Endpoint
-      .setProject(process.env.NEXT_PUBLIC_APPWRITE_ID as string) // Your project ID
-      .setJWT(jwt); // Your secret JSON Web Token
+      .setEndpoint('https://cloud.appwrite.io/v1')
+      .setProject(process.env.NEXT_PUBLIC_APPWRITE_ID as string)
+      .setJWT(jwt as string);
+
+    clientWithKey
+      .setEndpoint('https://cloud.appwrite.io/v1')
+      .setProject(process.env.NEXT_PUBLIC_APPWRITE_ID as string)
+      .setKey(process.env.PERMISSION_SETTING_API_KEY as string);
+
+    // Get the existing task document
+    const document = await databases.getDocument(
+      process.env.NEXT_PUBLIC_DATABASE_ID as string,
+      process.env.NEXT_PUBLIC_TASKS_COLLECTION_ID as string,
+      taskId
+    );
 
     // Verify authentication
     const user = await account.get();
 
-    // Check if the user is a member of the team
-    const membersList = await teams.listMemberships(team, [
-      sdk.Query.equal('userId', user.$id),
-    ]);
-
-    if (membersList.total === 0) {
-      return res
-        .status(403)
-        .json({ error: 'You are not a member of the team' });
-    }
-
-    const isOwnerOrAdmin = membersList.memberships.some((membership) => {
-      return (
-        membership?.userId === user.$id &&
-        (membership.roles.includes('owner') ||
-          membership.roles.includes('admin'))
-      );
-    });
-
-    if (!isOwnerOrAdmin) {
+    //@ts-ignore
+    if (user.$id !== document.assignee) {
       return res.status(403).json({
-        error: 'You need owner or admin role in order to create tasks',
+        error:
+          'You need are not the assignee of the task, only assignee can mark update task completion status',
       });
     }
 
-    const response = await databases.createDocument(
+    // Update the task document
+    const response = await databases.updateDocument(
       process.env.NEXT_PUBLIC_DATABASE_ID as string,
       process.env.NEXT_PUBLIC_TASKS_COLLECTION_ID as string,
-      sdk.ID.unique(),
-      {
-        taskName,
-        taskDescription,
-        assignee,
-        team,
-        priority: taskPriority,
-        action: 'CREATE',
-        isComplete: false,
-      },
-      [
-        sdk.Permission.read(sdk.Role.team(team as string)),
-        sdk.Permission.update(sdk.Role.team(team as string, 'owner')),
-        sdk.Permission.update(sdk.Role.team(team as string, 'admin')),
-        sdk.Permission.delete(sdk.Role.team(team as string, 'owner')),
-        sdk.Permission.delete(sdk.Role.team(team as string, 'admin')),
-        sdk.Permission.update(sdk.Role.user(user.$id)),
-      ]
+      taskId,
+      //@ts-ignore
+      { isComplete: !document.isCompleted }
     );
 
-    res.status(201).json({
-      message: 'Document created successfully',
+    res.status(200).json({
+      message: 'Task completion updated successfully',
       document: response,
     });
-
-    // Create the document in the chat collection
   } catch (error) {
-    console.error('Error creating document:', error);
-    res.status(500).json({ error: 'Failed to create document' });
+    console.error('Error updating task completion:', error);
+    res.status(500).json({ error: 'Failed to update task completion' });
   }
 };
 
-export default createTask;
+export default updateTaskCompletion;

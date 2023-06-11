@@ -29,7 +29,7 @@ const postDirectChat = async (req: NextApiRequest, res: NextApiResponse) => {
     clientWithKey
       .setEndpoint('https://cloud.appwrite.io/v1') // Your API Endpoint
       .setProject(process.env.NEXT_PUBLIC_APPWRITE_ID as string) // Your project ID
-      .setKey(process.env.PERMISSION_SETTING_API_KEY as string); // Your secret JSON Web Token
+      .setKey(process.env.PERMISSION_SETTING_API_KEY as string);
 
     // Verify authentication
     const user = await account.get();

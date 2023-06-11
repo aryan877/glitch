@@ -4,7 +4,10 @@ import {
   Button,
   Center,
   HStack,
+  Icon,
   Input,
+  InputGroup,
+  InputRightElement,
   List,
   ListIcon,
   ListItem,
@@ -15,7 +18,13 @@ import {
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import React, { useState } from 'react';
-import { AiOutlineEye, AiOutlineUser, AiOutlineUserAdd } from 'react-icons/ai';
+import {
+  AiOutlineEye,
+  AiOutlineSearch,
+  AiOutlineUser,
+  AiOutlineUserAdd,
+} from 'react-icons/ai';
+import { FaSearch } from 'react-icons/fa';
 import { useDebounce } from 'usehooks-ts';
 import withAuth from 'utils/withAuth';
 import Layout from '../../../../components/Layout';
@@ -55,15 +64,28 @@ const UserSearch = () => {
     <Layout>
       <Box mx={8} mt={-8} p={4} borderRadius="md">
         <VStack spacing={4} align="flex-start">
-          <Input
-            placeholder="Search users"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+          <InputGroup>
+            <Input
+              placeholder="Search users"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              variant="outline"
+              borderColor="gray.400"
+              borderRadius="md"
+              size="md"
+              _focus={{
+                borderColor: 'blue.500',
+                boxShadow: '0 0 0 1px blue.500',
+              }}
+            />
+            <InputRightElement width="4.5rem" pointerEvents="none">
+              <AiOutlineSearch size="24px" color="gray" />
+            </InputRightElement>
+          </InputGroup>
 
           {searchResults.length === 0 ? (
             <Center w="full">
-              <Text>No users to show</Text>
+              <Text>No users to show, search for user to show up</Text>
             </Center>
           ) : (
             <List w="full" spacing={2}>
