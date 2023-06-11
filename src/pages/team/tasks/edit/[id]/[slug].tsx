@@ -3,6 +3,8 @@ import {
   Box,
   Button,
   Input,
+  InputGroup,
+  InputRightElement,
   Modal,
   ModalBody,
   ModalContent,
@@ -157,7 +159,14 @@ const EditTaskPage: React.FC = () => {
       setLoading(true);
       const response = await axios.post('/api/gettaskdescription', { prompt });
 
-      setGeneratedDescription(response.data.description);
+      const text = response.data.description;
+      let typedText = '';
+
+      for (let i = 0; i < text.length; i++) {
+        typedText += text.charAt(i);
+        setGeneratedDescription(typedText);
+        await new Promise((resolve) => setTimeout(resolve, 2));
+      }
     } catch (error) {
       console.log(error);
       // Handle error
@@ -191,20 +200,25 @@ const EditTaskPage: React.FC = () => {
           <Text textAlign="center" fontWeight="bold" fontSize="2xl">
             Edit Task
           </Text>
-          <Input
-            placeholder="Task Name"
-            value={taskName}
-            onChange={(e) => setTaskName(e.target.value)}
-          />
+          <InputGroup>
+            <InputRightElement
+              pointerEvents="none"
+              fontSize="sm"
+              color="gray.500"
+              mx={2}
+            >
+              {`${taskName.length}/100`}
+            </InputRightElement>
+            <Input
+              placeholder="Task Name"
+              _placeholder={{ color: 'gray.500' }}
+              value={taskName}
+              onChange={(e) => setTaskName(e.target.value)}
+            />
+          </InputGroup>
           <ReactQuillWithNoSSR
             theme="snow"
             value={taskDescription}
-            onChange={(value) => {
-              if (value.length <= 2000) {
-                setTaskDescription(value);
-                setCharCount(value.length);
-              }
-            }}
             placeholder="Task Description"
             modules={modules}
             style={{ width: '100%' }}
@@ -215,9 +229,7 @@ const EditTaskPage: React.FC = () => {
           </Button>
 
           <VStack w="full" align="start">
-            <Text fontSize="lg" color="#575757">
-              Set Deadline (optional)
-            </Text>
+            <Text color="gray.500">Set Deadline (optional)</Text>
             <DatePicker
               enableTabLoop={false}
               selected={endDate}
@@ -233,6 +245,7 @@ const EditTaskPage: React.FC = () => {
             value={assignedTo}
             onChange={(e) => setAssignedTo(e.target.value)}
             placeholder="Assign"
+            _placeholder={{ color: 'gray.500' }}
           >
             {teamMembersData &&
               teamMembersData.map((teamMember) => (
@@ -243,6 +256,7 @@ const EditTaskPage: React.FC = () => {
           </Select>
 
           <Select
+            _placeholder={{ color: 'gray.500' }}
             value={taskPriority}
             onChange={(e) => setTaskPriority(e.target.value)}
             placeholder="Task Priority"
@@ -254,13 +268,18 @@ const EditTaskPage: React.FC = () => {
 
           {inputError && <Text color="red">{inputError}</Text>}
 
-          <Button mt={8} colorScheme="whatsapp" onClick={handleTaskSubmit}>
+          <Button
+            mt={8}
+            colorScheme="whatsapp"
+            onClick={handleTaskSubmit}
+            isLoading={loading}
+          >
             Update Task
           </Button>
         </VStack>
       </Box>
 
-      <Modal isCentered isOpen={isOpen} onClose={handleModalClose}>
+      <Modal isCentered isOpen={isOpen} onClose={onClose}>
         <ModalOverlay />
         <ModalContent>
           <ModalHeader>Generate Description with AI</ModalHeader>

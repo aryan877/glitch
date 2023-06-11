@@ -3,6 +3,8 @@ import {
   Box,
   Button,
   Input,
+  InputGroup,
+  InputRightElement,
   Modal,
   ModalBody,
   ModalContent,
@@ -37,7 +39,6 @@ const CreateTaskPage: React.FC = () => {
   const [taskName, setTaskName] = useState('');
   const [taskDescription, setTaskDescription] = useState('');
   const [assignedTo, setAssignedTo] = useState('');
-  const [charCount, setCharCount] = useState(0);
   const [loading, setLoading] = useState<boolean>(false);
   const [taskPriority, setTaskPriority] = useState('');
   const queryClient = useQueryClient();
@@ -143,8 +144,6 @@ const CreateTaskPage: React.FC = () => {
 
   const modules = {
     toolbar: [
-      // [{ header: '1' }, { header: '2' }],
-      // [{ size: [] }],
       ['bold', 'italic', 'underline', 'strike', 'code'],
       [
         { list: 'ordered' },
@@ -166,20 +165,25 @@ const CreateTaskPage: React.FC = () => {
           <Text textAlign="center" fontWeight="bold" fontSize="2xl">
             Create Task
           </Text>
-          <Input
-            placeholder="Task Name"
-            value={taskName}
-            onChange={(e) => setTaskName(e.target.value)}
-          />
+          <InputGroup>
+            <InputRightElement
+              pointerEvents="none"
+              fontSize="sm"
+              color="gray.500"
+              mx={2}
+            >
+              {`${taskName.length}/100`}
+            </InputRightElement>
+            <Input
+              placeholder="Task Name"
+              _placeholder={{ color: 'gray.500' }}
+              value={taskName}
+              onChange={(e) => setTaskName(e.target.value)}
+            />
+          </InputGroup>
           <ReactQuillWithNoSSR
             theme="snow"
             value={taskDescription}
-            onChange={(value) => {
-              if (value.length <= 2000) {
-                setTaskDescription(value);
-                setCharCount(value.length);
-              }
-            }}
             placeholder="Task Description"
             modules={modules}
             style={{ width: '100%' }}
@@ -190,9 +194,7 @@ const CreateTaskPage: React.FC = () => {
           </Button>
 
           <VStack w="full" align="start">
-            <Text fontSize="lg" color="#575757">
-              Set Deadline (optional)
-            </Text>
+            <Text color="gray.500">Set Deadline (optional)</Text>
             <DatePicker
               enableTabLoop={false}
               selected={endDate}
@@ -208,6 +210,7 @@ const CreateTaskPage: React.FC = () => {
             value={assignedTo}
             onChange={(e) => setAssignedTo(e.target.value)}
             placeholder="Assign"
+            _placeholder={{ color: 'gray.500' }}
           >
             {teamMembersData &&
               teamMembersData.map((teamMember) => (
@@ -218,6 +221,7 @@ const CreateTaskPage: React.FC = () => {
           </Select>
 
           <Select
+            _placeholder={{ color: 'gray.500' }}
             value={taskPriority}
             onChange={(e) => setTaskPriority(e.target.value)}
             placeholder="Task Priority"

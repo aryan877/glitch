@@ -30,10 +30,15 @@ a {
 
 .react-datepicker__input-container input {
   padding: 8px;
-  background-color: #333333;
+  background-color: rgb(34, 34, 34);
   border-radius: 8px;
-  border: 2px solid transparent;
+  border: 1px solid rgb(80, 80, 80);
 }
+
+.react-datepicker__input-container input::placeholder {
+  color: rgb(116, 116, 116);
+}
+
 .react-datepicker__time-list-item--selected,
 .react-datepicker__day--selected {
   background-color: #48bb78 !important;
@@ -110,7 +115,7 @@ a {
 }
 
 .quill > .ql-container > .ql-editor.ql-blank::before {
-  color: rgb(87, 87, 87);
+  color: rgb(116, 116, 116);
   font-style: normal;
 }
 
@@ -129,7 +134,7 @@ a {
 }
 
 .quill > .ql-container.ql-snow {
-  border: 1px solid rgb(80, 80, 80);
+  border: 1px solid rgb(70, 70, 70);
   border-bottom-left-radius: 8px;
   border-bottom-right-radius: 8px;
 }
