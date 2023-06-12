@@ -213,17 +213,20 @@ function TeamSidebar() {
             w="full"
           >
             <HStack spacing={4} alignItems="center" w="100%">
-              {/* <Tooltip color="white" label="Chat" placement="right"> */}
               <Box>
                 <FiMessageSquare size="24px" />
               </Box>
-              {/* </Tooltip> */}
-              <Text
-                display={shouldHideIcons ? 'none' : 'flex'}
+
+              <chakra.div
+                as={Text}
+                overflow="hidden"
+                whiteSpace="nowrap"
                 fontWeight="bold"
+                textOverflow="ellipsis"
+                maxW={flexWidth - 100}
               >
                 Team Chat
-              </Text>
+              </chakra.div>
             </HStack>
           </Link>
           <Link
@@ -266,12 +269,16 @@ function TeamSidebar() {
                 <BsPin size="24px" />
               </Box>
 
-              <Text
-                display={shouldHideIcons ? 'none' : 'flex'}
+              <chakra.div
+                as={Text}
+                overflow="hidden"
+                whiteSpace="nowrap"
                 fontWeight="bold"
+                textOverflow="ellipsis"
+                maxW={flexWidth - 100}
               >
                 Pinned Tasks
-              </Text>
+              </chakra.div>
             </HStack>
           </Link>
           {/* <Link

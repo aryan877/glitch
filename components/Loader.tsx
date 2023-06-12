@@ -1,4 +1,4 @@
-import { Box, Center, Spinner, Text, VStack } from '@chakra-ui/react';
+import { Box, Center, Flex, Spinner, Text } from '@chakra-ui/react';
 import { useEffect, useState } from 'react';
 
 const Loader = () => {
@@ -36,17 +36,19 @@ const Loader = () => {
   }, []);
 
   return (
-    <Center height="100vh">
-      <div className="container">
-        <p className="glitch">
-          <span aria-hidden="true">glitch</span>
-          glitch
-          <span aria-hidden="true">glitch</span>
-        </p>
-      </div>
-      <Box>
-        <Text ml={4}>{message}</Text>
-      </Box>
+    <Center h="100vh">
+      <Flex direction="column" alignItems="center">
+        <Box mb={4}>
+          <p className="glitch">
+            <span aria-hidden="true">glitch</span>
+            glitch
+            <span aria-hidden="true">glitch</span>
+          </p>
+        </Box>
+        <Text size="2xl" fontWeight="bold">
+          {message}
+        </Text>
+      </Flex>
     </Center>
   );
 };
