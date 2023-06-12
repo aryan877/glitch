@@ -106,12 +106,16 @@ function PinnedTasks() {
         const tasks: Models.Document[] = [];
         for (const document of response.documents) {
           for (const taskId of document.tasks) {
-            const taskResponse = await databases.getDocument(
-              process.env.NEXT_PUBLIC_DATABASE_ID as string,
-              process.env.NEXT_PUBLIC_TASKS_COLLECTION_ID as string,
-              taskId
-            );
-            tasks.push(taskResponse as Models.Document);
+            try {
+              const taskResponse = await databases.getDocument(
+                process.env.NEXT_PUBLIC_DATABASE_ID as string,
+                process.env.NEXT_PUBLIC_TASKS_COLLECTION_ID as string,
+                taskId
+              );
+              tasks.push(taskResponse as Models.Document);
+            } catch (error) {
+              console.error(`Error fetching task ${taskId}:`, error);
+            }
           }
         }
 
@@ -357,9 +361,14 @@ function PinnedTasks() {
             </Button>
           </Link>
         )} */}
-        <Text fontSize="xl" fontWeight="bold" mb={4}>
-          Pinned Tasks ({pinnedTasksData?.length})
-        </Text>
+        <HStack align="baseline">
+          {' '}
+          <Text fontSize="xl" fontWeight="bold" mb={4}>
+            Your Pins ({pinnedTasksData?.length}){' '}
+          </Text>{' '}
+          <BsPin size="18px" />
+        </HStack>
+
         <Grid templateColumns="repeat(1,1fr)" minH={300} gap={4} my={0}>
           {pinnedTasksData &&
             pinnedTasksData.map((task) => (
@@ -419,14 +428,14 @@ function PinnedTasks() {
                   <Text fontWeight="semibold" fontSize="lg" mb={2} mr={4}>
                     Assigned To
                   </Text>
-                  <Text mb={2}>
+                  {/* <Text mb={2}>
                     {teamMembersData &&
                       teamMembersData.map((teamMember) =>
                         teamMember.userId === task.assignee
                           ? teamMember.userName
                           : ''
                       )}
-                  </Text>
+                  </Text> */}
 
                   {teamMembersProfileImages && (
                     <Link href={`/profile/${task.assignee}`}>
@@ -446,6 +455,33 @@ function PinnedTasks() {
                           size="md"
                           src={
                             teamMembersProfileImages[task.assignee] as string
+                          }
+                        />
+                      </Tooltip>
+                    </Link>
+                  )}
+
+                  <Text fontWeight="semibold" fontSize="lg" mb={2} mx={4}>
+                    Created By
+                  </Text>
+                  {teamMembersProfileImages && (
+                    <Link href={`/profile/${task.assignee}`}>
+                      <Tooltip
+                        bg="gray.900"
+                        color="white"
+                        label={
+                          teamMembersData &&
+                          teamMembersData.map((teamMember) =>
+                            teamMember.userId === currentUser.$id
+                              ? teamMember.userName
+                              : ''
+                          )
+                        }
+                      >
+                        <Avatar
+                          size="md"
+                          src={
+                            teamMembersProfileImages[currentUser.$id] as string
                           }
                         />
                       </Tooltip>

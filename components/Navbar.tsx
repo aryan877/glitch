@@ -12,18 +12,19 @@ import {
   MenuList,
   Spacer,
   Text,
-  Tooltip
+  Tooltip,
 } from '@chakra-ui/react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Account, Avatars, Databases, Query, Storage } from 'appwrite';
 import axios from 'axios';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import { useContext, useEffect, useMemo } from 'react';
-import { AiOutlineLogout, AiOutlineUser } from 'react-icons/ai';
-import { BsBellFill } from 'react-icons/bs';
-import { FiArrowLeft, FiLogOut, FiMessageSquare } from 'react-icons/fi';
+import { useContext, useEffect, useMemo, useState } from 'react';
+import { AiOutlineGroup, AiOutlineLogout, AiOutlineUser } from 'react-icons/ai';
+import { BsBell, BsBellFill } from 'react-icons/bs';
+import { FiArrowLeft, FiBell, FiLogOut, FiMessageSquare } from 'react-icons/fi';
 import { MdGroup, MdMessage, MdTask } from 'react-icons/md';
+import { RiGroup2Fill, RiGroupFill } from 'react-icons/ri';
 import tinycolor from 'tinycolor2';
 import { UserContext, useUser } from '../context/UserContext';
 import { client } from '../utils/appwriteConfig';
@@ -34,7 +35,9 @@ const Navbar = ({ flexWidth }: { flexWidth: number }) => {
   const avatars: any = useMemo(() => new Avatars(client), []);
   const router = useRouter();
   const { id, slug } = router.query;
-
+  const [directChatTooltipOpen, setDirectChatTooltipOpen] = useState(false);
+  const [groupDMTooltipOpen, setGroupDMTooltipOpen] = useState(false);
+  const [taskTooltipOpen, setTaskTooltipOpen] = useState(false);
   const darkButtonRoutes = useMemo(
     () => [
       '/team/[id]',
@@ -138,6 +141,18 @@ const Navbar = ({ flexWidth }: { flexWidth: number }) => {
     sender: string;
     sender_name: string;
     unreadCount: number;
+  }
+
+  interface UnreadTasks {
+    sender?: string;
+    sender_name: string;
+    assignee?: string;
+    assignee_name: string;
+    taskId: string;
+    taskName: string;
+    team: string;
+    teamName: string;
+    $id: string;
   }
 
   //DIRECT CHAT NOTIF DATA HANDLERS
@@ -348,6 +363,131 @@ const Navbar = ({ flexWidth }: { flexWidth: number }) => {
   }, [queryClient, id, currentUser]);
   //GROUP CHAT NOTIF DATA HANDLERS
 
+  //TASK ASSIGNMENT NOTIF HANDLERS
+  // a. notifications reader
+  const { data: unreadTasks = [] } = useQuery<UnreadTasks[]>(
+    ['unreadTasks'],
+    async () => {
+      try {
+        const response = await databases.listDocuments(
+          process.env.NEXT_PUBLIC_DATABASE_ID as string,
+          process.env.NEXT_PUBLIC_TASKS_NOTIFICATION_COLLECTION_ID as string,
+          [
+            Query.equal('readerId', currentUser.$id),
+            Query.equal('isRead', false),
+          ]
+        );
+
+        const unreadTasks: UnreadTasks[] = response.documents.map(
+          (document: any) => {
+            const {
+              taskName,
+              assignee_name,
+              sender_name,
+              taskId,
+              teamName,
+              team,
+              $id,
+            } = document;
+
+            return {
+              taskName,
+              assignee_name,
+              sender_name,
+              taskId,
+              teamName,
+              team,
+              $id,
+            };
+          }
+        );
+
+        return unreadTasks;
+      } catch (error) {
+        console.error('Error fetching unread tasks:', error);
+        throw error;
+      }
+    },
+    {
+      staleTime: 3600000,
+      cacheTime: 3600000,
+    }
+  );
+
+  const { data: allTasks = [] } = useQuery<UnreadTasks[]>(
+    ['allTasks'],
+    async () => {
+      try {
+        const response = await databases.listDocuments(
+          process.env.NEXT_PUBLIC_DATABASE_ID as string,
+          process.env.NEXT_PUBLIC_TASKS_NOTIFICATION_COLLECTION_ID as string,
+          [
+            Query.equal('readerId', currentUser.$id),
+            Query.limit(1),
+            Query.orderDesc('$createdAt'),
+          ]
+        );
+
+        const unreadTasks: UnreadTasks[] = response.documents.map(
+          (document: any) => {
+            const {
+              taskName,
+              assignee_name,
+              sender_name,
+              taskId,
+              teamName,
+              team,
+              $id,
+            } = document;
+
+            return {
+              taskName,
+              assignee_name,
+              sender_name,
+              taskId,
+              teamName,
+              team,
+              $id,
+            };
+          }
+        );
+
+        return unreadTasks;
+      } catch (error) {
+        console.error('Error fetching unread tasks:', error);
+        throw error;
+      }
+    },
+    {
+      staleTime: 3600000,
+      cacheTime: 3600000,
+    }
+  );
+
+  // b. Subscriptions
+  useEffect(() => {
+    const unsubscribe = client.subscribe(
+      `databases.${process.env.NEXT_PUBLIC_DATABASE_ID}.collections.${process.env.NEXT_PUBLIC_TASKS_NOTIFICATION_COLLECTION_ID}.documents`,
+      (response) => {
+        // queryClient.invalidateQueries([`allTasks`]);
+        if (
+          response.events.includes(
+            `databases.${process.env.NEXT_PUBLIC_DATABASE_ID}.collections.${process.env.NEXT_PUBLIC_TASKS_NOTIFICATION_COLLECTION_ID}.documents.*.create`
+          )
+        ) {
+          queryClient.refetchQueries([`allTasks`]);
+          queryClient.refetchQueries([`unreadTasks`]);
+        }
+      }
+    );
+    return () => {
+      unsubscribe();
+    };
+  }, [queryClient]);
+  //c. Mark Read
+  //to be done
+  //TASK ASSIGNMENT NOTIF HANDLERS
+
   //get logged in user data
   const { data, isLoading, isError, error } = useQuery(
     [`userData-${currentUser.$id}`],
@@ -440,6 +580,70 @@ const Navbar = ({ flexWidth }: { flexWidth: number }) => {
     { staleTime: 600000, cacheTime: 600000, enabled: !!dmUserData }
   );
 
+  const handleTaskNotificationMenuOpen = async () => {
+    try {
+      for (const unreadTask of unreadTasks) {
+        await databases.updateDocument(
+          process.env.NEXT_PUBLIC_DATABASE_ID as string,
+          process.env.NEXT_PUBLIC_TASKS_NOTIFICATION_COLLECTION_ID as string,
+          unreadTask.$id as string,
+          {
+            isRead: true,
+          }
+        );
+      }
+      queryClient.refetchQueries([`unreadTasks`]);
+    } catch (error) {}
+  };
+
+  const loadPreviousTaskNotificationsHandler = async () => {
+    try {
+      const lastUnreadTask = allTasks[allTasks.length - 1];
+      const lastCursor = lastUnreadTask.$id;
+
+      const response = await databases.listDocuments(
+        process.env.NEXT_PUBLIC_DATABASE_ID as string,
+        process.env.NEXT_PUBLIC_TASKS_NOTIFICATION_COLLECTION_ID as string,
+        [
+          Query.equal('readerId', currentUser.$id),
+          Query.limit(1),
+          Query.orderDesc('$createdAt'),
+          Query.cursorAfter(lastCursor),
+        ]
+      );
+      const unreadTasks: UnreadTasks[] = response.documents.map(
+        (document: any) => {
+          // Map the document fields to the UnreadTasks interface
+          const {
+            taskName,
+            assignee_name,
+            sender_name,
+            taskId,
+            teamName,
+            team,
+            $id,
+          } = document;
+
+          return {
+            taskName,
+            assignee_name,
+            sender_name,
+            taskId,
+            teamName,
+            team,
+            $id,
+          };
+        }
+      );
+      const updatedTaskNotifications = [...allTasks, ...unreadTasks];
+      queryClient.setQueryData(['allTasks'], updatedTaskNotifications);
+    } catch (error) {}
+  };
+
+  const handleTaskNotifictionMenuClose = () => {
+    queryClient.refetchQueries([`allTasks`]);
+  };
+
   return (
     <Flex
       justifyContent="space-between"
@@ -502,15 +706,19 @@ const Navbar = ({ flexWidth }: { flexWidth: number }) => {
       </HStack>
       {!isDarkButtonRoute && <Spacer />}
       <HStack gap={4}>
-        <Menu>
+        <Menu placement="bottom">
           <Tooltip
             bg="gray.900"
             color="white"
-            label="direct chat notifications"
+            label="direct chats"
+            isOpen={directChatTooltipOpen}
           >
             <MenuButton
               as={IconButton}
               aria-label="notifications"
+              onClick={() => setDirectChatTooltipOpen(false)}
+              onMouseEnter={() => setDirectChatTooltipOpen(true)}
+              onMouseLeave={() => setDirectChatTooltipOpen(false)}
               icon={
                 <Flex position="relative">
                   <FiMessageSquare size="24px" />
@@ -518,7 +726,7 @@ const Navbar = ({ flexWidth }: { flexWidth: number }) => {
                     <Box
                       position="absolute"
                       top="0px"
-                      right="-4px"
+                      right="0px"
                       px={2}
                       py={1}
                       borderRadius="full"
@@ -549,106 +757,53 @@ const Navbar = ({ flexWidth }: { flexWidth: number }) => {
                   key={unreadChat.sender}
                   href={`/team/${id}/dm/${unreadChat.sender}`}
                 >
-                  <MenuItem borderRadius="md">
+                  <MenuItem borderRadius="md" p={4} px={2}>
                     <Image
                       src="/notification_logo.svg"
                       alt="notification logo"
                       h="10"
                       mr={2}
                     />
-                    {unreadChat.unreadCount === 1 ? (
-                      <>1 new chat from {unreadChat.sender_name}</>
-                    ) : (
-                      <>
-                        {unreadChat.unreadCount} new chats from{' '}
-                        {unreadChat.sender_name}
-                      </>
-                    )}
+                    <Text fontSize="sm" fontWeight="bold">
+                      {unreadChat.unreadCount === 1 ? (
+                        <>1 new chat from {unreadChat.sender_name}</>
+                      ) : (
+                        <>
+                          {unreadChat.unreadCount} new chats from{' '}
+                          {unreadChat.sender_name}
+                        </>
+                      )}
+                    </Text>
                   </MenuItem>
                 </Link>
               ))
             ) : (
-              <Box p={4}>You have no new direct messages!</Box>
+              <Box p={4}>All direct messages have been read!</Box>
             )}
           </MenuList>
         </Menu>
-        {/* <Menu>
-          <MenuButton
-            as={IconButton}
-            aria-label="notifications"
-            icon={
-              <Flex position="relative">
-                <MdTask size="24px" />
-                {unreadChatsData.length > 0 && (
-                  <Box
-                    position="absolute"
-                    top="0px"
-                    right="-4px"
-                    px={2}
-                    py={1}
-                    borderRadius="full"
-                    bg="red.500"
-                    color="white"
-                    fontSize="xs"
-                    fontWeight="bold"
-                    transform="translate(50%, -50%)"
-                  >
-                    {unreadChatsData.length.toString()}
-                  </Box>
-                )}
-              </Flex>
-            }
-            bg="gray.800"
-            _hover={{ bg: 'gray.700' }}
-            _active={{ bg: 'gray.700' }}
-            variant="outline"
-            border="none"
-            size="md"
-            borderRadius="full"
-          />
-          <MenuList p={2} border="none" borderRadius="md">
-            {unreadChatsData.length > 0 ? (
-              unreadChatsData.map((unreadChat) => (
-                <Link
-                  key={unreadChat.teamId}
-                  href={`/team/chat/${unreadChat.teamId}`}
-                >
-                  <MenuItem borderRadius="md">
-                    <Image
-                      src="/notification_logo.svg"
-                      alt="notification logo"
-                      h="10"
-                      mr={2}
-                    />
-                    {unreadChat.unreadCount === 1 ? (
-                      <>1 new chat in {unreadChat.teamName}</>
-                    ) : (
-                      <>
-                        {unreadChat.unreadCount} new chats in{' '}
-                        {unreadChat.teamName}
-                      </>
-                    )}
-                  </MenuItem>
-                </Link>
-              ))
-            ) : (
-              <Box p={4}>You have no new task notifications!</Box>
-            )}
-          </MenuList>
-        </Menu> */}
-        <Menu>
-          <Tooltip bg="gray.900" color="white" label="group chat notifications">
+
+        <Menu placement="bottom">
+          <Tooltip
+            bg="gray.900"
+            color="white"
+            label="group chats"
+            isOpen={groupDMTooltipOpen}
+          >
             <MenuButton
               as={IconButton}
+              onClick={() => setGroupDMTooltipOpen(false)}
+              onMouseEnter={() => setGroupDMTooltipOpen(true)}
+              onMouseLeave={() => setGroupDMTooltipOpen(false)}
               aria-label="notifications"
               icon={
                 <Flex position="relative">
-                  <MdGroup size="24px" />
+                  <RiGroupFill size="24px" />
                   {unreadChatsData.length > 0 && (
                     <Box
                       position="absolute"
                       top="0px"
-                      right="-4px"
+                      right="0px"
                       px={2}
                       py={1}
                       borderRadius="full"
@@ -679,27 +834,134 @@ const Navbar = ({ flexWidth }: { flexWidth: number }) => {
                   key={unreadChat.teamId}
                   href={`/team/chat/${unreadChat.teamId}`}
                 >
-                  <MenuItem borderRadius="md">
+                  <MenuItem borderRadius="md" p={4} px={2}>
                     <Image
                       src="/notification_logo.svg"
                       alt="notification logo"
                       h="10"
                       mr={2}
                     />
-                    {unreadChat.unreadCount === 1 ? (
-                      <>1 new chat in {unreadChat.teamName}</>
-                    ) : (
-                      <>
-                        {unreadChat.unreadCount} new chats in{' '}
-                        {unreadChat.teamName}
-                      </>
-                    )}
+                    <Text fontSize="sm" fontWeight="bold">
+                      {unreadChat.unreadCount === 1 ? (
+                        <>1 new chat in {unreadChat.teamName}</>
+                      ) : (
+                        <>
+                          {unreadChat.unreadCount} new chats in{' '}
+                          {unreadChat.teamName}
+                        </>
+                      )}
+                    </Text>
                   </MenuItem>
                 </Link>
               ))
             ) : (
-              <Box p={4}>You have no new group chat notifications!</Box>
+              <Box p={4}>All group chats have been read!</Box>
             )}
+          </MenuList>
+        </Menu>
+        {/* task notifications */}
+        <Menu
+          placement="bottom"
+          onOpen={handleTaskNotificationMenuOpen}
+          onClose={handleTaskNotifictionMenuClose}
+        >
+          <Tooltip
+            bg="gray.900"
+            color="white"
+            label="task notifications"
+            isOpen={taskTooltipOpen}
+          >
+            <MenuButton
+              as={IconButton}
+              aria-label="notifications"
+              onClick={() => setTaskTooltipOpen(false)}
+              onMouseEnter={() => setTaskTooltipOpen(true)}
+              onMouseLeave={() => setTaskTooltipOpen(false)}
+              icon={
+                <Flex position="relative">
+                  <FiBell size="24px" />
+                  {unreadTasks.length > 0 && (
+                    <Box
+                      position="absolute"
+                      top="0px"
+                      right="0px"
+                      px={2}
+                      py={1}
+                      borderRadius="full"
+                      bg="red.500"
+                      color="white"
+                      fontSize="xs"
+                      fontWeight="bold"
+                      transform="translate(50%, -50%)"
+                    >
+                      {unreadTasks.length.toString()}
+                    </Box>
+                  )}
+                </Flex>
+              }
+              bg="gray.800"
+              _hover={{ bg: 'gray.700' }}
+              _active={{ bg: 'gray.700' }}
+              variant="outline"
+              border="none"
+              size="md"
+              borderRadius="full"
+            />
+          </Tooltip>
+          <MenuList
+            p={2}
+            border="none"
+            borderRadius="md"
+            maxW="400"
+            maxH="600"
+            overflowY="auto"
+          >
+            {allTasks.length > 0 ? (
+              allTasks.map((task, index) => (
+                <Link
+                  key={index}
+                  href={`/team/tasks/task_page/${task.team}/${task.taskId}`}
+                >
+                  <MenuItem borderRadius="md" p={4} px={2}>
+                    <Image
+                      src="/notification_logo.svg"
+                      alt="notification logo"
+                      h="10"
+                      mr={2}
+                    />
+                    <Text fontSize="sm" fontWeight="bold">
+                      <Text as="span" color="blue.200">
+                        {task.sender_name}
+                      </Text>{' '}
+                      assigned a task to{' '}
+                      <Text as="span" color="green.200">
+                        You
+                      </Text>{' '}
+                      in team{' '}
+                      <Text as="span" color="orange.200">
+                        {task.teamName}
+                      </Text>
+                      <br />
+                      {task.taskName && (
+                        <Text as="span" color="gray.300" fontSize="sm">
+                          Title: {task.taskName}
+                        </Text>
+                      )}
+                    </Text>
+                  </MenuItem>
+                </Link>
+              ))
+            ) : (
+              <Box p={4}>You have no task notifications!</Box>
+            )}
+            <Button
+              variant="unstyled"
+              ml={4}
+              color="blue.200"
+              onClick={loadPreviousTaskNotificationsHandler}
+            >
+              Load more...
+            </Button>
           </MenuList>
         </Menu>
         <Menu>

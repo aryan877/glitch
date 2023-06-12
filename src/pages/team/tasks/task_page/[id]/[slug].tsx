@@ -53,8 +53,8 @@ import {
 } from 'react-icons/ai';
 import { BsArrowDown, BsPin } from 'react-icons/bs';
 import { FaCopy, FaTrash } from 'react-icons/fa';
-import { FiPaperclip } from 'react-icons/fi';
-import { IoMdAdd } from 'react-icons/io';
+import { FiCopy, FiPaperclip } from 'react-icons/fi';
+import { IoMdAdd, IoMdCopy } from 'react-icons/io';
 import 'react-quill/dist/quill.snow.css';
 import ResizeTextarea from 'react-textarea-autosize';
 import tinycolor from 'tinycolor2';
@@ -529,6 +529,14 @@ function TaskPage() {
     }
   };
 
+  const handleClickCopy = () => {
+    const idToCopy = taskData?.$id;
+    if (idToCopy) {
+      navigator.clipboard.writeText(idToCopy);
+    }
+    showNotification('task id copied');
+  };
+
   return (
     <Layout>
       <TaskNoteFileSender
@@ -539,10 +547,20 @@ function TaskPage() {
       />
       <Box mx={8} mt={-8}>
         {taskData && (
-          <Text fontSize="lg" mb={2}>
-            {' '}
-            Task ID <strong>{taskData?.$id}</strong>
-          </Text>
+          <HStack align="baseline">
+            <Text fontSize="lg" mb={2}>
+              {' '}
+              Task ID <strong>{taskData?.$id}</strong>
+            </Text>
+            <Button
+              ml={4}
+              onClick={handleClickCopy}
+              leftIcon={<FiCopy />}
+              variant="unstyled"
+            >
+              copy id
+            </Button>
+          </HStack>
         )}
         <Grid templateColumns="repeat(1,1fr)" minH={300} gap={4} my={0}>
           {taskData && (
@@ -602,7 +620,7 @@ function TaskPage() {
                 {/* <Text mb={2}>
                     {teamMembersData &&
                       teamMembersData.map((teamMember) =>
-                        teamMember.userId === taskData.assignee
+                        teamMember.userId === task.assignee
                           ? teamMember.userName
                           : ''
                       )}
@@ -626,6 +644,33 @@ function TaskPage() {
                         size="md"
                         src={
                           teamMembersProfileImages[taskData.assignee] as string
+                        }
+                      />
+                    </Tooltip>
+                  </Link>
+                )}
+
+                <Text fontWeight="semibold" fontSize="lg" mb={2} mx={4}>
+                  Created By
+                </Text>
+                {teamMembersProfileImages && (
+                  <Link href={`/profile/${taskData.assignee}`}>
+                    <Tooltip
+                      bg="gray.900"
+                      color="white"
+                      label={
+                        teamMembersData &&
+                        teamMembersData.map((teamMember) =>
+                          teamMember.userId === currentUser.$id
+                            ? teamMember.userName
+                            : ''
+                        )
+                      }
+                    >
+                      <Avatar
+                        size="md"
+                        src={
+                          teamMembersProfileImages[currentUser.$id] as string
                         }
                       />
                     </Tooltip>

@@ -173,6 +173,9 @@ function Home() {
         <CreateTeamModal isOpen={isOpen} onClose={onClose} />
         <Flex direction="column" mx={8} align="flex-start">
           <Box>
+            <Text mb={8} fontSize="6xl">
+              Welcome to Glitch
+            </Text>
             <Button
               mb={8}
               variant="outline"
@@ -258,6 +261,7 @@ function Home() {
                           </Text>
                           <Text fontSize="sm" mt={2}>
                             <Text>
+                              Created on{' '}
                               {dayjs(team.$createdAt).format(
                                 'MMM D, YYYY hh:mm A'
                               )}

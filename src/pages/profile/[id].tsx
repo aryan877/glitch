@@ -110,6 +110,7 @@ function Profile() {
     [`userProfileImage-${id}`, data],
     async () => {
       try {
+
         const imageUrl = storage.getFilePreview(
           process.env.NEXT_PUBLIC_USER_PROFILE_BUCKET_ID as string,
           data.prefs.profileImageId

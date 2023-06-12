@@ -645,6 +645,33 @@ function TeamTasks() {
                       </Tooltip>
                     </Link>
                   )}
+
+                  <Text fontWeight="semibold" fontSize="lg" mb={2} mx={4}>
+                    Created By
+                  </Text>
+                  {teamMembersProfileImages && (
+                    <Link href={`/profile/${task.assignee}`}>
+                      <Tooltip
+                        bg="gray.900"
+                        color="white"
+                        label={
+                          teamMembersData &&
+                          teamMembersData.map((teamMember) =>
+                            teamMember.userId === currentUser.$id
+                              ? teamMember.userName
+                              : ''
+                          )
+                        }
+                      >
+                        <Avatar
+                          size="md"
+                          src={
+                            teamMembersProfileImages[currentUser.$id] as string
+                          }
+                        />
+                      </Tooltip>
+                    </Link>
+                  )}
                 </HStack>
 
                 <HStack
@@ -709,12 +736,17 @@ function TeamTasks() {
                 >
                   PRIORITY: {task.priority}
                 </Badge>
-                <Badge fontSize="sm" color="white">
+                <Badge mr={2} fontSize="sm" color="white">
                   CREATED:{' '}
                   {dayjs(task.$createdAt, 'YYYY-MM-DD HH:mm:ss').format(
                     'dddd, MMMM D, YYYY, h:mm A'
                   )}
                 </Badge>
+                {task.teamName && (
+                  <Badge fontSize="sm" color="white">
+                    TEAM: {task.teamName}
+                  </Badge>
+                )}
 
                 {
                   <Flex justifyContent="space-between" mt={8}>

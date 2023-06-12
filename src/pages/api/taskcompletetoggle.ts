@@ -38,7 +38,7 @@ const updateTaskCompletion = async (
     if (user.$id !== document.assignee) {
       return res.status(403).json({
         error:
-          'You need are not the assignee of the task, only assignee can mark update task completion status',
+          'You are not the assignee of the task, only assignee can mark update task completion status',
       });
     }
 

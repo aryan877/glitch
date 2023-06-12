@@ -408,8 +408,13 @@ function ChatMessage({
                       <Text fontSize="sm" mr={2}>
                         {reader.readerName}
                       </Text>
+
                       <Text fontSize="xs">
-                        Read at {dayjs(reader.readTime).format('HH:mm')}
+                        {dayjs(reader.readTime).isSame(dayjs(), 'day')
+                          ? `Read at ${dayjs(reader.readTime).format('HH:mm')}`
+                          : `Read on ${dayjs(reader.readTime).format(
+                              'MMM DD, HH:mm'
+                            )}`}
                       </Text>
                     </MenuItem>
                   ))}

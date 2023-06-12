@@ -406,17 +406,6 @@ function ChatMessage({
                       Delete
                     </MenuItem>
                   )}
-                  {/* 
-                  {data?.map((reader: any) => (
-                    <MenuItem key={random()}>
-                      <Text fontSize="sm" mr={2}>
-                        {reader.readerName}
-                      </Text>
-                      <Text fontSize="xs">
-                        Read at {dayjs(reader.readTime).format('HH:mm')}
-                      </Text>
-                    </MenuItem>
-                  ))} */}
                 </MenuList>
               </Menu>
             </HStack>

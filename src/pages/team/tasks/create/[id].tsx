@@ -20,6 +20,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Account, Teams } from 'appwrite';
 import axios from 'axios';
 import { useNotification } from 'context/NotificationContext';
+import { useUser } from 'context/UserContext';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/router';
 import { useState } from 'react';
@@ -67,7 +68,7 @@ const CreateTaskPage: React.FC = () => {
   const [generatedDescription, setGeneratedDescription] = useState('');
   const [inputError, setInputError] = useState('');
   const { showNotification } = useNotification();
-
+  const { currentUser } = useUser();
   const [endDate, setEndDate] = useState<Date | null>(null);
 
   const {
@@ -94,6 +95,8 @@ const CreateTaskPage: React.FC = () => {
 
       setInputError(''); // Clear input error
 
+      const teamData = await teamsClient.get(id as string);
+
       const promise = await account.createJWT();
       const taskData: {
         taskName: string;
@@ -103,6 +106,8 @@ const CreateTaskPage: React.FC = () => {
         taskPriority: string;
         team: string;
         deadline: string | null;
+        teamName: string;
+        sender: string;
       } = {
         taskName: taskName,
         taskDescription: taskDescription,
@@ -111,6 +116,8 @@ const CreateTaskPage: React.FC = () => {
         taskPriority: taskPriority,
         team: id as string,
         deadline: endDate ? endDate.toISOString() : null,
+        teamName: teamData.name,
+        sender: currentUser.$id,
       };
       setLoading(true);
       await axios.post('/api/createtask', taskData);

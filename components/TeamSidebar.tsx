@@ -174,8 +174,9 @@ function TeamSidebar() {
         cursor={isDragging ? 'grabbing' : 'grab'}
       >
         <Link mb={2} py={2} href="/">
-          <Text fontSize="2xl" fontWeight="bold" color="white">
-            <Image maxW="100" src="/logo.png" alt="logo" />
+          <Text fontSize="2xl" fontWeight="bold" color="green.200">
+            Glitch.
+            {/* <Image maxW="100" src="/logo.png" alt="logo" /> */}
           </Text>
         </Link>
 

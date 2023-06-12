@@ -22,6 +22,7 @@ import {
 } from '@chakra-ui/react';
 import { useQueryClient } from '@tanstack/react-query';
 import {
+  Account,
   Databases,
   ID,
   Models,
@@ -30,6 +31,7 @@ import {
   Storage,
   Teams,
 } from 'appwrite';
+import axios from 'axios';
 import { useRouter } from 'next/router';
 import { useCallback, useContext, useState } from 'react';
 import Cropper from 'react-easy-crop';
@@ -70,6 +72,7 @@ const EditTeamDataModal: React.FC<EditTeamDataModalProps> = ({
   const { id } = router.query;
   const { showNotification } = useNotification();
   const databases = useMemo(() => new Databases(client), []);
+  const account = useMemo(() => new Account(client), []);
   const storage = useMemo(() => new Storage(client), []);
   const teamsClient = useMemo(() => new Teams(client), []);
   const [loading, setLoading] = useState(false);
@@ -134,20 +137,20 @@ const EditTeamDataModal: React.FC<EditTeamDataModalProps> = ({
     },
     []
   );
-
   const handleSavePreferences = async () => {
     try {
-      setLoading(true);
       if (file) {
         const reader = new FileReader();
+
         reader.onload = async (event) => {
           const binaryFile = event.target?.result;
+
           if (binaryFile instanceof ArrayBuffer) {
             const blob = new Blob([binaryFile]);
             const convertedFile = new File([blob], file.name, {
               type: file.type,
             });
-
+            setLoading(true);
             const response = await storage.createFile(
               process.env.NEXT_PUBLIC_TEAM_PROFILE_BUCKET_ID as string,
               ID.unique(),
@@ -164,12 +167,14 @@ const EditTeamDataModal: React.FC<EditTeamDataModalProps> = ({
               process.env.NEXT_PUBLIC_TEAMS_COLLECTION_ID as string,
               id as string
             );
+
             if (currentDocument.teamImage) {
               await storage.deleteFile(
                 process.env.NEXT_PUBLIC_TEAM_PROFILE_BUCKET_ID as string,
                 currentDocument.teamImage
               );
             }
+
             const updatedDocument = await databases.updateDocument(
               process.env.NEXT_PUBLIC_DATABASE_ID as string,
               process.env.NEXT_PUBLIC_TEAMS_COLLECTION_ID as string,
@@ -182,20 +187,28 @@ const EditTeamDataModal: React.FC<EditTeamDataModalProps> = ({
                 teamImage: response.$id,
               }
             );
-            await teamsClient.update(id as string, name);
+
+            const promise = await account.createJWT();
+
+            await axios.post('/api/updateteamname', {
+              jwt: promise.jwt,
+              team: id,
+              name,
+            });
+
             queryClient.setQueryData(
               [`teamPreferences-${id}`],
-              (prevData: any) => {
-                return updatedDocument;
-              }
+              updatedDocument
             );
 
             queryClient.removeQueries({ queryKey: ['teamPreferencesData'] });
             onClose();
           }
         };
+
         reader.readAsArrayBuffer(file);
       } else {
+        setLoading(true);
         const updatedDocument = await databases.updateDocument(
           process.env.NEXT_PUBLIC_DATABASE_ID as string,
           process.env.NEXT_PUBLIC_TEAMS_COLLECTION_ID as string,
@@ -207,19 +220,25 @@ const EditTeamDataModal: React.FC<EditTeamDataModalProps> = ({
             defaultRole: teamDefaultRole,
           }
         );
-        await teamsClient.update(id as string, name);
-        queryClient.setQueryData([`teamPreferences-${id}`], (prevData: any) => {
-          return updatedDocument;
+
+        const promise = await account.createJWT();
+
+        await axios.post('/api/updateteamname', {
+          jwt: promise.jwt,
+          team: id,
+          name,
         });
+
+        queryClient.setQueryData([`teamPreferences-${id}`], updatedDocument);
 
         queryClient.removeQueries({ queryKey: ['teamPreferencesData'] });
         onClose();
       }
+      setLoading(false);
     } catch (error) {
+      setLoading(false);
       console.error('Error saving preferences:', error);
       onClose();
-    } finally {
-      setLoading(false);
     }
   };
 

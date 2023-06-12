@@ -1,5 +1,13 @@
 import { Link } from '@chakra-ui/next-js';
-import { Box, chakra, Flex, HStack, Image, VStack } from '@chakra-ui/react';
+import {
+  Box,
+  chakra,
+  Flex,
+  HStack,
+  Image,
+  Text,
+  VStack,
+} from '@chakra-ui/react';
 import { useUser } from 'context/UserContext';
 import { useRouter } from 'next/router';
 import React, { useEffect, useRef, useState } from 'react';
@@ -56,9 +64,10 @@ function Sidebar() {
       >
         <VStack spacing={8} align="start" w="100%">
           <Link href="/" mb={4}>
-            <chakra.span fontSize="2xl" fontWeight="bold" color="white">
-              <Image maxW="100" src="/logo.png" alt="logo" />
-            </chakra.span>
+            <Text fontSize="2xl" fontWeight="bold" color="green.200">
+              Glitch.
+              {/* <Image maxW="100" src="/logo.png" alt="logo" /> */}
+            </Text>
           </Link>
           <Link
             href="/"

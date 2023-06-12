@@ -15,6 +15,8 @@ const createTask = async (req: NextApiRequest, res: NextApiResponse) => {
     assignee,
     taskPriority,
     deadline,
+    teamName,
+    sender,
   } = req.body;
   try {
     // Set up the Appwrite client
@@ -68,6 +70,8 @@ const createTask = async (req: NextApiRequest, res: NextApiResponse) => {
         priority: taskPriority,
         isComplete: false,
         deadline,
+        teamName,
+        sender,
       },
       [
         sdk.Permission.read(sdk.Role.team(team as string)),

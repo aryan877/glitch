@@ -89,12 +89,13 @@ function RoleInput({
   };
 
   return (
-    <Box>
-      <Menu isOpen={isOpen} onClose={handleMenuClose}>
+    <Box position="relative" overflow="visible">
+      <Menu isOpen={isOpen} onClose={handleMenuClose} placement="top-start">
         <MenuButton as={Button} onClick={handleToggleMenu}>
           Roles
         </MenuButton>
-        <MenuList p={4} border="none">
+
+        <MenuList zIndex={1} p={4} border="none">
           <Box mb={2} p={2}>
             {roles.map((role, index) => (
               <Badge
@@ -102,6 +103,8 @@ function RoleInput({
                 size="sm"
                 mr={2}
                 px={2}
+                py={1}
+                color="black"
                 bg={getBadgeColor(role)}
               >
                 {role}
@@ -111,7 +114,7 @@ function RoleInput({
                   variant="ghost"
                   onClick={() => handleRemoveRole(index)}
                 >
-                  <MdClose />
+                  <MdClose color="black" />
                 </Button>
               </Badge>
             ))}

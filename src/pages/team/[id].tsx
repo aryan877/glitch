@@ -45,12 +45,49 @@ import RoleInput from '../../../components/RoleInput';
 import { useUser } from '../../../context/UserContext';
 import { client } from '../../../utils/appwriteConfig';
 import { default as withAuth } from '../../../utils/withAuth';
+
 export const getBadgeColor = (word: string) => {
   const hash = stringHash(word || '');
-  const red = hash % 256;
-  const green = (hash >> 8) % 256;
-  const blue = (hash >> 16) % 256;
-  return `rgb(${red}, ${green}, ${blue})`;
+
+  const hue = (hash % 360) / 360;
+
+  const saturation = 0.8;
+  const value = 0.9;
+
+  const chroma = value * saturation;
+  const huePrime = hue * 6;
+  const x = chroma * (1 - Math.abs((huePrime % 2) - 1));
+  let red, green, blue;
+
+  if (huePrime >= 0 && huePrime < 1) {
+    [red, green, blue] = [chroma, x, 0];
+  } else if (huePrime >= 1 && huePrime < 2) {
+    [red, green, blue] = [x, chroma, 0];
+  } else if (huePrime >= 2 && huePrime < 3) {
+    [red, green, blue] = [0, chroma, x];
+  } else if (huePrime >= 3 && huePrime < 4) {
+    [red, green, blue] = [0, x, chroma];
+  } else if (huePrime >= 4 && huePrime < 5) {
+    [red, green, blue] = [x, 0, chroma];
+  } else if (huePrime >= 5 && huePrime < 6) {
+    [red, green, blue] = [chroma, 0, x];
+  } else {
+    [red, green, blue] = [0, 0, 0];
+  }
+
+  const brightness = value - chroma;
+  red += brightness;
+  green += brightness;
+  blue += brightness;
+
+  const scaledRed = Math.round(red * 255);
+  const scaledGreen = Math.round(green * 255);
+  const scaledBlue = Math.round(blue * 255);
+
+  const color = tinycolor({ r: scaledRed, g: scaledGreen, b: scaledBlue });
+  const lighterColor = color.lighten(20);
+
+  return lighterColor.toRgbString();
 };
 
 function Team() {
@@ -95,8 +132,8 @@ function Team() {
       }
     },
     {
-      staleTime: 600000,
-      cacheTime: 600000,
+      // staleTime: 600000,
+      // cacheTime: 600000,
     }
   );
   //team api member list
@@ -181,11 +218,15 @@ function Team() {
     [`teamProfileImage-${id}`, teamPreference],
     async () => {
       try {
-        const imageUrl = await storage.getFilePreview(
-          process.env.NEXT_PUBLIC_TEAM_PROFILE_BUCKET_ID as string,
-          teamPreference.teamImage
-        );
-        return `${imageUrl.toString()}`;
+        if (teamPreference.teamImage) {
+          const imageUrl = storage.getFilePreview(
+            process.env.NEXT_PUBLIC_TEAM_PROFILE_BUCKET_ID as string,
+            teamPreference.teamImage
+          );
+          return `${imageUrl.toString()}`;
+        } else {
+          throw new Error('no team image');
+        }
       } catch (error) {
         const result = await avatars.getInitials(
           teamPreference.name as string,
@@ -193,7 +234,7 @@ function Team() {
           240,
           tinycolor(teamPreference.bg).lighten(20).toHex()
         );
-        return result.toString();
+        return result;
       }
     },
     {
@@ -398,45 +439,47 @@ function Team() {
               {teamMembersData?.length}{' '}
               {teamMembersData?.length === 1 ? 'Member' : 'Members'}
             </Text>
-            <HStack spacing={0} align="center">
+            <HStack>
               <Button
-                leftIcon={
-                  <Icon
-                    color={getBadgeColor(
-                      String(teamPreference.defaultRole) as string
-                    )}
-                    as={BsCircleFill}
-                    boxSize={6}
-                  />
-                }
+                leftIcon={<AiFillEdit size="24px" />}
                 variant="solid"
+                onClick={openEditTeamModal}
               >
-                Default Role:{' '}
-                {teamPreference.defaultRole
-                  ? teamPreference.defaultRole
-                  : 'member'}
+                Edit
               </Button>
-              <Tooltip
-                bg="gray.900"
-                color="white"
-                label="members will be assigned this role by default when they join"
-              >
+              <HStack spacing={0} align="center">
                 <Button
-                  variant="ghost"
-                  _hover={{ bg: 'transparent' }}
-                  _focus={{ boxShadow: 'none' }}
+                  leftIcon={
+                    <Icon
+                      color={getBadgeColor(
+                        String(teamPreference.defaultRole) as string
+                      )}
+                      as={BsCircleFill}
+                      boxSize={6}
+                    />
+                  }
+                  variant="solid"
                 >
-                  <BsInfoCircleFill />
+                  Default Role:{' '}
+                  {teamPreference.defaultRole
+                    ? teamPreference.defaultRole
+                    : 'member'}
                 </Button>
-              </Tooltip>
+                <Tooltip
+                  bg="gray.900"
+                  color="white"
+                  label="members will be assigned this role by default when they join"
+                >
+                  <Button
+                    variant="ghost"
+                    _hover={{ bg: 'transparent' }}
+                    _focus={{ boxShadow: 'none' }}
+                  >
+                    <BsInfoCircleFill />
+                  </Button>
+                </Tooltip>
+              </HStack>
             </HStack>
-            <Button
-              leftIcon={<AiFillEdit size="24px" />}
-              variant="solid"
-              onClick={openEditTeamModal}
-            >
-              Edit
-            </Button>
           </VStack>
         </Flex>
       </Box>
@@ -531,7 +574,7 @@ function Team() {
                                   key={role}
                                   size="sm"
                                   px={2}
-                                  colorScheme="white"
+                                  color="black"
                                   bg={getBadgeColor(role)}
                                   fontSize="sm"
                                 >
@@ -545,6 +588,15 @@ function Team() {
                       {/* Use the appropriate property for the team member's name */}
                     </Flex>
                   </Link>
+                  {/* {teamMember.roles && owner && (
+                    <RoleInput
+                      memberRoles={teamMember.roles}
+                      memberId={teamMember.$id}
+                      isOpen={roleInputState[index]?.isOpen}
+                      onClose={() => handleRoleInputClose(index)}
+                      onOpen={() => handleRoleInputOpen(index)}
+                    />
+                  )} */}
                   <Flex direction="row" align="center">
                     {!teamMember.confirm && (
                       <Badge colorScheme="yellow" mr={4}>
@@ -569,42 +621,44 @@ function Team() {
                         </Link>
                       </Tooltip>
                     )}
-                    {teamMember.roles && owner && (
-                      <RoleInput
-                        memberRoles={teamMember.roles}
-                        memberId={teamMember.$id}
-                        isOpen={roleInputState[index]?.isOpen}
-                        onClose={() => handleRoleInputClose(index)}
-                        onOpen={() => handleRoleInputOpen(index)}
-                      />
-                    )}
-                    <Menu>
-                      <MenuButton
-                        as={Button}
-                        p={0}
-                        m={0}
-                        bg="transparent"
-                        _hover={{ bg: 'transparent', color: 'gray.200' }}
-                        _active={{ bg: 'transparent' }}
-                        rightIcon={<AiOutlineEllipsis size="48px" />}
-                      ></MenuButton>
-                      <MenuList borderRadius="md" p={2} border="none">
-                        <Link href={`/profile/${teamMember.userId}`}>
-                          <MenuItem borderRadius="md">View Profile</MenuItem>
-                        </Link>
-                        {owner && teamMember.userId !== currentUser.$id && (
-                          <MenuItem
-                            onClick={() => {
-                              cancelMembershipHandler(teamMember.$id);
-                            }}
-                            _hover={{ bg: 'red.500' }}
-                            borderRadius="md"
-                          >
-                            Remove
-                          </MenuItem>
-                        )}
-                      </MenuList>
-                    </Menu>
+                    <HStack>
+                      {teamMember.roles && owner && (
+                        <RoleInput
+                          memberRoles={teamMember.roles}
+                          memberId={teamMember.$id}
+                          onClose={() => handleRoleInputClose(index)}
+                          onOpen={() => handleRoleInputOpen(index)}
+                          isOpen={roleInputState[index]?.isOpen}
+                        />
+                      )}
+                      <Menu>
+                        <MenuButton
+                          as={Button}
+                          p={0}
+                          m={0}
+                          bg="transparent"
+                          _hover={{ bg: 'transparent', color: 'gray.200' }}
+                          _active={{ bg: 'transparent' }}
+                          rightIcon={<AiOutlineEllipsis size="48px" />}
+                        ></MenuButton>
+                        <MenuList borderRadius="md" p={2} border="none">
+                          <Link href={`/profile/${teamMember.userId}`}>
+                            <MenuItem borderRadius="md">View Profile</MenuItem>
+                          </Link>
+                          {owner && teamMember.userId !== currentUser.$id && (
+                            <MenuItem
+                              onClick={() => {
+                                cancelMembershipHandler(teamMember.$id);
+                              }}
+                              _hover={{ bg: 'red.500' }}
+                              borderRadius="md"
+                            >
+                              Remove
+                            </MenuItem>
+                          )}
+                        </MenuList>
+                      </Menu>
+                    </HStack>
                   </Flex>
                 </>
               </Flex>
