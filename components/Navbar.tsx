@@ -12,7 +12,7 @@ import {
   MenuList,
   Spacer,
   Text,
-  Tooltip,
+  Tooltip
 } from '@chakra-ui/react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Account, Avatars, Databases, Query, Storage } from 'appwrite';
@@ -485,7 +485,7 @@ const Navbar = ({ flexWidth }: { flexWidth: number }) => {
           </Link>
         )}
         {dmUserData && router.pathname.startsWith('/team/[id]/dm/[slug]') && (
-          <Link href={`/team/${id}`}>
+          <Link href={`/profile/${slug}`}>
             <HStack ml={4}>
               <Avatar
                 borderWidth={2}

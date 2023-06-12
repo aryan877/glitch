@@ -579,7 +579,7 @@ function DirectChat() {
             queryData
           );
           const promise = await account.createJWT();
-          await axios.post('/api/editchat', {
+          await axios.post('/api/editdirectchat', {
             jwt: promise.jwt,
             content: formattedMessage,
             $id: messageId,
