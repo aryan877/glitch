@@ -647,29 +647,6 @@ function TeamChat() {
           setMode(null);
         }
         const docId = uuidv4();
-        // if (mode === 'EDIT') {
-        //   //find id with messageId
-        //   const queryData = (prevData: any) => {
-        //     const messageIndex = prevData.findIndex(
-        //       (message: any) => message.$id === messageId
-        //     );
-        //     if (messageIndex !== -1) {
-        //       // prevData[messageIndex].content = formattedMessage;
-        //       prevData[messageIndex].edited = true;
-        //     }
-        //     return prevData;
-        //   };
-        //   queryClient.setQueryData([`teamMessages-${id}`], queryData);
-        //   const promise = await account.createJWT();
-        //   await axios.post('/api/editchat', {
-        //     jwt: promise.jwt,
-        //     content: formattedMessage,
-        //     $id: messageId,
-        //   });
-        //   return;
-        // }
-        // edit flow ends here
-        // normal message and reply flow
         const queryData = (prevData: any) => {
           const newMessage = {
             sender: currentUser.$id,

@@ -6,7 +6,7 @@ const createTask = async (req: NextApiRequest, res: NextApiResponse) => {
   const clientWithKey = new sdk.Client();
   const account = new sdk.Account(client);
   const databases = new sdk.Databases(clientWithKey);
-  const teams = new sdk.Teams(client);
+  const teams = new sdk.Teams(clientWithKey);
   const {
     jwt,
     team,
@@ -26,7 +26,7 @@ const createTask = async (req: NextApiRequest, res: NextApiResponse) => {
     clientWithKey
       .setEndpoint('https://cloud.appwrite.io/v1') // Your API Endpoint
       .setProject(process.env.NEXT_PUBLIC_APPWRITE_ID as string) // Your project ID
-      .setKey(process.env.PERMISSION_SETTING_API_KEY as string);
+      .setKey(process.env.POST_CHATS_COMMENTS_TASKS_API_KEY as string);
 
     // Verify authentication
     const user = await account.get();
@@ -66,7 +66,6 @@ const createTask = async (req: NextApiRequest, res: NextApiResponse) => {
         assignee,
         team,
         priority: taskPriority,
-        // action: 'CREATE',
         isComplete: false,
         deadline,
       },

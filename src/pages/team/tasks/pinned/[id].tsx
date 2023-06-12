@@ -1,3 +1,4 @@
+import { Link } from '@chakra-ui/next-js';
 import {
   AlertDialog,
   AlertDialogBody,
@@ -26,7 +27,15 @@ import {
   VStack,
 } from '@chakra-ui/react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Account, Avatars, Databases, Query, Storage, Teams } from 'appwrite';
+import {
+  Account,
+  Avatars,
+  Databases,
+  Models,
+  Query,
+  Storage,
+  Teams,
+} from 'appwrite';
 import axios from 'axios';
 import { useNotification } from 'context/NotificationContext';
 import { useUser } from 'context/UserContext';
@@ -35,7 +44,6 @@ import 'dayjs/locale/en'; // Import the locale you want to use (e.g., 'en' for E
 import customParseFormat from 'dayjs/plugin/customParseFormat';
 import relativeTime from 'dayjs/plugin/relativeTime'; // Import the relativeTime plugin
 import { assign } from 'lodash';
-import Link from 'next/link';
 import { useRouter } from 'next/router';
 import React, { useMemo, useRef, useState } from 'react';
 import {
@@ -45,37 +53,30 @@ import {
   AiOutlineDown,
   AiOutlineSearch,
 } from 'react-icons/ai';
-import { BsArrow90DegRight, BsLink45Deg, BsPin } from 'react-icons/bs';
+import { BsPin } from 'react-icons/bs';
 import { FaCopy, FaTrash } from 'react-icons/fa';
-import { FiArrowUpRight, FiChevronDown, FiLink } from 'react-icons/fi';
+import { FiArrowUpRight } from 'react-icons/fi';
 import { IoMdAdd } from 'react-icons/io';
 import tinycolor from 'tinycolor2';
 import { client } from 'utils/appwriteConfig';
 import withAuth from 'utils/withAuth';
-import Layout from '../../../../components/Layout';
-import { getBadgeColor } from '../[id]';
+import Layout from '../../../../../components/Layout';
+import { getBadgeColor } from '../../[id]';
 // Dummy task data with colors
 // dayjs.extend(relativeTime);
 // dayjs.extend(customParseFormat);
-function TeamTasks() {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchId, setSearchId] = useState('');
+function PinnedTasks() {
   const router = useRouter();
-
   const { id } = router.query;
   const { showNotification } = useNotification();
-  const [filterType, setFilterType] = useState('all');
   const { currentUser } = useUser();
   const storage = useMemo(() => new Storage(client), []);
   const teamsClient = useMemo(() => new Teams(client), []);
   const avatars = useMemo(() => new Avatars(client), []);
   const databases = useMemo(() => new Databases(client), []);
   const account = useMemo(() => new Account(client), []);
-  const [sortType, setSortType] = useState<string | null>(null);
-  const [showSortType, setShowSortType] = useState(false);
   const queryClient = useQueryClient();
   const [pinLoadingState, setPinLoadingState] = useState({});
-
   const {
     data: teamMembersData,
     isLoading: teamMembersLoading,
@@ -90,81 +91,36 @@ function TeamTasks() {
     { staleTime: 3600000, cacheTime: 3600000 }
   );
 
-  const [assignee, setAssignee] = useState<string | null>(null);
-
-  const { data: teamTasksData, isSuccess: isSuccessTeamTasksData } = useQuery(
-    [`teamTasks-${id}`, filterType, searchQuery, sortType, assignee, searchId],
-    async () => {
+  const { data: pinnedTasksData, isSuccess: isSuccessPinnedTasksData } =
+    useQuery([`pinnedTasks-${id}`], async () => {
       try {
-        let filters = [];
-
-        if (filterType === 'pending') {
-          //@ts-ignore
-          filters.push(Query.equal('isComplete', false));
-        } else if (filterType === 'completed') {
-          //@ts-ignore
-          filters.push(Query.equal('isComplete', true));
-        }
-
-        if (!searchQuery && searchId) {
-          //@ts-ignore
-          filters.push(Query.equal('$id', searchId as string));
-        } else if (searchQuery) {
-          //@ts-ignore
-          filters.push(Query.search('taskName', searchQuery as string));
-        } else if (!searchQuery) {
-          //@ts-ignore
-          filters.push(Query.equal('team', id as string));
-        }
-
-        if (assignee) {
-          //@ts-ignore
-          filters.push(Query.equal('assignee', assignee));
-        }
-
-        let sortBy = null;
-        if (sortType === 'dateCreated') {
-          //@ts-ignore
-          sortBy = Query.orderDesc('$createdAt');
-        } else if (sortType === 'deadline') {
-          //@ts-ignore
-          sortBy = Query.orderDesc('deadline');
-        }
-
         const response = await databases.listDocuments(
           process.env.NEXT_PUBLIC_DATABASE_ID as string,
-          process.env.NEXT_PUBLIC_TASKS_COLLECTION_ID as string,
-          //@ts-ignore
-          [...filters, sortBy].filter(Boolean)
+          process.env.NEXT_PUBLIC_TASKS_PINNED_COLLECTION_ID as string,
+          [
+            Query.equal('userId', currentUser.$id),
+            Query.equal('team', id as string),
+          ]
         );
 
-        let sortedDocuments = response.documents;
-        if (sortType === 'priority') {
-          sortedDocuments = response.documents.sort((doc1, doc2) => {
-            const priority1 = doc1?.priority || '';
-            const priority2 = doc2?.priority || '';
-
-            if (priority1 === 'high' && priority2 !== 'high') {
-              return -1;
-            } else if (priority1 !== 'high' && priority2 === 'high') {
-              return 1;
-            } else if (priority1 === 'medium' && priority2 === 'low') {
-              return -1;
-            } else if (priority1 === 'low' && priority2 === 'medium') {
-              return 1;
-            } else {
-              return 0;
-            }
-          });
+        const tasks: Models.Document[] = [];
+        for (const document of response.documents) {
+          for (const taskId of document.tasks) {
+            const taskResponse = await databases.getDocument(
+              process.env.NEXT_PUBLIC_DATABASE_ID as string,
+              process.env.NEXT_PUBLIC_TASKS_COLLECTION_ID as string,
+              taskId
+            );
+            tasks.push(taskResponse as Models.Document);
+          }
         }
 
-        return sortedDocuments;
+        return tasks;
       } catch (error) {
-        console.error('Error fetching team messages:', error);
+        console.error('Error fetching pinned tasks:', error);
         throw error;
       }
-    }
-  );
+    });
 
   const {
     data: teamMembersProfileImages,
@@ -224,20 +180,6 @@ function TeamTasks() {
     [teamMembersData, currentUser]
   );
 
-  const handleSortByChange = (sortType: string) => {
-    setSortType(sortType);
-    setShowSortType(true);
-  };
-
-  const clearSortType = () => {
-    setSortType(null);
-    setShowSortType(false);
-  };
-
-  const clearAssignee = () => {
-    setAssignee(null);
-  };
-
   const [taskMarkId, setTaskMarkId] = useState<string | null>(null);
   const [taskMarkStatusComplete, setTaskMarkStatusComplete] = useState<
     boolean | null
@@ -265,7 +207,7 @@ function TeamTasks() {
       onClose();
       setTaskMarkId(null);
       setTaskMarkStatusComplete(null);
-      queryClient.refetchQueries([`teamTasks-${id}`]);
+      queryClient.refetchQueries([`pinnedTasks-${id}`]);
       showNotification('Task completion status updated');
     } catch (error) {
       console.error('Error updating task completion status:', error);
@@ -286,7 +228,7 @@ function TeamTasks() {
         );
         onDeleteClose();
         setTaskMarkId(null);
-        queryClient.refetchQueries([`teamTasks-${id}`]);
+        queryClient.refetchQueries([`pinnedTasks-${id}`]);
         showNotification('Task deleted successfully');
       }
     } catch (error) {
@@ -316,28 +258,6 @@ function TeamTasks() {
       });
   };
 
-  const isAppwriteID = (term) => {
-    const appwriteIDPattern = /^[a-f0-9]{20}$/;
-    const searchTermPattern = /(\b(\w{1,3})\b)|(\b(\w{4})\b)/i;
-    return appwriteIDPattern.test(term) && !searchTermPattern.test(term);
-  };
-
-  const searchHandler = (e) => {
-    const inputValue = e.target.value;
-
-    if (isAppwriteID(inputValue)) {
-      setSearchId(inputValue);
-      setSearchQuery('');
-    } else {
-      setSearchQuery(inputValue);
-      setSearchId('');
-    }
-
-    setAssignee(null);
-    setSortType(null);
-    setFilterType('all');
-  };
-
   const pinTaskHandler = async (taskId: string, pinned: boolean) => {
     try {
       const promise = await account.createJWT();
@@ -349,7 +269,7 @@ function TeamTasks() {
       });
       const pinToggleMessage = pinned ? 'unpinned' : 'pinned';
       showNotification(`task ${pinToggleMessage}`);
-      queryClient.refetchQueries([`teamTasks-${id}`]);
+      queryClient.refetchQueries([`pinnedTasks-${id}`]);
     } catch (error) {
       console.error(error);
       throw new Error('failed to pin task');
@@ -430,133 +350,19 @@ function TeamTasks() {
         </AlertDialogOverlay>
       </AlertDialog>
       <Box mx={8} mt={-8}>
-        <Box>
-          <InputGroup>
-            <Input
-              placeholder="Search with Task Name or Task ID"
-              value={searchQuery ? searchQuery : searchId}
-              onChange={searchHandler}
-              pr="4.5rem" // Add padding to accommodate the icon
-              variant="outline"
-              borderColor="gray.400"
-              borderRadius="md"
-              size="md"
-              _focus={{
-                borderColor: 'blue.500',
-                boxShadow: '0 0 0 1px blue.500',
-              }}
-            />
-            <InputRightElement width="4.5rem" pointerEvents="none">
-              <AiOutlineSearch size="24px" color="gray" />
-            </InputRightElement>
-          </InputGroup>
-        </Box>
-        {ownerOrAdmin && (
+        {/* {ownerOrAdmin && (
           <Link href={`/team/tasks/create/${id}`}>
             <Button my={4} borderRadius="full" leftIcon={<IoMdAdd size={18} />}>
               Create New Task
             </Button>
           </Link>
-        )}
-        <HStack spacing={2} my={4}>
-          <Button
-            borderRadius="full"
-            onClick={() => setFilterType('all')}
-            variant={filterType === 'all' ? 'solid' : 'outline'}
-          >
-            All
-          </Button>
-          <Button
-            borderRadius="full"
-            onClick={() => setFilterType('pending')}
-            variant={filterType === 'pending' ? 'solid' : 'outline'}
-          >
-            Pending
-          </Button>
-
-          <Button
-            borderRadius="full"
-            onClick={() => setFilterType('completed')}
-            variant={filterType === 'completed' ? 'solid' : 'outline'}
-          >
-            Complete
-          </Button>
-          <Button
-            borderRadius="full"
-            onClick={() => setAssignee(currentUser.$id)}
-            variant={assignee === currentUser.$id ? 'solid' : 'outline'}
-          >
-            Assigned to You
-          </Button>
-          <Menu>
-            <MenuButton
-              as={Button}
-              rightIcon={<AiOutlineDown />}
-              borderRadius="full"
-              variant="outline"
-            >
-              {assignee
-                ? (
-                    teamMembersData?.find(
-                      (member) => member.userId === assignee
-                    )?.userName || 'Filter Member'
-                  ).slice(0, 8) + '...'
-                : 'Filter Member'}
-            </MenuButton>
-            <MenuList border="none">
-              {teamMembersData?.map((teamMember) => (
-                <MenuItem
-                  key={teamMember.$id}
-                  onClick={() => setAssignee(teamMember.userId as string)}
-                >
-                  {teamMember.userName}
-                </MenuItem>
-              ))}
-            </MenuList>
-          </Menu>
-          {assignee && (
-            <Button
-              variant="ghost"
-              bg="red"
-              borderRadius="full"
-              onClick={clearAssignee}
-            >
-              {' '}
-              Remove Filter
-            </Button>
-          )}
-
-          <Menu>
-            <MenuButton
-              as={Button}
-              rightIcon={<AiOutlineDown />}
-              borderRadius="full"
-              variant="outline"
-            >
-              {showSortType ? sortType : 'Sort By'}
-            </MenuButton>
-            <MenuList border="none">
-              <MenuItem onClick={() => handleSortByChange('dateCreated')}>
-                Date Created ( Latest to Oldest )
-              </MenuItem>
-              <MenuItem onClick={() => handleSortByChange('priority')}>
-                Priority ( High to Low)
-              </MenuItem>
-              <MenuItem onClick={() => handleSortByChange('deadline')}>
-                Deadline ( Shortest to Longest )
-              </MenuItem>
-            </MenuList>
-          </Menu>
-          {showSortType && (
-            <Button bg="red" borderRadius="full" onClick={clearSortType}>
-              {' '}
-              Clear Sort
-            </Button>
-          )}
-        </HStack>
+        )} */}
+        <Text fontSize="xl" fontWeight="bold" mb={4}>
+          Pinned Tasks ({pinnedTasksData?.length})
+        </Text>
         <Grid templateColumns="repeat(1,1fr)" minH={300} gap={4} my={0}>
-          {teamTasksData &&
-            teamTasksData.map((task) => (
+          {pinnedTasksData &&
+            pinnedTasksData.map((task) => (
               <Box
                 borderWidth={2}
                 borderColor={task.isComplete ? 'green.900' : 'yellow.500'}
@@ -613,14 +419,14 @@ function TeamTasks() {
                   <Text fontWeight="semibold" fontSize="lg" mb={2} mr={4}>
                     Assigned To
                   </Text>
-                  {/* <Text mb={2}>
+                  <Text mb={2}>
                     {teamMembersData &&
                       teamMembersData.map((teamMember) =>
                         teamMember.userId === task.assignee
                           ? teamMember.userName
                           : ''
                       )}
-                  </Text> */}
+                  </Text>
 
                   {teamMembersProfileImages && (
                     <Link href={`/profile/${task.assignee}`}>
@@ -823,9 +629,9 @@ function TeamTasks() {
               </Box>
             ))}
         </Grid>
-        {teamTasksData?.length == 0 && (
+        {pinnedTasksData?.length == 0 && (
           <Center>
-            <Text>No Tasks To Show</Text>
+            <Text>No Pinned Tasks</Text>
           </Center>
         )}
       </Box>
@@ -833,4 +639,4 @@ function TeamTasks() {
   );
 }
 
-export default withAuth(TeamTasks);
+export default withAuth(PinnedTasks);

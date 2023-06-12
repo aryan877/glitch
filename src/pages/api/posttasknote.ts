@@ -1,22 +1,13 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import sdk from 'node-appwrite';
 
-const postChat = async (req: NextApiRequest, res: NextApiResponse) => {
+const postTaskComment = async (req: NextApiRequest, res: NextApiResponse) => {
   const client = new sdk.Client();
   const clientWithKey = new sdk.Client();
   const account = new sdk.Account(client);
   const databases = new sdk.Databases(clientWithKey);
   const teams = new sdk.Teams(clientWithKey);
-  const {
-    jwt,
-    content,
-    team,
-    $id,
-    reference,
-    referenceContent,
-    referenceUser,
-    file,
-  } = req.body;
+  const { content, team, taskId, jwt, file } = req.body;
   try {
     // Set up the Appwrite client
     client
@@ -44,24 +35,18 @@ const postChat = async (req: NextApiRequest, res: NextApiResponse) => {
     }
     const response = await databases.createDocument(
       process.env.NEXT_PUBLIC_DATABASE_ID as string,
-      process.env.NEXT_PUBLIC_CHATS_COLLECTION_ID as string,
-      $id,
+      process.env.NEXT_PUBLIC_TASKS_NOTES_COLLECTION_ID as string,
+      sdk.ID.unique(),
       {
         sender: user.$id,
         content,
         team,
+        taskId,
         ...(file && { file }),
         sender_name: user.name,
-        ...(referenceContent &&
-          reference && {
-            reference: reference,
-            referenceContent: referenceContent,
-            referenceUser: referenceUser,
-          }),
       },
       [
         sdk.Permission.read(sdk.Role.team(team as string)),
-        sdk.Permission.update(sdk.Role.user(user.$id as string)),
         sdk.Permission.delete(sdk.Role.user(user.$id as string)),
       ]
     );
@@ -78,4 +63,4 @@ const postChat = async (req: NextApiRequest, res: NextApiResponse) => {
   }
 };
 
-export default postChat;
+export default postTaskComment;

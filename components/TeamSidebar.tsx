@@ -24,12 +24,13 @@ import {
   BsCheckSquareFill,
   BsGearFill,
   BsPeopleFill,
+  BsPin,
   BsSearch,
 } from 'react-icons/bs';
 import { FaSearch, FaTasks } from 'react-icons/fa';
 import { FiMessageCircle, FiMessageSquare, FiSearch } from 'react-icons/fi';
 import { IoMdSearch } from 'react-icons/io';
-import { MdSearchOff } from 'react-icons/md';
+import { MdPin, MdSearchOff } from 'react-icons/md';
 import { RiMessage2Line, RiMessageLine } from 'react-icons/ri';
 import tinycolor from 'tinycolor2';
 import { useSidebar } from '../context/SidebarContext';
@@ -40,7 +41,7 @@ function TeamSidebar() {
   const { flexWidth, setFlexWidth } = useSidebar();
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const router = useRouter();
-  const { id } = router.query;
+  const { id, slug } = router.query;
   const queryClient = useQueryClient();
   const databases = useMemo(() => new Databases(client), []);
   const handleDrag = (e: any, data: any) => {
@@ -178,8 +179,8 @@ function TeamSidebar() {
           </Text>
         </Link>
 
-        <Text fontWeight="bold" mt={8} mb={4} color="gray.300">
-          {teamPreference.name}
+        <Text fontWeight="bold" fontSize="md" mt={8} mb={4} color="gray.300">
+          team-{teamPreference.name}
         </Text>
         <VStack spacing={4} align="start" w="100%">
           <Link
@@ -247,6 +248,31 @@ function TeamSidebar() {
               </Text>
             </HStack>
           </Link>
+          <Link
+            href={`/team/tasks/pinned/${id}`}
+            color={
+              router.pathname === '/team/tasks/pinned/[id]'
+                ? 'white'
+                : 'gray.300'
+            }
+            p={2}
+            _hover={{ bg: 'gray.700', color: 'white' }}
+            borderRadius="md"
+            w="full"
+          >
+            <HStack spacing={4} alignItems="center" w="100%">
+              <Box>
+                <BsPin size="24px" />
+              </Box>
+
+              <Text
+                display={shouldHideIcons ? 'none' : 'flex'}
+                fontWeight="bold"
+              >
+                Pinned Tasks
+              </Text>
+            </HStack>
+          </Link>
           {/* <Link
             href={`/team/video/${id}`}
             color={
@@ -297,7 +323,7 @@ function TeamSidebar() {
           </Link>
         </VStack>
         <Box mt={8}>
-          <Text fontWeight="bold" mb={4} color="gray.300">
+          <Text fontWeight="bold" mb={4} fontSize="md" color="gray.300">
             Direct Messages
           </Text>
           <VStack align="start" gap={2}>
@@ -328,6 +354,8 @@ function TeamSidebar() {
                       as={Text}
                       overflow="hidden"
                       whiteSpace="nowrap"
+                      color={slug === teamMember.userId ? 'white' : 'gray.300'}
+                      fontWeight="bold"
                       textOverflow="ellipsis"
                       maxW={flexWidth - 100} // Adjust the maximum width as per your requirement
                     >

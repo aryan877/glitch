@@ -36,10 +36,28 @@ const ReactQuillWithNoSSR = dynamic(() => import('react-quill'), {
   ssr: false,
 });
 
+const modules = {
+  toolbar: [
+    // [{ header: '1' }, { header: '2' }],
+    // [{ size: [] }],
+    ['bold', 'italic', 'underline', 'strike', 'code'],
+    [
+      { list: 'ordered' },
+      { list: 'bullet' },
+      { indent: '-1' },
+      { indent: '+1' },
+    ],
+    ['link'],
+  ],
+  clipboard: {
+    matchVisual: false,
+  },
+};
+
 const EditTaskPage: React.FC = () => {
   const [taskName, setTaskName] = useState('');
   const [taskDescription, setTaskDescription] = useState('');
-  const [assignedTo, setAssignedTo] = useState('');
+  // const [assignedTo, setAssignedTo] = useState('');
   const [charCount, setCharCount] = useState(0);
   const [loading, setLoading] = useState<boolean>(false);
   const [taskPriority, setTaskPriority] = useState('');
@@ -93,16 +111,16 @@ const EditTaskPage: React.FC = () => {
     if (taskData && taskDataSuccess) {
       setTaskName(taskData.taskName);
       setTaskDescription(taskData.taskDescription);
-      setAssignedTo(taskData.assignee);
+      // setAssignedTo(taskData.assignee);
       setTaskPriority(taskData.priority);
-      setEndDate(taskData.deadline);
+      setEndDate(new Date(taskData.deadline));
     }
   }, [taskData, taskDataSuccess]);
 
   const handleTaskSubmit = async (): Promise<void> => {
     try {
       // Input validation
-      if (!taskName || !taskDescription || !assignedTo || !taskPriority) {
+      if (!taskName || !taskDescription || !taskPriority) {
         setInputError('Please fill in all required fields.');
         return;
       }
@@ -114,14 +132,14 @@ const EditTaskPage: React.FC = () => {
         taskName: string;
         // jwt: string;
         taskDescription: string;
-        assignee: string;
+        // assignee: string;
         priority: string;
         // team: string;
         deadline: string | null;
       } = {
         taskName: taskName,
         taskDescription: taskDescription,
-        assignee: assignedTo,
+        // assignee: assignedTo,
         priority: taskPriority,
         deadline: endDate ? endDate.toISOString() : null,
       };
@@ -175,24 +193,6 @@ const EditTaskPage: React.FC = () => {
     }
   };
 
-  const modules = {
-    toolbar: [
-      // [{ header: '1' }, { header: '2' }],
-      // [{ size: [] }],
-      ['bold', 'italic', 'underline', 'strike', 'code'],
-      [
-        { list: 'ordered' },
-        { list: 'bullet' },
-        { indent: '-1' },
-        { indent: '+1' },
-      ],
-      ['link'],
-    ],
-    clipboard: {
-      matchVisual: false,
-    },
-  };
-
   return (
     <Layout>
       <Box maxW="6xl" mx="auto" my={8} w="50%">
@@ -219,6 +219,9 @@ const EditTaskPage: React.FC = () => {
           <ReactQuillWithNoSSR
             theme="snow"
             value={taskDescription}
+            onChange={(value) => {
+              setTaskDescription(value);
+            }}
             placeholder="Task Description"
             modules={modules}
             style={{ width: '100%' }}
@@ -241,7 +244,7 @@ const EditTaskPage: React.FC = () => {
             />
           </VStack>
 
-          <Select
+          {/* <Select
             value={assignedTo}
             onChange={(e) => setAssignedTo(e.target.value)}
             placeholder="Assign"
@@ -253,7 +256,7 @@ const EditTaskPage: React.FC = () => {
                   {teamMember.userName}
                 </option>
               ))}
-          </Select>
+          </Select> */}
 
           <Select
             _placeholder={{ color: 'gray.500' }}

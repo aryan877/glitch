@@ -4,6 +4,10 @@ const nextConfig = {
   images: {
     domains: ['cloud.appwrite.io'],
   },
+  experimental: {
+    scrollRestoration: true,
+  },
 }
+
 
 module.exports = nextConfig

@@ -22,8 +22,8 @@ import { useRouter } from 'next/router';
 import { useContext, useEffect, useMemo } from 'react';
 import { AiOutlineLogout, AiOutlineUser } from 'react-icons/ai';
 import { BsBellFill } from 'react-icons/bs';
-import { FiArrowLeft, FiLogOut } from 'react-icons/fi';
-import { MdMessage, MdTask } from 'react-icons/md';
+import { FiArrowLeft, FiLogOut, FiMessageSquare } from 'react-icons/fi';
+import { MdGroup, MdMessage, MdTask } from 'react-icons/md';
 import tinycolor from 'tinycolor2';
 import { UserContext, useUser } from '../context/UserContext';
 import { client } from '../utils/appwriteConfig';
@@ -503,13 +503,17 @@ const Navbar = ({ flexWidth }: { flexWidth: number }) => {
       {!isDarkButtonRoute && <Spacer />}
       <HStack gap={4}>
         <Menu>
-          <Tooltip bg="gray.900" color="white" label="direct chat notifications">
+          <Tooltip
+            bg="gray.900"
+            color="white"
+            label="direct chat notifications"
+          >
             <MenuButton
               as={IconButton}
               aria-label="notifications"
               icon={
                 <Flex position="relative">
-                  <MdMessage size="24px" />
+                  <FiMessageSquare size="24px" />
                   {unreadDirectChatsData.length > 0 && (
                     <Box
                       position="absolute"
@@ -639,7 +643,7 @@ const Navbar = ({ flexWidth }: { flexWidth: number }) => {
               aria-label="notifications"
               icon={
                 <Flex position="relative">
-                  <BsBellFill size="24px" />
+                  <MdGroup size="24px" />
                   {unreadChatsData.length > 0 && (
                     <Box
                       position="absolute"

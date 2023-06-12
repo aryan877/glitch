@@ -1,7 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import sdk from 'node-appwrite';
 
-const getUsers = async (req: NextApiRequest, res: NextApiResponse) => {
+const getUser = async (req: NextApiRequest, res: NextApiResponse) => {
   const client = new sdk.Client();
   const users = new sdk.Users(client);
 
@@ -24,4 +24,4 @@ const getUsers = async (req: NextApiRequest, res: NextApiResponse) => {
   }
 };
 
-export default getUsers;
+export default getUser;

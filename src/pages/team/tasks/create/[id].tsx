@@ -35,6 +35,22 @@ const ReactQuillWithNoSSR = dynamic(() => import('react-quill'), {
   ssr: false,
 });
 
+const modules = {
+  toolbar: [
+    ['bold', 'italic', 'underline', 'strike', 'code'],
+    [
+      { list: 'ordered' },
+      { list: 'bullet' },
+      { indent: '-1' },
+      { indent: '+1' },
+    ],
+    ['link'],
+  ],
+  clipboard: {
+    matchVisual: false,
+  },
+};
+
 const CreateTaskPage: React.FC = () => {
   const [taskName, setTaskName] = useState('');
   const [taskDescription, setTaskDescription] = useState('');
@@ -105,8 +121,8 @@ const CreateTaskPage: React.FC = () => {
         router.back();
       }, 1000);
     } catch (error) {
-      setLoading(false);
       showNotification('could not create task, something went wrong');
+      setLoading(false);
     }
   };
 
@@ -142,22 +158,6 @@ const CreateTaskPage: React.FC = () => {
     }
   };
 
-  const modules = {
-    toolbar: [
-      ['bold', 'italic', 'underline', 'strike', 'code'],
-      [
-        { list: 'ordered' },
-        { list: 'bullet' },
-        { indent: '-1' },
-        { indent: '+1' },
-      ],
-      ['link'],
-    ],
-    clipboard: {
-      matchVisual: false,
-    },
-  };
-
   return (
     <Layout>
       <Box maxW="6xl" mx="auto" my={8} w="50%">
@@ -185,6 +185,9 @@ const CreateTaskPage: React.FC = () => {
             theme="snow"
             value={taskDescription}
             placeholder="Task Description"
+            onChange={(value) => {
+              setTaskDescription(value);
+            }}
             modules={modules}
             style={{ width: '100%' }}
           />

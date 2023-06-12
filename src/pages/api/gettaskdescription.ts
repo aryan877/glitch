@@ -13,7 +13,7 @@ const getTaskDescription = async (
     2. Key deliverables and milestones.
     3. Specific requirements or dependencies.
     
-    Format your response using HTML tags for better readability.
+    Format your response using HTML tags for better readability. Word limit of 2000 words has to be always respected, never go beyond that.
     
     Prompt entered by the user: ${req.body.prompt}`;
 

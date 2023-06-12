@@ -359,7 +359,8 @@ function Team() {
       <Box
         w="full"
         mt={-32}
-        py={8}
+        pt={16}
+        pb={12}
         bgGradient={`linear-gradient(to bottom, ${
           teamPreference.bg
         } 0%, ${tinycolor(teamPreference.bg).darken(20).toString()})`}
@@ -465,7 +466,7 @@ function Team() {
               rightIcon={<AiOutlineEllipsis size="48px" />}
             ></MenuButton>
             <MenuList borderRadius="md" p={2} border="none">
-              <MenuItem borderRadius="md">Group Chat</MenuItem>
+              <MenuItem borderRadius="md">Team Chat</MenuItem>
 
               <MenuItem
                 _hover={{ bg: 'red.500' }}
@@ -516,6 +517,11 @@ function Team() {
                         <Text _hover={{ textDecoration: 'underline' }}>
                           {teamMember.userName}
                         </Text>{' '}
+                        {teamMember.userId === currentUser.$id && (
+                          <Text _hover={{ textDecoration: 'underline' }}>
+                            (YOU)
+                          </Text>
+                        )}
                         <HStack gap={1}>
                           {teamMember.roles.map(
                             (role: string, index: number) => {
@@ -548,13 +554,21 @@ function Team() {
                         </Flex>
                       </Badge>
                     )}
-                    <Tooltip label="direct message" color="white" bg="gray.900">
-                      <IconButton
-                        mr={4}
-                        icon={<FiMessageSquare />}
-                        aria-label="DM Message"
-                      />
-                    </Tooltip>
+                    {teamMember.userId !== currentUser.$id && (
+                      <Tooltip
+                        label="direct message"
+                        color="white"
+                        bg="gray.900"
+                      >
+                        <Link href={`/team/${id}/dm/${teamMember.userId}`}>
+                          <IconButton
+                            mr={4}
+                            icon={<FiMessageSquare />}
+                            aria-label="DM Message"
+                          />
+                        </Link>
+                      </Tooltip>
+                    )}
                     {teamMember.roles && owner && (
                       <RoleInput
                         memberRoles={teamMember.roles}

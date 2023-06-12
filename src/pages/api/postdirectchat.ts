@@ -16,7 +16,6 @@ const postDirectChat = async (req: NextApiRequest, res: NextApiResponse) => {
     referenceContent,
     referenceUser,
     file,
-    sender_name,
     receiver,
   } = req.body;
   try {
@@ -29,7 +28,7 @@ const postDirectChat = async (req: NextApiRequest, res: NextApiResponse) => {
     clientWithKey
       .setEndpoint('https://cloud.appwrite.io/v1') // Your API Endpoint
       .setProject(process.env.NEXT_PUBLIC_APPWRITE_ID as string) // Your project ID
-      .setKey(process.env.PERMISSION_SETTING_API_KEY as string);
+      .setKey(process.env.POST_CHATS_COMMENTS_TASKS_API_KEY as string); // Your secret JSON Web Token
 
     // Verify authentication
     const user = await account.get();
@@ -42,9 +41,9 @@ const postDirectChat = async (req: NextApiRequest, res: NextApiResponse) => {
         sender: user.$id,
         content,
         channel,
-        sender_name,
         receiver,
         ...(file && { file }),
+        sender_name: user.name,
         ...(referenceContent &&
           reference && {
             reference: reference,

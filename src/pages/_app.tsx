@@ -15,6 +15,7 @@ function App({ Component, pageProps }: AppProps) {
   if (typeof window !== 'undefined') {
     localStorage.setItem('chakra-ui-color-mode', 'dark');
   }
+
   return (
     <QueryClientProvider client={queryClient}>
       <CacheProvider>

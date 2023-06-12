@@ -19,20 +19,18 @@ import { AiOutlineFile } from 'react-icons/ai';
 import { useUser } from '../context/UserContext';
 import { client } from '../utils/appwriteConfig';
 
-interface ChatFileSenderProps {
+interface TaskNoteFileSenderProps {
   isOpen: boolean;
   onClose: () => void;
   file: File | undefined;
   sendFileMessage: (fileId: string) => void;
-  receiver?: string;
 }
 
-const ChatFileSender: React.FC<ChatFileSenderProps> = ({
+const TaskNoteFileSender: React.FC<TaskNoteFileSenderProps> = ({
   isOpen,
   onClose,
   file,
   sendFileMessage,
-  receiver,
 }) => {
   const storage = useMemo(() => new Storage(client), []);
   const [loading, setLoading] = useState<boolean>(false);
@@ -76,17 +74,8 @@ const ChatFileSender: React.FC<ChatFileSenderProps> = ({
             Permission.update(Role.user(currentUser.$id as string)),
             Permission.delete(Role.user(currentUser.$id as string)),
           ];
-
-          if (receiver) {
-            permissions = [
-              Permission.update(Role.user(currentUser.$id as string)),
-              Permission.delete(Role.user(currentUser.$id as string)),
-              Permission.read(Role.user(currentUser.$id as string)),
-              Permission.read(Role.user(receiver as string)),
-            ];
-          }
           response = await storage.createFile(
-            process.env.NEXT_PUBLIC_CHATS_FILES_BUCKET_ID as string,
+            process.env.NEXT_PUBLIC_TASK_NOTES_FILES_BUCKET_ID as string,
             ID.unique(),
             convertedFile,
             permissions
@@ -99,6 +88,7 @@ const ChatFileSender: React.FC<ChatFileSenderProps> = ({
       }
     } catch (error) {
       // Handle error
+      console.error(error);
     } finally {
       setLoading(false);
     }
@@ -134,43 +124,10 @@ const ChatFileSender: React.FC<ChatFileSenderProps> = ({
             {loading ? 'Uploading file...' : 'Send'}
           </Button>
         </ModalBody>
-        <ModalFooter>
-          {/* {cropMode ? (
-            <Button
-              bg="white"
-              color="gray.800"
-              borderRadius="full"
-              _hover={{ transform: 'scale(1.05)' }}
-              onClick={handleCrop}
-            >
-              Apply
-            </Button>
-          ) : (
-            <>
-              {' '}
-              <Button
-                variant="unstyled"
-                mr={4}
-                onClick={onClose}
-                _hover={{ transform: 'scale(1.05)' }}
-              >
-                Cancel
-              </Button>
-              <Button
-                bg="white"
-                color="gray.800"
-                borderRadius="full"
-                _hover={{ transform: 'scale(1.05)' }}
-                onClick={handleSavePreferences}
-              >
-                Save
-              </Button>
-            </>
-          )} */}
-        </ModalFooter>
+        <ModalFooter></ModalFooter>
       </ModalContent>
     </Modal>
   );
 };
 
-export default ChatFileSender;
+export default TaskNoteFileSender;

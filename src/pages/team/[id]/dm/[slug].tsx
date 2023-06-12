@@ -1083,6 +1083,7 @@ function DirectChat() {
         isOpen={isOpen}
         onClose={onClose}
         file={file}
+        receiver={slug as string}
       />
       <Box
         pos="fixed"
@@ -1114,7 +1115,7 @@ function DirectChat() {
                 );
 
               return (
-                <>
+                <Box key={msg.$id}>
                   {displayDate && (
                     <HStack w="full" my={8} px={4}>
                       <Divider flex="1" mr={2} />
@@ -1126,7 +1127,6 @@ function DirectChat() {
                   )}
                   <Box ref={index === 0 ? ref : null}>
                     <ChatMessage
-                      key={msg.$id}
                       docId={msg.$id}
                       sender={msg.sender}
                       content={msg.content}
@@ -1155,7 +1155,7 @@ function DirectChat() {
                       }
                     />
                   </Box>
-                </>
+                </Box>
               );
             })}
         </Box>
