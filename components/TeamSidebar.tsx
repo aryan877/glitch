@@ -186,7 +186,7 @@ function TeamSidebar() {
         <VStack spacing={4} align="start" w="100%">
           <Link
             p={2}
-            _hover={{ bg: 'gray.700', color: 'white' }}
+            _hover={{ bg: 'gray.800', color: 'white' }}
             borderRadius="md"
             w="full"
             href={`/team/${id}`}
@@ -208,7 +208,7 @@ function TeamSidebar() {
             href={`/team/chat/${id}`}
             color={router.pathname === '/team/chat/[id]' ? 'white' : 'gray.300'}
             p={2}
-            _hover={{ bg: 'gray.700', color: 'white' }}
+            _hover={{ bg: 'gray.800', color: 'white' }}
             borderRadius="md"
             w="full"
           >
@@ -235,7 +235,7 @@ function TeamSidebar() {
               router.pathname === '/team/tasks/[id]' ? 'white' : 'gray.300'
             }
             p={2}
-            _hover={{ bg: 'gray.700', color: 'white' }}
+            _hover={{ bg: 'gray.800', color: 'white' }}
             borderRadius="md"
             w="full"
           >
@@ -260,7 +260,7 @@ function TeamSidebar() {
                 : 'gray.300'
             }
             p={2}
-            _hover={{ bg: 'gray.700', color: 'white' }}
+            _hover={{ bg: 'gray.800', color: 'white' }}
             borderRadius="md"
             w="full"
           >
@@ -312,7 +312,7 @@ function TeamSidebar() {
                 : 'gray.300'
             }
             p={2}
-            _hover={{ bg: 'gray.700', color: 'white' }}
+            _hover={{ bg: 'gray.800', color: 'white' }}
             borderRadius="md"
             w="full"
           >
@@ -348,7 +348,7 @@ function TeamSidebar() {
                   <HStack
                     borderRadius="md"
                     p={2}
-                    _hover={{ bg: 'gray.700' }}
+                    _hover={{ bg: 'gray.800' }}
                     gap={2}
                   >
                     {teamMembersProfileImages && (
