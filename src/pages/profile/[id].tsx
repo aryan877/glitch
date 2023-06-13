@@ -110,7 +110,6 @@ function Profile() {
     [`userProfileImage-${id}`, data],
     async () => {
       try {
-
         const imageUrl = storage.getFilePreview(
           process.env.NEXT_PUBLIC_USER_PROFILE_BUCKET_ID as string,
           data.prefs.profileImageId
@@ -193,8 +192,8 @@ function Profile() {
           {data && (
             <VStack gap={4} align="start">
               <Box>
-                <Text mb="-4">Username</Text>
-                <Text fontWeight="extrabold" fontSize="6xl">
+                <Text mb="-2">Username</Text>
+                <Text fontWeight="extrabold" fontSize="4xl">
                   {data.name ? data.name : 'No Username'}
                 </Text>
               </Box>
