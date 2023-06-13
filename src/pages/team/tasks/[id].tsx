@@ -441,7 +441,6 @@ function TeamTasks() {
               borderColor="gray.400"
               borderRadius="md"
               size="md"
- 
             />
             <InputRightElement width="4.5rem" pointerEvents="none">
               <AiOutlineSearch size="24px" color="gray" />
@@ -450,7 +449,12 @@ function TeamTasks() {
         </Box>
         {ownerOrAdmin && (
           <Link href={`/team/tasks/create/${id}`}>
-            <Button my={4} borderRadius="full" leftIcon={<IoMdAdd size={18} />}>
+            <Button
+              my={4}
+              colorScheme="whatsapp"
+              borderRadius="full"
+              leftIcon={<IoMdAdd size={18} />}
+            >
               Create New Task
             </Button>
           </Link>

@@ -91,10 +91,20 @@ function RoleInput({
   return (
     <Box position="relative" overflow="visible">
       <Menu isOpen={isOpen} onClose={handleMenuClose} placement="top-start">
-        <MenuButton as={Button} onClick={handleToggleMenu}>
+        <MenuButton
+          borderRadius="full"
+          as={Button}
+          onClick={handleToggleMenu}
+          borderWidth={1}
+          borderColor="whatsapp.400"
+          color="whatsapp.400"
+          bg="transparent"
+          _hover={{ bg: 'transparent' }}
+          _focus={{ bg: 'transparent' }}
+          _active={{ bg: 'transparent' }}
+        >
           Roles
         </MenuButton>
-
         <MenuList zIndex={1} p={4} border="none">
           <Box mb={2} p={2}>
             {roles.map((role, index) => (

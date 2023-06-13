@@ -227,12 +227,20 @@ const EditTaskPage: React.FC = () => {
             style={{ width: '100%' }}
           />
 
-          <Button onClick={handleGenerateDescription}>
+          <Button
+            onClick={handleGenerateDescription}
+            bgGradient="linear(to-r, violet, indigo)"
+            _hover={{ bgGradient: 'linear(to-r, violet, indigo)' }}
+            _active={{ bgGradient: 'linear(to-r, violet, indigo)' }}
+            borderRadius="full"
+          >
             Generate Description with AI
           </Button>
 
           <VStack w="full" align="start">
-            <Text color="gray.500">Set Deadline (optional)</Text>
+            <Text color="gray.500" fontWeight="bold">
+              Set Deadline (optional)
+            </Text>
             <DatePicker
               enableTabLoop={false}
               selected={endDate}
@@ -276,6 +284,7 @@ const EditTaskPage: React.FC = () => {
             colorScheme="whatsapp"
             onClick={handleTaskSubmit}
             isLoading={loading}
+            borderRadius="full"
           >
             Update Task
           </Button>
@@ -306,9 +315,12 @@ const EditTaskPage: React.FC = () => {
             )}
           </ModalBody>
           <ModalFooter>
-            <Button onClick={handleModalClose}>Use Response</Button>
+            <Button borderRadius="full" onClick={handleModalClose}>
+              Use Response
+            </Button>
             <Button
               ml={4}
+              borderRadius="full"
               // disabled={loading}
               isLoading={loading}
               colorScheme="whatsapp"
