@@ -667,9 +667,7 @@ const Navbar = ({ flexWidth }: { flexWidth: number }) => {
               aria-label="Go Back"
               icon={<MdArrowBackIosNew />}
               onClick={goBack}
-              bg="black"
-              _hover={{ bg: 'gray.700' }}
-              _active={{ bg: 'gray.700' }}
+              bg="gray.900"
               borderRadius="full"
               color="white"
             />
@@ -746,9 +744,7 @@ const Navbar = ({ flexWidth }: { flexWidth: number }) => {
                   )}
                 </Flex>
               }
-              bg="gray.800"
-              _hover={{ bg: 'gray.700' }}
-              _active={{ bg: 'gray.700' }}
+              bg="gray.900"
               variant="outline"
               border="none"
               size="md"
@@ -826,9 +822,7 @@ const Navbar = ({ flexWidth }: { flexWidth: number }) => {
                   )}
                 </Flex>
               }
-              bg="gray.800"
-              _hover={{ bg: 'gray.700' }}
-              _active={{ bg: 'gray.700' }}
+              bg="gray.900"
               variant="outline"
               border="none"
               size="md"
@@ -910,9 +904,7 @@ const Navbar = ({ flexWidth }: { flexWidth: number }) => {
                   )}
                 </Flex>
               }
-              bg="gray.800"
-              _hover={{ bg: 'gray.700' }}
-              _active={{ bg: 'gray.700' }}
+              bg="gray.900"
               variant="outline"
               border="none"
               size="md"
