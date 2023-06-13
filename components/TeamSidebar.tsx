@@ -566,9 +566,11 @@ function TeamSidebar() {
           </Link>
         </VStack>
         <Box mt={8}>
-          <Text fontWeight="bold" mb={4} fontSize="md" color="gray.300">
-            Direct Messages
-          </Text>
+          {teamMembersData && teamMembersData.length > 0 && (
+            <Text fontWeight="bold" mb={4} fontSize="md" color="gray.300">
+              Direct Messages
+            </Text>
+          )}
           <VStack align="start" gap={2}>
             {teamMembersData?.map((teamMember) => {
               if (currentUser.$id === teamMember.userId) {
