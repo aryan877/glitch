@@ -2,54 +2,53 @@ import { Box, Center, Flex, Spinner, Text } from '@chakra-ui/react';
 import { useEffect, useState } from 'react';
 
 const Loader = () => {
-  const getRandomMessage = () => {
-    const messages = [
-      'Glitching into the unknown',
-      'Embracing the beauty of glitches',
-      'Unveiling hidden digital anomalies',
-      'Dancing with pixelated glitches',
-      'Discovering the art within the error',
-      'Creating glitchy wonders',
-      'Navigating through the digital distortion',
-      'Transforming glitches into art',
-      'Unleashing the power of glitched pixels',
-      'Embodying the spirit of the glitch',
-      'Exploring the glitched dimensions',
-      'Embracing imperfections in the matrix',
-      'Harnessing the energy of digital glitches',
-      'Unlocking the secrets of the glitched code',
-      'Transcending the boundaries of the error',
-      'Illuminating glitches with creativity',
-      'Redefining reality through glitches',
-      'Embracing the serendipity of glitches',
-      'Unraveling the mysteries of digital imperfections',
-      'Creating harmony within the glitched chaos',
+  const getRandomJoke = () => {
+    const jokes = [
+      'Why did the developer go broke? Because he lost his domain in a hackathon!',
+      'Why do programmers prefer hackathons? Because they like to "code" their way to success!',
+      'What do you call a hackathon that serves donuts? A "code-glazed" event!',
+      'Why did the hacker break up with their partner? They weren\'t "encrypt" anymore!',
+      'Why did the developer bring a ladder to the hackathon? To "scale" their project!',
+      'Why did the coding competition end early? It had a "bug" in the schedule!',
+      'What did the hackathon participants say after a successful event? "We nailed it!"',
+      'How did the developer prepare for the hackathon? By staying "Java"lized!',
+      'Why did the programmer bring a baseball bat to the hackathon? To "code" some home runs!',
+      'What did the hackathon organizer say to the participants? "Let\'s hack and roll!"',
     ];
-    const randomIndex = Math.floor(Math.random() * messages.length);
-    return messages[randomIndex];
+    const randomIndex = Math.floor(Math.random() * jokes.length);
+    return jokes[randomIndex];
   };
 
-  const [message, setMessage] = useState('');
+  const [joke, setJoke] = useState('');
 
   useEffect(() => {
-    setMessage(getRandomMessage());
+    setJoke(getRandomJoke());
   }, []);
 
   return (
-    <Center h="100vh">
-      <Flex direction="column" alignItems="center">
-        <Box mb={4}>
-          <p className="glitch">
-            <span aria-hidden="true">glitch</span>
-            glitch
-            <span aria-hidden="true">glitch</span>
-          </p>
-        </Box>
-        <Text size="2xl" fontWeight="bold">
-          {message}
-        </Text>
-      </Flex>
-    </Center>
+    <div
+      style={{
+        height: '100vh',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+      }}
+    >
+      <Center>
+        <Flex direction="column" alignItems="center">
+          <Box mb={4}>
+            <p className="glitch">
+              <span aria-hidden="true">glitch</span>
+              glitch
+              <span aria-hidden="true">glitch</span>
+            </p>
+          </Box>
+          <Text fontSize="2xl" fontWeight="bold">
+            {joke}
+          </Text>
+        </Flex>
+      </Center>
+    </div>
   );
 };
 
