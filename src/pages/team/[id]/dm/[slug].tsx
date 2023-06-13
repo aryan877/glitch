@@ -39,6 +39,7 @@ import {
   Teams,
 } from 'appwrite';
 import axios from 'axios';
+import { UnreadDirectChat } from 'components/Navbar';
 import dayjs from 'dayjs';
 import hashSum from 'hash-sum';
 import { random } from 'lodash';
@@ -479,6 +480,55 @@ function DirectChat() {
     maxSize: 50 * 1024 * 1024, // 50MB in bytes
   });
 
+  const { data: unreadDirectChatsData = [] } = useQuery<UnreadDirectChat[]>(
+    ['unreadDirectChats'],
+    async () => {
+      try {
+        const response = await databases.listDocuments(
+          process.env.NEXT_PUBLIC_DATABASE_ID as string,
+          process.env
+            .NEXT_PUBLIC_DIRECT_CHATS_NOTIFICATION_COLLECTION_ID as string,
+          [
+            Query.equal('readerId', currentUser.$id),
+            Query.equal('isRead', false),
+          ]
+        );
+
+        const unreadDirectChats: UnreadDirectChat[] = response.documents.reduce(
+          (result: UnreadDirectChat[], document: any) => {
+            const { sender, sender_name } = document;
+
+            const existingSender = result.find(
+              (unread) => unread.sender === sender
+            );
+
+            if (existingSender) {
+              existingSender.unreadCount++;
+            } else {
+              result.push({
+                sender,
+                sender_name,
+                unreadCount: 1,
+              });
+            }
+
+            return result;
+          },
+          []
+        );
+
+        return unreadDirectChats;
+      } catch (error) {
+        console.error('Error fetching direct messages notifications:', error);
+        throw error;
+      }
+    },
+    {
+      staleTime: 3600000,
+      cacheTime: 3600000,
+    }
+  );
+
   const { isOpen, onOpen, onClose } = useDisclosure();
   //here we implement infinite query and we move up and load previous messages not the next ones,
   // we start with the latest and go back
@@ -821,7 +871,7 @@ function DirectChat() {
   useEffect(() => {
     const markNotificationsAsRead = async () => {
       try {
-        if (!data) {
+        if (!data || !unreadDirectChatsData) {
           return;
         }
         const response = await databases.listDocuments(
@@ -856,7 +906,14 @@ function DirectChat() {
       }
     };
     markNotificationsAsRead();
-  }, [databases, currentUser.$id, hash, data, queryClient]);
+  }, [
+    databases,
+    currentUser.$id,
+    hash,
+    data,
+    queryClient,
+    unreadDirectChatsData,
+  ]);
 
   const { data: teamPreference = { bg: '', description: '', name: '' } } =
     useQuery(

@@ -367,7 +367,7 @@ function TeamSidebar() {
         <Text fontWeight="bold" fontSize="md" mt={8} mb={4} color="gray.300">
           team-{teamPreference.name}
         </Text>
-        <VStack spacing={4} align="start" w="100%">
+        <VStack spacing={2} align="start" w="100%">
           <Link
             p={2}
             _hover={{ bg: 'gray.800', color: 'white' }}
@@ -392,7 +392,7 @@ function TeamSidebar() {
             borderRadius="md"
             w="full"
           >
-            <HStack spacing={4} alignItems="start" w="100%">
+            <HStack spacing={4} align="flex-start" w="100%">
               <Box>
                 <FiMessageSquare size="24px" />
               </Box>
@@ -439,7 +439,7 @@ function TeamSidebar() {
                         fontWeight="bold"
                         textOverflow="ellipsis"
                         maxW={flexWidth - 100}
-                        color="gray.300"
+                        color="gray.200"
                       >
                         {data[0].sender_name}
                       </chakra.div>

@@ -43,11 +43,19 @@ import {
   Teams,
 } from 'appwrite';
 import axios from 'axios';
+import { UnreadChat } from 'components/Navbar';
 import dayjs from 'dayjs';
 import { isEmpty, random } from 'lodash';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import { createRef, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  createRef,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { useDropzone } from 'react-dropzone';
 import { AiOutlineSend } from 'react-icons/ai';
 import {
@@ -236,7 +244,7 @@ function ChatMessage({
         }}
       >
         {
-          <Link href={`/profile/${sender}}`}>
+          <Link href={`/profile/${sender}`}>
             <Avatar
               name={senderName as string}
               size="md"
@@ -259,15 +267,17 @@ function ChatMessage({
             borderRadius="md"
           >
             {display && (
-              <Text
-                fontSize="sm"
-                mb={2}
-                textTransform="uppercase"
-                color="gray.500"
-                fontWeight="bold"
-              >
-                {senderName}
-              </Text>
+              <Link href={`/profile/${sender}`}>
+                <Text
+                  fontSize="sm"
+                  mb={2}
+                  textTransform="uppercase"
+                  color={sender === currentUser?.$id ? 'white' : 'gray.500'}
+                  fontWeight="bold"
+                >
+                  {senderName}
+                </Text>
+              </Link>
             )}
             {reference && (
               <Box
@@ -728,6 +738,91 @@ function TeamChat() {
     }
   };
 
+  const { data: unreadChatsData = [] } = useQuery<UnreadChat[]>(
+    ['unreadChats'],
+    async () => {
+      try {
+        const response = await databases.listDocuments(
+          process.env.NEXT_PUBLIC_DATABASE_ID as string,
+          process.env.NEXT_PUBLIC_CHATS_NOTIFICATION_COLLECTION_ID as string,
+          [
+            Query.equal('readerId', currentUser.$id),
+            Query.equal('isRead', false),
+          ]
+        );
+
+        const unreadChats: UnreadChat[] = response.documents.reduce(
+          (result: UnreadChat[], document: any) => {
+            const { teamId, teamName } = document;
+
+            const existingTeam = result.find((team) => team.teamId === teamId);
+
+            if (existingTeam) {
+              existingTeam.unreadCount++;
+            } else {
+              result.push({
+                teamId,
+                teamName,
+                unreadCount: 1,
+              });
+            }
+
+            return result;
+          },
+          []
+        );
+
+        return unreadChats;
+      } catch (error) {
+        console.error('Error fetching team messages:', error);
+        throw error;
+      }
+    },
+    {
+      staleTime: 3600000,
+      cacheTime: 3600000,
+    }
+  );
+
+  const markNotificationsAsRead = useCallback(async () => {
+    try {
+      if (!data || unreadChatsData.length === 0) {
+        return;
+      }
+      const response = await databases.listDocuments(
+        process.env.NEXT_PUBLIC_DATABASE_ID as string,
+        process.env.NEXT_PUBLIC_CHATS_NOTIFICATION_COLLECTION_ID as string,
+        [
+          Query.equal('teamId', id as string),
+          Query.equal('readerId', currentUser.$id),
+          Query.equal('isRead', false),
+        ]
+      );
+
+      for (const document of response.documents) {
+        try {
+          await databases.updateDocument(
+            process.env.NEXT_PUBLIC_DATABASE_ID as string,
+            process.env.NEXT_PUBLIC_CHATS_NOTIFICATION_COLLECTION_ID as string,
+            document.$id,
+            { isRead: true, readTime: new Date().toISOString() }
+          );
+        } catch (error) {
+          console.error('Failed to update notification:', error);
+        }
+      }
+      queryClient.refetchQueries({ queryKey: ['unreadChats'] });
+      // TODO: Mark notifications as read
+    } catch (error) {
+      console.error('Error fetching team messages:', error);
+      throw error;
+    }
+  }, [databases, currentUser.$id, id, data, queryClient, unreadChatsData]);
+
+  useEffect(() => {
+    markNotificationsAsRead();
+  }, [markNotificationsAsRead]);
+
   //Subscriptions
   useEffect(() => {
     const unsubscribe = client.subscribe(
@@ -738,6 +833,7 @@ function TeamChat() {
             `databases.${process.env.NEXT_PUBLIC_DATABASE_ID}.collections.${process.env.NEXT_PUBLIC_CHATS_COLLECTION_ID}.documents.*.create`
           )
         ) {
+          setTimeout(markNotificationsAsRead, 4000);
           queryClient.refetchQueries([`teamMessagesSidebar-${id}`]);
           // queryClient.invalidateQueries(['allTeams']);
           if (
@@ -783,7 +879,7 @@ function TeamChat() {
     return () => {
       unsubscribe();
     };
-  }, [queryClient, id, currentUser]);
+  }, [queryClient, id, currentUser, markNotificationsAsRead]);
 
   const componentRefs =
     data?.reduce(
@@ -810,45 +906,6 @@ function TeamChat() {
       }
     }
   };
-
-  useEffect(() => {
-    const markNotificationsAsRead = async () => {
-      try {
-        if (!data) {
-          return;
-        }
-        const response = await databases.listDocuments(
-          process.env.NEXT_PUBLIC_DATABASE_ID as string,
-          process.env.NEXT_PUBLIC_CHATS_NOTIFICATION_COLLECTION_ID as string,
-          [
-            Query.equal('teamId', id as string),
-            Query.equal('readerId', currentUser.$id),
-            Query.equal('isRead', false),
-          ]
-        );
-
-        for (const document of response.documents) {
-          try {
-            await databases.updateDocument(
-              process.env.NEXT_PUBLIC_DATABASE_ID as string,
-              process.env
-                .NEXT_PUBLIC_CHATS_NOTIFICATION_COLLECTION_ID as string,
-              document.$id,
-              { isRead: true, readTime: new Date().toISOString() }
-            );
-          } catch (error) {
-            console.error('Failed to update notification:', error);
-          }
-        }
-        queryClient.refetchQueries({ queryKey: ['unreadChats'] });
-        // TODO: Mark notifications as read
-      } catch (error) {
-        console.error('Error fetching team messages:', error);
-        throw error;
-      }
-    };
-    markNotificationsAsRead();
-  }, [databases, currentUser.$id, id, data, queryClient]);
 
   const { data: teamPreference = { bg: '', description: '', name: '' } } =
     useQuery(
