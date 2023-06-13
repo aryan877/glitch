@@ -24,7 +24,7 @@ import { useContext, useEffect, useMemo, useState } from 'react';
 import { AiOutlineGroup, AiOutlineLogout, AiOutlineUser } from 'react-icons/ai';
 import { BsBell, BsBellFill } from 'react-icons/bs';
 import { FiArrowLeft, FiBell, FiLogOut, FiMessageSquare } from 'react-icons/fi';
-import { MdGroup, MdMessage, MdTask } from 'react-icons/md';
+import { MdArrowBackIosNew, MdGroup, MdMessage, MdTask } from 'react-icons/md';
 import { RiGroup2Fill, RiGroupFill } from 'react-icons/ri';
 import tinycolor from 'tinycolor2';
 import { UserContext, useUser } from '../context/UserContext';
@@ -665,7 +665,7 @@ const Navbar = ({ flexWidth }: { flexWidth: number }) => {
             <IconButton
               ml={8}
               aria-label="Go Back"
-              icon={<FiArrowLeft />}
+              icon={<MdArrowBackIosNew />}
               onClick={goBack}
               bg="black"
               _hover={{ bg: 'gray.700' }}

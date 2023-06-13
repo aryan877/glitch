@@ -365,7 +365,7 @@ function TeamSidebar() {
         </Link>
 
         <Text fontWeight="bold" fontSize="md" mt={8} mb={4} color="gray.300">
-          team-{teamPreference.name}
+          #-team-{teamPreference.name}
         </Text>
         <VStack spacing={2} align="start" w="100%">
           <Link
@@ -376,11 +376,21 @@ function TeamSidebar() {
             href={`/team/${id}`}
             color={router.pathname === '/team/[id]' ? 'white' : 'gray.300'}
           >
-            <HStack spacing={4} alignItems="center" w="full">
+            <HStack spacing={4} alignItems="start" w="full">
               <Box>
                 <BsPeopleFill size={24} />
               </Box>
-              <Text fontWeight="bold">Team</Text>
+              <VStack align="start">
+                <Text fontWeight="bold">Team</Text>
+                <Text
+                  mt={-2}
+                  fontSize="sm"
+                  color="gray.500"
+                  fontWeight="semibold"
+                >
+                  dashboard
+                </Text>
+              </VStack>
             </HStack>
           </Link>
 
@@ -392,7 +402,7 @@ function TeamSidebar() {
             borderRadius="md"
             w="full"
           >
-            <HStack spacing={4} align="flex-start" w="100%">
+            <HStack spacing={4} alignItems="start" w="100%">
               <Box>
                 <FiMessageSquare size="24px" />
               </Box>
@@ -472,17 +482,21 @@ function TeamSidebar() {
             borderRadius="md"
             w="full"
           >
-            <HStack spacing={4} alignItems="center" w="100%">
+            <HStack spacing={4} alignItems="start" w="100%">
               <Box>
                 <FaTasks size="24px" />
               </Box>
-
-              <Text
-                display={shouldHideIcons ? 'none' : 'flex'}
-                fontWeight="bold"
-              >
-                Tasks
-              </Text>
+              <VStack align="start">
+                <Text fontWeight="bold">Tasks</Text>
+                <Text
+                  fontSize="sm"
+                  color="gray.500"
+                  fontWeight="semibold"
+                  mt={-2}
+                >
+                  team tasks
+                </Text>
+              </VStack>
             </HStack>
           </Link>
           <Link
@@ -501,17 +515,26 @@ function TeamSidebar() {
               <Box>
                 <BsPin size="24px" />
               </Box>
-
-              <chakra.div
-                as={Text}
-                overflow="hidden"
-                whiteSpace="nowrap"
-                fontWeight="bold"
-                textOverflow="ellipsis"
-                maxW={flexWidth - 100}
-              >
-                Pinned Tasks
-              </chakra.div>
+              <VStack align="start">
+                <chakra.div
+                  as={Text}
+                  overflow="hidden"
+                  whiteSpace="nowrap"
+                  fontWeight="bold"
+                  textOverflow="ellipsis"
+                  maxW={flexWidth - 100}
+                >
+                  Pinned Tasks
+                </chakra.div>
+                <Text
+                  mt={-2}
+                  fontSize="sm"
+                  color="gray.500"
+                  fontWeight="semibold"
+                >
+                  your pins
+                </Text>
+              </VStack>
             </HStack>
           </Link>
           {/* <Link
@@ -554,12 +577,26 @@ function TeamSidebar() {
                 <FiSearch size="24px" />{' '}
               </Box>
 
-              <Text
-                display={shouldHideIcons ? 'none' : 'flex'}
-                fontWeight="bold"
-              >
-                Search
-              </Text>
+              <VStack align="start">
+                <chakra.div
+                  as={Text}
+                  overflow="hidden"
+                  whiteSpace="nowrap"
+                  fontWeight="bold"
+                  textOverflow="ellipsis"
+                  maxW={flexWidth - 100}
+                >
+                  Search
+                </chakra.div>
+                <Text
+                  mt={-2}
+                  fontSize="sm"
+                  color="gray.500"
+                  fontWeight="semibold"
+                >
+                  search users
+                </Text>
+              </VStack>
             </HStack>
           </Link>
         </VStack>
@@ -571,7 +608,7 @@ function TeamSidebar() {
             </chakra.div>
           </Text>
           {teamMembersData && teamMembersData.length <= 1 && (
-            <Text color="gray.500" fontSize="sm">
+            <Text mt={-2} fontSize="sm" color="gray.500" fontWeight="semibold">
               Add members to see direct chats
             </Text>
           )}
