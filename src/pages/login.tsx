@@ -57,7 +57,7 @@ const LoginPage = () => {
     const account = new Account(client);
     const baseUrl =
       process.env.NODE_ENV === 'production'
-        ? 'https://appwrite-five.vercel.app'
+        ? 'https://glitch.zone'
         : 'http://localhost:3000';
 
     account.createOAuth2Session('github', baseUrl, `${baseUrl}/login`);

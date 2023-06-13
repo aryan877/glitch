@@ -21,7 +21,7 @@ const PasswordRecoveryPage = () => {
 
   const baseUrl =
     process.env.NODE_ENV === 'production'
-      ? 'https://appwrite-five.vercel.app'
+      ? 'https://glitch.zone'
       : 'http://localhost:3000';
 
   const handlePasswordRecovery = () => {
