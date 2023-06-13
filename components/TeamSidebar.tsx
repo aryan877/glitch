@@ -566,7 +566,7 @@ function TeamSidebar() {
           </Link>
         </VStack>
         <Box mt={8}>
-          {teamMembersData && teamMembersData.length > 0 && (
+          {teamMembersData && teamMembersData.length > 1 && (
             <Text fontWeight="bold" mb={4} fontSize="md" color="gray.300">
               Direct Messages
             </Text>
