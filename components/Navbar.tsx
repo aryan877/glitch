@@ -2,6 +2,7 @@ import {
   Avatar,
   Box,
   Button,
+  Center,
   Flex,
   HStack,
   IconButton,
@@ -28,6 +29,31 @@ import { RiGroup2Fill, RiGroupFill } from 'react-icons/ri';
 import tinycolor from 'tinycolor2';
 import { UserContext, useUser } from '../context/UserContext';
 import { client } from '../utils/appwriteConfig';
+
+export interface UnreadChat {
+  teamId: string;
+  teamName: string;
+  unreadCount: number;
+}
+
+export interface UnreadDirectChat {
+  sender: string;
+  sender_name: string;
+  unreadCount: number;
+}
+
+export interface UnreadTasks {
+  sender?: string;
+  sender_name: string;
+  assignee?: string;
+  assignee_name: string;
+  taskId: string;
+  taskName: string;
+  team: string;
+  teamName: string;
+  $id: string;
+}
+
 const Navbar = ({ flexWidth }: { flexWidth: number }) => {
   const { currentUser, loading, setCurrentUser } = useUser();
   const queryClient = useQueryClient();
@@ -130,30 +156,6 @@ const Navbar = ({ flexWidth }: { flexWidth: number }) => {
   const goBack = () => {
     router.back();
   };
-
-  interface UnreadChat {
-    teamId: string;
-    teamName: string;
-    unreadCount: number;
-  }
-
-  interface UnreadDirectChat {
-    sender: string;
-    sender_name: string;
-    unreadCount: number;
-  }
-
-  interface UnreadTasks {
-    sender?: string;
-    sender_name: string;
-    assignee?: string;
-    assignee_name: string;
-    taskId: string;
-    taskName: string;
-    team: string;
-    teamName: string;
-    $id: string;
-  }
 
   //DIRECT CHAT NOTIF DATA HANDLERS
   // a. notifications reader
@@ -313,7 +315,7 @@ const Navbar = ({ flexWidth }: { flexWidth: number }) => {
     const unsubscribe = client.subscribe(
       `databases.${process.env.NEXT_PUBLIC_DATABASE_ID}.collections.${process.env.NEXT_PUBLIC_CHATS_NOTIFICATION_COLLECTION_ID}.documents`,
       (response) => {
-        queryClient.invalidateQueries([`teamMessages-${id}`]);
+        queryClient.refetchQueries([`teamMessagesSidebar-${id}`]);
         if (
           response.events.includes(
             `databases.${process.env.NEXT_PUBLIC_DATABASE_ID}.collections.${process.env.NEXT_PUBLIC_CHATS_NOTIFICATION_COLLECTION_ID}.documents.*.create`
@@ -423,7 +425,7 @@ const Navbar = ({ flexWidth }: { flexWidth: number }) => {
           process.env.NEXT_PUBLIC_TASKS_NOTIFICATION_COLLECTION_ID as string,
           [
             Query.equal('readerId', currentUser.$id),
-            Query.limit(1),
+            Query.limit(2),
             Query.orderDesc('$createdAt'),
           ]
         );
@@ -606,7 +608,7 @@ const Navbar = ({ flexWidth }: { flexWidth: number }) => {
         process.env.NEXT_PUBLIC_TASKS_NOTIFICATION_COLLECTION_ID as string,
         [
           Query.equal('readerId', currentUser.$id),
-          Query.limit(1),
+          Query.limit(2),
           Query.orderDesc('$createdAt'),
           Query.cursorAfter(lastCursor),
         ]
@@ -725,15 +727,18 @@ const Navbar = ({ flexWidth }: { flexWidth: number }) => {
                   {unreadDirectChatsData.length > 0 && (
                     <Box
                       position="absolute"
-                      top="0px"
-                      right="0px"
-                      px={2}
-                      py={1}
+                      top="0"
+                      right="0"
+                      w="6"
+                      h="6"
                       borderRadius="full"
                       bg="red.500"
                       color="white"
                       fontSize="xs"
                       fontWeight="bold"
+                      display="flex"
+                      alignItems="center"
+                      justifyContent="center"
                       transform="translate(50%, -50%)"
                     >
                       {unreadDirectChatsData.length.toString()}
@@ -802,15 +807,18 @@ const Navbar = ({ flexWidth }: { flexWidth: number }) => {
                   {unreadChatsData.length > 0 && (
                     <Box
                       position="absolute"
-                      top="0px"
-                      right="0px"
-                      px={2}
-                      py={1}
+                      top="0"
+                      right="0"
+                      w="6"
+                      h="6"
                       borderRadius="full"
                       bg="red.500"
                       color="white"
                       fontSize="xs"
                       fontWeight="bold"
+                      display="flex"
+                      alignItems="center"
+                      justifyContent="center"
                       transform="translate(50%, -50%)"
                     >
                       {unreadChatsData.length.toString()}
@@ -883,15 +891,18 @@ const Navbar = ({ flexWidth }: { flexWidth: number }) => {
                   {unreadTasks.length > 0 && (
                     <Box
                       position="absolute"
-                      top="0px"
-                      right="0px"
-                      px={2}
-                      py={1}
+                      top="0"
+                      right="0"
+                      w="6"
+                      h="6"
                       borderRadius="full"
                       bg="red.500"
                       color="white"
                       fontSize="xs"
                       fontWeight="bold"
+                      display="flex"
+                      alignItems="center"
+                      justifyContent="center"
                       transform="translate(50%, -50%)"
                     >
                       {unreadTasks.length.toString()}

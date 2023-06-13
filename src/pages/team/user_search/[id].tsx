@@ -130,10 +130,6 @@ const UserSearch = () => {
               borderColor="gray.400"
               borderRadius="md"
               size="md"
-              _focus={{
-                borderColor: 'blue.500',
-                boxShadow: '0 0 0 1px blue.500',
-              }}
             />
             <InputRightElement width="4.5rem" pointerEvents="none">
               <AiOutlineSearch size="24px" color="gray" />

@@ -468,7 +468,7 @@ function Team() {
                 <Tooltip
                   bg="gray.900"
                   color="white"
-                  label="members will be assigned this role by default when they join"
+                  label="members will be assigned the default role on joining the team"
                 >
                   <Button
                     variant="ghost"

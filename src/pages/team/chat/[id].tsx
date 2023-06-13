@@ -254,7 +254,7 @@ function ChatMessage({
             maxW="xl"
             py={2}
             px={4}
-            bg={sender === currentUser?.$id ? 'teal.100' : 'white'}
+            bg={sender === currentUser?.$id ? 'gray.500' : 'white'}
             color="white"
             borderRadius="md"
           >
@@ -274,17 +274,17 @@ function ChatMessage({
                 onClick={() => handleOriginalMessageClick(reference)}
                 borderRadius="md"
                 p={2}
-                bg={sender === currentUser?.$id ? 'teal.200' : 'gray.100'}
+                bg={sender === currentUser?.$id ? 'gray.700' : 'gray.100'}
                 mb={2}
                 w="full"
                 borderLeftColor={
-                  sender === currentUser.$id ? 'teal.500' : 'gray.300'
+                  sender === currentUser.$id ? 'gray.900' : 'gray.300'
                 }
                 cursor="pointer"
                 borderLeftWidth={4}
               >
                 <Text
-                  color={sender === currentUser.$id ? 'teal.700' : 'gray.700'}
+                  color={sender === currentUser.$id ? 'white' : 'gray.700'}
                   ml={1}
                   textTransform="uppercase"
                   fontSize="sm"
@@ -293,7 +293,7 @@ function ChatMessage({
                   {referenceUser}
                 </Text>
                 <Text
-                  color={sender === currentUser.$id ? 'teal.700' : 'gray.700'}
+                  color={sender === currentUser.$id ? 'white' : 'gray.700'}
                   ml={1}
                   fontSize="md"
                 >
@@ -304,7 +304,7 @@ function ChatMessage({
 
             <Text
               fontSize="md"
-              color="gray.900"
+              color={sender === currentUser.$id ? 'white' : 'gray.900'}
               dangerouslySetInnerHTML={{ __html: content }}
             />
 
@@ -323,18 +323,30 @@ function ChatMessage({
             )}
             {fileId && (
               <Flex alignItems="center" justifyContent="space-between">
-                <Text mt={2} color="gray.900">
+                <Text
+                  mt={2}
+                  color={sender === currentUser.$id ? 'white' : 'gray.900'}
+                >
                   {result.name.length > 10
                     ? result.name.replace(/^(.{7}).+?(\.[^.]+)$/, '$1...$2')
                     : result.name}
                 </Text>
-                <Tooltip color="white" label="Download File" placement="top">
+                <Tooltip
+                  color="white"
+                  bg="gray.900"
+                  label="Download File"
+                  // placement="top"
+                >
                   <Button
+                    mt={2}
                     onClick={downloadFileHandler}
-                    variant="unstyled"
+                    // variant="unstyled"
                     aria-label="download file"
                   >
-                    <BsArrowDown size="20" color="#606060" />
+                    <BsArrowDown
+                      size="20"
+                      color={sender === currentUser.$id ? 'white' : '#606060'}
+                    />
                   </Button>
                 </Tooltip>
               </Flex>
@@ -347,7 +359,11 @@ function ChatMessage({
               justifyContent="space-between"
             >
               {/* <Spacer /> */}
-              <Text fontWeight="bold" color="gray.500" fontSize="xs">
+              <Text
+                fontWeight="bold"
+                color={sender === currentUser.$id ? 'white' : 'gray.500'}
+                fontSize="xs"
+              >
                 {dayjs(createdAt).format('hh:mm A')}{' '}
                 {edited && <span>edited</span>}
               </Text>
@@ -426,9 +442,15 @@ function ChatMessage({
               <Flex py={1} color="gray.400">
                 <Spacer />
                 {data && data.length > 0 ? (
-                  <BsCheck2All size="24" />
+                  <BsCheck2All
+                    color={sender === currentUser.$id ? 'white' : '#606060'}
+                    size="24"
+                  />
                 ) : (
-                  <BsCheck2 size="24" />
+                  <BsCheck2
+                    color={sender === currentUser.$id ? 'white' : '#606060'}
+                    size="24"
+                  />
                 )}
               </Flex>
             )}
@@ -716,6 +738,7 @@ function TeamChat() {
             `databases.${process.env.NEXT_PUBLIC_DATABASE_ID}.collections.${process.env.NEXT_PUBLIC_CHATS_COLLECTION_ID}.documents.*.create`
           )
         ) {
+          queryClient.refetchQueries([`teamMessagesSidebar-${id}`]);
           // queryClient.invalidateQueries(['allTeams']);
           if (
             (response.payload as { team?: string; sender?: string })?.team ===
@@ -876,11 +899,17 @@ function TeamChat() {
             queryClient.setQueryData(
               [`messageReaders-${updatedMessage.messageId}`],
               (prevData: any) => {
+                if (!prevData) {
+                  // Handle the case when prevData is falsy (e.g., null or undefined)
+                  return [updatedMessage];
+                }
+
                 const existingIndex = prevData.findIndex(
                   (item: any) =>
                     item.messageId === updatedMessage.messageId &&
                     item.readerId === updatedMessage.readerId
                 );
+
                 if (existingIndex !== -1) {
                   prevData[existingIndex] = updatedMessage;
                   return [...prevData];
@@ -1082,7 +1111,7 @@ function TeamChat() {
         <Box
           overflowY="scroll"
           flex="1"
-          bgGradient={`linear(to top, gray.700 99%, ${teamPreference.bg})`}
+          bgGradient={`linear(to top, gray.800 99%, ${teamPreference.bg})`}
           py={4}
           ref={containerRef}
         >

@@ -346,7 +346,11 @@ function TaskPage() {
     { staleTime: 3600000, cacheTime: 3600000 }
   );
 
-  const { data: taskData, isSuccess: isSuccessTaskData } = useQuery(
+  const {
+    data: taskData,
+    isSuccess: isSuccessTaskData,
+    isError: isErrorTaskData,
+  } = useQuery(
     [`task-${slug}`],
     async () => {
       try {
@@ -362,6 +366,7 @@ function TaskPage() {
       }
     },
     {
+      retry: 1,
       // staleTime: 3600000,
       // cacheTime: 3600000,
     }
@@ -562,7 +567,18 @@ function TaskPage() {
             </Button>
           </HStack>
         )}
-        <Grid templateColumns="repeat(1,1fr)" minH={300} gap={4} my={0}>
+        {isErrorTaskData && (
+          <Text fontSize="2xl" fontWeight="bold">
+            Request Id not found, looks like the task may have been deleted
+          </Text>
+        )}
+
+        <Grid
+          templateColumns="repeat(1,1fr)"
+          minH={!isErrorTaskData ? 300 : 'auto'}
+          gap={4}
+          my={0}
+        >
           {taskData && (
             <Box
               borderWidth={2}

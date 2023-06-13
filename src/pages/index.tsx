@@ -2,9 +2,13 @@ import {
   Avatar,
   Box,
   Button,
+  chakra,
   Flex,
   Grid,
   Image,
+  Input,
+  InputGroup,
+  InputRightElement,
   Text,
   useDisclosure,
 } from '@chakra-ui/react';
@@ -16,19 +20,21 @@ import { Nunito_Sans } from 'next/font/google';
 import Head from 'next/head';
 import Link from 'next/link';
 import { useContext, useEffect, useMemo, useState } from 'react';
+import { AiOutlineSearch } from 'react-icons/ai';
 import { IoMdAdd } from 'react-icons/io';
 import tinycolor from 'tinycolor2';
+import { useDebounce } from 'usehooks-ts';
 import { default as CreateTeamModal } from '../../components/CreateTeamModal';
 import Layout from '../../components/Layout';
 import Navbar from '../../components/Navbar';
 import { useUser } from '../../context/UserContext';
 import { client } from '../../utils/appwriteConfig';
 import withAuth from '../../utils/withAuth';
-const nunito = Nunito_Sans({ subsets: ['latin'] });
-
 function Home() {
   const { currentUser, loading } = useUser();
   const { isOpen, onOpen, onClose } = useDisclosure();
+  const [searchTerm, setSearchTerm] = useState('');
+  const debouncedSearchTerm = useDebounce<string>(searchTerm, 300);
   // const [teams, setTeams] = useState<any>([]);
   // const [teamPreferencesData, setTeamPreferences] = useState<any>([]);
   // const [teamImages, setTeamImages] = useState<any>([]);
@@ -42,8 +48,15 @@ function Home() {
     isError,
     isSuccess,
   } = useQuery(
-    ['teamsList'],
+    ['teamsList', debouncedSearchTerm],
     async () => {
+      if (debouncedSearchTerm) {
+        const response = await teamsClient.list(
+          [Query.orderDesc('$createdAt')],
+          debouncedSearchTerm as string
+        );
+        return response.teams;
+      }
       const response = await teamsClient.list([Query.orderDesc('$createdAt')]);
       return response.teams;
     },
@@ -174,7 +187,8 @@ function Home() {
         <Flex direction="column" mx={8} align="flex-start">
           <Box>
             <Text mb={8} fontSize="6xl">
-              Welcome to Glitch
+              Welcome to Glitch, powered by{' '}
+              <chakra.span color="red.500">Appwrite</chakra.span>
             </Text>
             <Button
               mb={8}
@@ -184,7 +198,8 @@ function Home() {
               borderWidth={1}
               _hover={{
                 bg: 'black',
-                borderColor: 'black',
+                borderColor: 'green.500',
+                color: 'green.500',
               }}
               borderColor="white"
               leftIcon={<IoMdAdd size={18} />}
@@ -193,8 +208,25 @@ function Home() {
               Create New Team
             </Button>
           </Box>
-          {isLoading && <Text>Loading...</Text>}
-          {teams.length === 0 && isSuccess && (
+
+          {
+            <InputGroup mb={4}>
+              <Input
+                placeholder="Search team"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                variant="outline"
+                borderColor="gray.400"
+                borderRadius="md"
+                size="md"
+              />
+              <InputRightElement width="4.5rem" pointerEvents="none">
+                <AiOutlineSearch size="24px" color="gray" />
+              </InputRightElement>
+            </InputGroup>
+          }
+          {isLoading && <Text my={4}>Loading...</Text>}
+          {teams.length === 0 && isSuccess && !searchTerm && (
             <Box height="full" alignItems="center" justifyContent="flex-start">
               <Text fontSize="xl" fontWeight="bold" color="gray.200">
                 You have no teams

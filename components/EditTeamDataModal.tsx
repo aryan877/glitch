@@ -251,7 +251,7 @@ const EditTeamDataModal: React.FC<EditTeamDataModalProps> = ({
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
       <ModalOverlay />
-      <ModalContent maxH="80vh" overflowY="auto" zIndex="9999" bg="gray.700">
+      <ModalContent maxH="80vh" overflowY="auto" zIndex="9999" bg="gray.900">
         <ModalHeader>Team Preferences</ModalHeader>
         <ModalBody>
           {cropMode ? (
