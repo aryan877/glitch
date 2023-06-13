@@ -63,7 +63,7 @@ function Sidebar() {
         cursor={isDragging ? 'grabbing' : 'grab'}
       >
         <VStack spacing={8} align="start" w="100%">
-          <Link href="/" mb={4}>
+          <Link href="/" mb={4} _hover={{ textDecoration: 'none' }}>
             <Text fontSize="2xl" fontWeight="bold" color="green.200">
               Glitch.
               {/* <Image maxW="100" src="/logo.png" alt="logo" /> */}

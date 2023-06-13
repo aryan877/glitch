@@ -33,6 +33,10 @@ const InviteMemberModal: React.FC<InviteMemberModalProps> = ({
   const { id } = router.query;
   const { showNotification } = useNotification();
   const teams = useMemo(() => new Teams(client), []);
+  const baseUrl =
+    process.env.NODE_ENV === 'production'
+      ? 'https://glitch.zone'
+      : 'http://localhost:3000';
   const addMemberHandler = async () => {
     let promise;
     if (defaultRole) {
@@ -40,14 +44,14 @@ const InviteMemberModal: React.FC<InviteMemberModalProps> = ({
         id as string,
         email,
         [defaultRole as string],
-        'http://localhost:3000/join'
+        `${baseUrl}/join`
       );
     } else {
       promise = teams.createMembership(
         id as string,
         email,
         [],
-        'http://localhost:3000/join'
+        `${baseUrl}/join`
       );
     }
     promise.then(

@@ -105,46 +105,48 @@ function RoleInput({
         >
           Roles
         </MenuButton>
-        <MenuList zIndex={1} p={4} border="none">
-          <Box mb={2} p={2}>
-            {roles.map((role, index) => (
-              <Badge
-                key={role}
-                size="sm"
-                mr={2}
-                px={2}
-                py={1}
-                color="black"
-                bg={getBadgeColor(role)}
-              >
-                {role}
-                <Button
+        {isOpen && (
+          <MenuList zIndex={1} p={4} border="none">
+            <Box mb={2} p={2}>
+              {roles.map((role, index) => (
+                <Badge
+                  key={role}
                   size="sm"
-                  ml={2}
-                  variant="ghost"
-                  onClick={() => handleRemoveRole(index)}
+                  mr={2}
+                  px={2}
+                  py={1}
+                  color="black"
+                  bg={getBadgeColor(role)}
                 >
-                  <MdClose color="black" />
-                </Button>
-              </Badge>
-            ))}
-          </Box>
-          <Box display="flex" alignItems="center" mb={2}>
-            <Input
-              placeholder="Enter role"
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              onKeyDown={handleKeyDown}
-              marginRight={2}
-            />
-            <Button size="sm" colorScheme="whatsapp" onClick={handleAddRole}>
-              <MdAdd size="24px" />
+                  {role}
+                  <Button
+                    size="sm"
+                    ml={2}
+                    variant="ghost"
+                    onClick={() => handleRemoveRole(index)}
+                  >
+                    <MdClose color="black" />
+                  </Button>
+                </Badge>
+              ))}
+            </Box>
+            <Box display="flex" alignItems="center" mb={2}>
+              <Input
+                placeholder="Enter role"
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                onKeyDown={handleKeyDown}
+                marginRight={2}
+              />
+              <Button size="sm" colorScheme="whatsapp" onClick={handleAddRole}>
+                <MdAdd size="24px" />
+              </Button>
+            </Box>
+            <Button onClick={saveRoles} mt={2} colorScheme="whatsapp">
+              Apply
             </Button>
-          </Box>
-          <Button onClick={saveRoles} mt={2} colorScheme="whatsapp">
-            Apply
-          </Button>
-        </MenuList>
+          </MenuList>
+        )}
       </Menu>
     </Box>
   );

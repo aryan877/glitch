@@ -1,4 +1,5 @@
 import { Link } from '@chakra-ui/next-js';
+
 import {
   Avatar,
   Box,
@@ -52,7 +53,8 @@ function TeamSidebar() {
   const handleDrag = (e: any, data: any) => {
     const newWidth = flexWidth + data.deltaX;
     const minWidth = 240;
-    const limitedWidth = Math.max(minWidth, newWidth);
+    const maxWidth = 600;
+    const limitedWidth = Math.max(minWidth, Math.min(maxWidth, newWidth));
     setFlexWidth(limitedWidth);
   };
   const { currentUser } = useUser();
@@ -357,7 +359,7 @@ function TeamSidebar() {
         ref={flexRef}
         cursor={isDragging ? 'grabbing' : 'grab'}
       >
-        <Link mb={2} py={2} href="/">
+        <Link mb={2} py={2} href="/" _hover={{ textDecoration: 'none' }}>
           <Text fontSize="2xl" fontWeight="bold" color="green.200">
             Glitch.
             {/* <Image maxW="100" src="/logo.png" alt="logo" /> */}

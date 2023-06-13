@@ -177,7 +177,7 @@ const CreateTaskPage: React.FC = () => {
               pointerEvents="none"
               fontSize="sm"
               color="gray.500"
-              mx={2}
+              mx={4}
             >
               {`${taskName.length}/100`}
             </InputRightElement>
