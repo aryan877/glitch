@@ -11,6 +11,7 @@ import {
   Text,
   useDisclosure,
 } from '@chakra-ui/react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Databases, ID, Permission, Role, Teams } from 'appwrite';
 import randomColor from 'randomcolor';
 import { useMemo, useState } from 'react';
@@ -27,7 +28,7 @@ const CreateTeamModal: React.FC<CreateTeamModalProps> = ({
   onClose,
 }) => {
   const [teamName, setTeamName] = useState('');
-
+  const queryClient = useQueryClient();
   const { showNotification } = useNotification();
   const databases = useMemo(() => new Databases(client), []);
   const createTeamHandler = async () => {
@@ -35,29 +36,21 @@ const CreateTeamModal: React.FC<CreateTeamModalProps> = ({
       // Create the team
       showNotification('Created team');
       const teams = new Teams(client);
-      const promise = teams.create(ID.unique(), teamName);
-
-      promise.then(
-        async function (response) {
-          await databases.createDocument(
-            process.env.NEXT_PUBLIC_DATABASE_ID as string,
-            process.env.NEXT_PUBLIC_TEAMS_COLLECTION_ID as string,
-            response.$id,
-            {
-              bg: randomColor({ luminosity: 'dark' }),
-              name: teamName,
-            },
-            [
-              Permission.read(Role.team(response.$id)),
-              Permission.update(Role.team(response.$id)),
-            ]
-          );
+      const promise = await teams.create(ID.unique(), teamName);
+      await databases.createDocument(
+        process.env.NEXT_PUBLIC_DATABASE_ID as string,
+        process.env.NEXT_PUBLIC_TEAMS_COLLECTION_ID as string,
+        promise.$id,
+        {
+          bg: randomColor({ luminosity: 'dark' }),
+          name: teamName,
         },
-
-        function (error) {
-          console.error(error); // Failure
-        }
+        [
+          Permission.read(Role.team(promise.$id)),
+          Permission.update(Role.team(promise.$id)),
+        ]
       );
+      queryClient.refetchQueries(['teamsList']);
       // Close the modal
       onClose();
     } catch (error) {

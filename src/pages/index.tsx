@@ -13,7 +13,7 @@ import {
   useDisclosure,
 } from '@chakra-ui/react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Avatars, Databases, Query, Teams } from 'appwrite';
+import { Avatars, Databases, Query, Storage, Teams } from 'appwrite';
 import dayjs from 'dayjs';
 import 'dayjs/locale/en';
 import { Nunito_Sans } from 'next/font/google';
@@ -40,10 +40,11 @@ function Home() {
   // const [teamImages, setTeamImages] = useState<any>([]);
   const teamsClient = useMemo(() => new Teams(client), []);
   const databases = useMemo(() => new Databases(client), []);
-  const queryClient = useQueryClient();
-
+  // const queryClient = useQueryClient();
+  const avatars = useMemo(() => new Avatars(client), []);
+  const storage = useMemo(() => new Storage(client), []);
   const {
-    data: teams = [],
+    data: teams,
     isLoading,
     isError,
     isSuccess,
@@ -67,36 +68,36 @@ function Home() {
   );
 
   const {
-    data: teamPreferencesData = {},
+    data: teamPreferencesData,
     isLoading: teamPreferencesLoading,
     isError: teamPreferencesError,
     isSuccess: teamPreferenceSuccess,
   } = useQuery(
     ['teamPreferencesData', teams],
     async () => {
-      const teamPreferencePromises = teams.map((team: any) =>
-        databases.getDocument(
-          process.env.NEXT_PUBLIC_DATABASE_ID as string,
-          process.env.NEXT_PUBLIC_TEAMS_COLLECTION_ID as string,
-          team.$id
-        )
-      );
-      const results = await Promise.allSettled(teamPreferencePromises);
       const preferencesMap: { [key: string]: any } = {};
-      results.forEach((result, index) => {
-        if (result.status === 'fulfilled') {
-          const preference = result.value;
-          preferencesMap[teams[index].$id] = preference;
-        } else {
-          console.error('Error fetching team preferences:', result.reason);
-          // Handle error for individual promise here
+
+      //@ts-ignore
+      for (const team of teams) {
+        try {
+          const preference = await databases.getDocument(
+            process.env.NEXT_PUBLIC_DATABASE_ID as string,
+            process.env.NEXT_PUBLIC_TEAMS_COLLECTION_ID as string,
+            team.$id
+          );
+          preferencesMap[team.$id] = preference;
+        } catch (error) {
+          console.error('Error fetching team preferences:', error);
+          // Handle error for individual request here
         }
-      });
+      }
+
       return preferencesMap;
     },
     {
       staleTime: 3600000,
       cacheTime: 3600000,
+      enabled: !!teams,
     }
   );
 
@@ -108,50 +109,67 @@ function Home() {
   } = useQuery(
     ['teamAvatars', teams, teamPreferencesData],
     async () => {
-      const avatarPromises = teams.map((team: any) =>
-        avatars.getInitials(
-          teamPreferencesData[team.$id]?.name,
-          240,
-          240,
-          tinycolor(teamPreferencesData[team.$id]?.bg).lighten(20).toHex()
-        )
-      );
-      const avatarResults = await Promise.allSettled(avatarPromises);
       const avatarMap: { [key: string]: string } = {};
-      avatarResults.forEach((result, index) => {
-        if (result.status === 'fulfilled') {
-          const avatar = result.value.toString();
-          avatarMap[teams[index].$id] = avatar;
-        } else {
-          console.error('Error fetching team avatar:', result.reason);
-          // Handle error for individual promise here
+      //@ts-ignore
+      for (const team of teams) {
+        try {
+          //@ts-ignore
+          if (teamPreferencesData[team.$id]?.teamImage) {
+            const imageUrl = await storage.getFilePreview(
+              process.env.NEXT_PUBLIC_TEAM_PROFILE_BUCKET_ID as string,
+              //@ts-ignore
+              teamPreferencesData[team.$id]?.teamImage
+            );
+            avatarMap[team.$id] = imageUrl.toString();
+          } else {
+            throw new Error('no team image');
+          }
+        } catch (error) {
+          console.error('Error fetching team image from bucket:', error);
+
+          try {
+            const avatar = await avatars.getInitials(
+              //@ts-ignore
+              teamPreferencesData[team.$id]?.name,
+              240,
+              240,
+              //@ts-ignore
+              tinycolor(teamPreferencesData[team.$id]?.bg).lighten(20).toHex()
+            );
+            avatarMap[team.$id] = avatar.toString();
+          } catch (error) {
+            console.error('Error fetching team avatar:', error);
+            // Handle error for individual request here
+          }
         }
-      });
+      }
+
       return avatarMap;
     },
     {
       staleTime: 3600000,
       cacheTime: 3600000,
+      enabled: !!teamPreferencesData && !!teams,
     }
   );
 
-  //Subscriptions
-  useEffect(() => {
-    const unsubscribe = client.subscribe('teams', (response) => {
-      if (response.events.includes('teams.*.create')) {
-        // queryClient.invalidateQueries(['allTeams']);
-        queryClient.setQueryData(['teamsList'], (prevData: any) => {
-          const newTeam = response.payload;
-          return [newTeam, ...prevData];
-        });
-      }
-    });
-    return () => {
-      unsubscribe();
-    };
-  }, [queryClient]);
-
-  const avatars = useMemo(() => new Avatars(client), []);
+  // Subscriptions
+  // useEffect(() => {
+  //   const unsubscribe = client.subscribe('teams', (response) => {
+  //     if (response.events.includes('teams.*.create')) {
+  //       // queryClient.invalidateQueries(['allTeams']);
+  //       queryClient.setQueryData(['teamsList'], (prevData: any) => {
+  //         console.log(prevData);
+  //         console.log(response.payload);
+  //         // const newTeam = response.payload;
+  //         // return [newTeam, ...prevData];
+  //       });
+  //     }
+  //   });
+  //   return () => {
+  //     unsubscribe();
+  //   };
+  // }, [queryClient]);
 
   //Subscriptions
 
@@ -226,7 +244,8 @@ function Home() {
             </InputGroup>
           }
           {isLoading && <Text my={4}>Loading...</Text>}
-          {teams.length === 0 && isSuccess && !searchTerm && (
+
+          {teams && teams.length === 0 && isSuccess && !searchTerm && (
             <Box height="full" alignItems="center" justifyContent="flex-start">
               <Text fontSize="xl" fontWeight="bold" color="gray.200">
                 You have no teams
@@ -243,65 +262,68 @@ function Home() {
               templateColumns="repeat(1, minmax(0px, 1fr))"
               gap={0}
             >
-              {teams.map((team: any) => {
-                return (
-                  <Link href={`/team/${team.$id}`} key={team.$id}>
-                    <Box
-                      cursor="pointer"
-                      // p={4}
-                      mb={2}
-                      // borderRadius="md"
-                      boxShadow="md"
-                      overflow="hidden"
-                      // h={200}
-                      position="relative" // Add position relative for parent container
-                    >
-                      {/* Background box */}
+              {teams &&
+                teams.map((team: any) => {
+                  return (
+                    <Link href={`/team/${team.$id}`} key={team.$id}>
                       <Box
-                        bg="black"
-                        bgGradient={`linear-gradient(to right, gray.600, ${
-                          teamPreferencesData[team.$id]?.bg
-                        })`}
-                        // position="absolute"
-                        // top={0}
-                        // left={0}
-                        // right={0}
-                        // bottom={0}
+                        cursor="pointer"
+                        // p={4}
+                        mb={2}
                         // borderRadius="md"
-
-                        display="flex"
-                        flexDirection="row"
-                        alignItems="center"
-                        transition="background-color 0.2s ease"
-                        _hover={{
-                          bg: 'black',
-                        }}
+                        boxShadow="md"
+                        overflow="hidden"
+                        // h={200}
+                        position="relative" // Add position relative for parent container
                       >
-                        {teamAvatarData[team.$id] && (
-                          <Avatar
-                            // key={member.id}
+                        {/* Background box */}
+                        {
+                          <Box
+                            bg="black"
+                            bgGradient={`linear-gradient(to right, gray.600, ${
+                              teamPreferencesData?.[team.$id]?.bg ?? 'gray.900'
+                            })`}
+                            // position="absolute"
+                            // top={0}
+                            // left={0}
+                            // right={0}
+                            // bottom={0}
+                            // borderRadius="md"
 
-                            src={teamAvatarData[team.$id]}
-                            size="md"
-                            m={4}
-                            marginRight={2}
-                          />
-                        )}
-                        <Box p={4}>
-                          <Text fontSize="xl" fontWeight="bold">
-                            {teamPreferencesData[team.$id]?.name}
-                          </Text>
-                          <Text fontSize="sm" mt={2}>
-                            <Text>
-                              Created on{' '}
-                              {dayjs(team.$createdAt).format(
-                                'MMM D, YYYY hh:mm A'
-                              )}
-                            </Text>
-                          </Text>
-                        </Box>
-                        <Flex mt={4}>
-                          {/* {project.members.map((member: any) => (
+                            display="flex"
+                            flexDirection="row"
+                            alignItems="center"
+                            transition="background-color 0.2s ease"
+                            _hover={{
+                              bg: 'black',
+                            }}
+                          >
+                            {teamAvatarData[team.$id] && (
+                              <Avatar
+                                // key={member.id}
+
+                                src={teamAvatarData[team.$id]}
+                                size="md"
+                                m={4}
+                                marginRight={2}
+                              />
+                            )}
+                            <Box p={4}>
+                              <Text fontSize="xl" fontWeight="bold">
+                                {teamPreferencesData?.[team.$id]?.name ??
+                                  'Fetching...'}
+                              </Text>
+                              <Text fontSize="sm" mt={2}>
+                                <Text>
+                                  Created on{' '}
+                                  {dayjs(team.$createdAt).format(
+                                    'MMM D, YYYY hh:mm A'
+                                  )}
+                                </Text>
+                              </Text>
+                            </Box>
+                            <Flex mt={4}>
+                              {/* {project.members.map((member: any) => (
                         <Avatar
                           key={member.id}
                           name={member.name}
@@ -310,11 +332,12 @@ function Home() {
                           marginRight={2}
                         />
                       ))} */}
-                        </Flex>
-                      </Box>
+                            </Flex>
+                          </Box>
+                        }
 
-                      {/* Cut-out circle */}
-                      {/* <Box
+                        {/* Cut-out circle */}
+                        {/* <Box
                         position="absolute"
                         bottom={0}
                         right={0}
@@ -324,10 +347,10 @@ function Home() {
                         borderRadius="50%"
                         bg={teamPreferencesData[team.$id]?.bg}
                       /> */}
-                    </Box>
-                  </Link>
-                );
-              })}
+                      </Box>
+                    </Link>
+                  );
+                })}
             </Grid>
           )}
         </Flex>

@@ -2,27 +2,37 @@ import { Box, Center, Flex, Spinner, Text } from '@chakra-ui/react';
 import { useEffect, useState } from 'react';
 
 const Loader = () => {
-  const getRandomJoke = () => {
-    const jokes = [
-      'Why did the developer go broke? Because he lost his domain in a hackathon!',
-      'Why do programmers prefer hackathons? Because they like to "code" their way to success!',
-      'What do you call a hackathon that serves donuts? A "code-glazed" event!',
-      'Why did the hacker break up with their partner? They weren\'t "encrypt" anymore!',
-      'Why did the developer bring a ladder to the hackathon? To "scale" their project!',
-      'Why did the coding competition end early? It had a "bug" in the schedule!',
-      'What did the hackathon participants say after a successful event? "We nailed it!"',
-      'How did the developer prepare for the hackathon? By staying "Java"lized!',
-      'Why did the programmer bring a baseball bat to the hackathon? To "code" some home runs!',
-      'What did the hackathon organizer say to the participants? "Let\'s hack and roll!"',
+  const getRandomQuote = () => {
+    const quotes = [
+      'The only way to do great work is to love what you do. - Steve Jobs',
+      'Success is not the key to happiness. Happiness is the key to success. - Albert Schweitzer',
+      'The future belongs to those who believe in the beauty of their dreams. - Eleanor Roosevelt',
+      "Believe you can and you're halfway there. - Theodore Roosevelt",
+      'The only limit to our realization of tomorrow will be our doubts of today. - Franklin D. Roosevelt',
+      'In the middle of every difficulty lies opportunity. - Albert Einstein',
+      "Don't watch the clock; do what it does. Keep going. - Sam Levenson",
+      'The best way to predict the future is to create it. - Peter Drucker',
+      'Success usually comes to those who are too busy to be looking for it. - Henry David Thoreau',
+      'The harder I work, the luckier I get. - Samuel Goldwyn',
+      'Success is not final, failure is not fatal: It is the courage to continue that counts. - Winston Churchill',
+      "Your time is limited, don't waste it living someone else's life. - Steve Jobs",
+      'The only place where success comes before work is in the dictionary. - Vidal Sassoon',
+      'The best revenge is massive success. - Frank Sinatra',
+      'The secret of success is to know something nobody else knows. - Aristotle Onassis',
+      "Success is not the absence of failure; it's the persistence through failure. - Aisha Tyler",
+      'The secret to success is to know who to blame for your failures. - Larry Wall',
+      "Don't aim for success if you want it; just do what you love and believe in, and it will come naturally. - David Frost",
+      "Opportunities don't happen. You create them. - Chris Grosser",
+      'The road to success and the road to failure are almost exactly the same. - Colin R. Davis',
     ];
-    const randomIndex = Math.floor(Math.random() * jokes.length);
-    return jokes[randomIndex];
+    const randomIndex = Math.floor(Math.random() * quotes.length);
+    return quotes[randomIndex];
   };
 
-  const [joke, setJoke] = useState('');
+  const [quote, setQuote] = useState('');
 
   useEffect(() => {
-    setJoke(getRandomJoke());
+    setQuote(getRandomQuote());
   }, []);
 
   return (
@@ -44,7 +54,7 @@ const Loader = () => {
             </p>
           </Box>
           <Text fontSize="2xl" fontWeight="bold">
-            {joke}
+            {quote}
           </Text>
         </Flex>
       </Center>
