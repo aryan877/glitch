@@ -13,7 +13,7 @@ import {
   MenuList,
   Spacer,
   Text,
-  Tooltip,
+  Tooltip
 } from '@chakra-ui/react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Account, Avatars, Databases, Query, Storage } from 'appwrite';
@@ -745,6 +745,8 @@ const Navbar = ({ flexWidth }: { flexWidth: number }) => {
                 </Flex>
               }
               bg="gray.900"
+              _hover={{ bg: 'gray.900' }}
+              _focus={{ bg: 'gray.900' }}
               variant="outline"
               border="none"
               size="md"
@@ -823,6 +825,8 @@ const Navbar = ({ flexWidth }: { flexWidth: number }) => {
                 </Flex>
               }
               bg="gray.900"
+              _hover={{ bg: 'gray.900' }}
+              _focus={{ bg: 'gray.900' }}
               variant="outline"
               border="none"
               size="md"
@@ -905,6 +909,8 @@ const Navbar = ({ flexWidth }: { flexWidth: number }) => {
                 </Flex>
               }
               bg="gray.900"
+              _hover={{ bg: 'gray.900' }}
+              _focus={{ bg: 'gray.900' }}
               variant="outline"
               border="none"
               size="md"
