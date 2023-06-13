@@ -380,14 +380,10 @@ function TeamSidebar() {
               <Box>
                 <BsPeopleFill size={24} />
               </Box>
-              <Text
-                display={shouldHideIcons ? 'none' : 'flex'}
-                fontWeight="bold"
-              >
-                Team
-              </Text>
+              <Text fontWeight="bold">Team</Text>
             </HStack>
           </Link>
+
           <Link
             href={`/team/chat/${id}`}
             color={router.pathname === '/team/chat/[id]' ? 'white' : 'gray.300'}
@@ -400,70 +396,72 @@ function TeamSidebar() {
               <Box>
                 <FiMessageSquare size="24px" />
               </Box>
-              <VStack align="start">
-                <HStack>
-                  {' '}
-                  <chakra.div
-                    as={Text}
-                    overflow="hidden"
-                    whiteSpace="nowrap"
-                    fontWeight="bold"
-                    textOverflow="ellipsis"
-                    maxW={flexWidth - 100}
-                  >
-                    Team Chat
-                  </chakra.div>{' '}
-                  {unreadChatsData.find((chat) => chat.teamId === id)
-                    ?.unreadCount && (
-                    <Box
-                      width={6}
-                      height={6}
-                      borderRadius="full"
-                      bg="red.500"
-                      color="white"
-                      fontSize="xs"
+              {
+                <VStack align="start">
+                  <HStack>
+                    <chakra.div
+                      as={Text}
+                      overflow="hidden"
+                      whiteSpace="nowrap"
                       fontWeight="bold"
+                      textOverflow="ellipsis"
+                      maxW={flexWidth - 100}
                     >
-                      <Center h="100%" w="100%">
-                        {
-                          unreadChatsData.find((chat) => chat.teamId === id)
-                            ?.unreadCount
-                        }
-                      </Center>
+                      Team Chat
+                    </chakra.div>
+                    {unreadChatsData.find((chat) => chat.teamId === id)
+                      ?.unreadCount && (
+                      <Box
+                        width={6}
+                        height={6}
+                        borderRadius="full"
+                        bg="red.500"
+                        color="white"
+                        fontSize="xs"
+                        fontWeight="bold"
+                      >
+                        <Center h="100%" w="100%">
+                          {
+                            unreadChatsData.find((chat) => chat.teamId === id)
+                              ?.unreadCount
+                          }
+                        </Center>
+                      </Box>
+                    )}
+                  </HStack>
+
+                  {data && data[0] && isSuccess && (
+                    <Box>
+                      <chakra.div
+                        as={Text}
+                        overflow="hidden"
+                        whiteSpace="nowrap"
+                        fontWeight="bold"
+                        textOverflow="ellipsis"
+                        maxW={flexWidth - 100}
+                        color="gray.300"
+                      >
+                        {data[0].sender_name}
+                      </chakra.div>
+                      <chakra.div
+                        as={Text}
+                        overflow="hidden"
+                        whiteSpace="nowrap"
+                        color="gray.200"
+                        mt={1}
+                        textOverflow="ellipsis"
+                        maxW={flexWidth - 100}
+                      >
+                        {data[0].content}
+                      </chakra.div>
                     </Box>
                   )}
-                </HStack>
-
-                {data && data[0] && isSuccess && (
-                  <Box>
-                    <chakra.div
-                      as={Text}
-                      overflow="hidden"
-                      whiteSpace="nowrap"
-                      fontWeight="bold"
-                      textOverflow="ellipsis"
-                      maxW={flexWidth - 100}
-                      color="gray.300"
-                    >
-                      {data[0].sender_name}
-                    </chakra.div>
-                    <chakra.div
-                      as={Text}
-                      overflow="hidden"
-                      whiteSpace="nowrap"
-                      color="gray.200"
-                      mt={1}
-                      textOverflow="ellipsis"
-                      maxW={flexWidth - 100}
-                    >
-                      {data[0].content}
-                    </chakra.div>
-                  </Box>
-                )}
-                {data && <Text fontSize="xs"> {timeAgo}</Text>}
-              </VStack>
+                  {data && <Text fontSize="xs"> {timeAgo}</Text>}
+                </VStack>
+              }
             </HStack>
           </Link>
+
           <Link
             href={`/team/tasks/${id}`}
             color={
@@ -565,12 +563,19 @@ function TeamSidebar() {
             </HStack>
           </Link>
         </VStack>
-        <Box mt={8}>
-          {teamMembersData && teamMembersData.length > 1 && (
-            <Text fontWeight="bold" mb={4} fontSize="md" color="gray.300">
-              Direct Messages
+        <Box mt={8} ml={2}>
+          <Text fontWeight="bold" mb={4} fontSize="md" color="gray.300">
+            <chakra.div>
+              Direct Messages (
+              {teamMembersData?.length ? teamMembersData?.length - 1 : 0})
+            </chakra.div>
+          </Text>
+          {teamMembersData && teamMembersData.length <= 1 && (
+            <Text color="gray.500" fontSize="sm">
+              Add members to see direct chats
             </Text>
           )}
+
           <VStack align="start" gap={2}>
             {teamMembersData?.map((teamMember) => {
               if (currentUser.$id === teamMember.userId) {
