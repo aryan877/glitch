@@ -204,9 +204,23 @@ function Home() {
         <CreateTeamModal isOpen={isOpen} onClose={onClose} />
         <Flex direction="column" mx={8} align="flex-start">
           <Box>
-            <Text mb={8} fontSize="6xl">
-              Welcome to Glitch, powered by{' '}
-              <chakra.span color="red.500">Appwrite</chakra.span>
+            <Text mb={8} fontSize="6xl" fontWeight="bold">
+              Welcome to{' '}
+              <chakra.span
+                bgGradient="linear(to-r, teal.400, blue.500)"
+                bgClip="text"
+                fontWeight="bold"
+              >
+                Glitch
+              </chakra.span>
+              , powered by{' '}
+              <chakra.span
+                bgGradient="linear(to-r, purple.400, pink.500)"
+                bgClip="text"
+                fontWeight="bold"
+              >
+                Appwrite
+              </chakra.span>
             </Text>
             <Button
               mb={8}
