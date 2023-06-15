@@ -532,19 +532,34 @@ function DirectChat() {
   const { isOpen, onOpen, onClose } = useDisclosure();
   //here we implement infinite query and we move up and load previous messages not the next ones,
   // we start with the latest and go back
+  const [lastRead, setLastRead] = useState('');
   const { data, isSuccess } = useQuery(
     [`directMessages-${id}-${slug}`],
     async () => {
       try {
+        const unread = await databases.listDocuments(
+          process.env.NEXT_PUBLIC_DATABASE_ID as string,
+          process.env
+            .NEXT_PUBLIC_DIRECT_CHATS_NOTIFICATION_COLLECTION_ID as string,
+          [
+            Query.equal('readerId', currentUser.$id),
+            Query.equal('isRead', false),
+            Query.equal('channel', hash as string),
+          ]
+        );
+        const queryLimit = unread.total === 0 ? 16 : unread.total + 8;
         const response = await databases.listDocuments(
           process.env.NEXT_PUBLIC_DATABASE_ID as string,
           process.env.NEXT_PUBLIC_DIRECT_CHATS_COLLECTION_ID as string,
           [
             Query.equal('channel', [hash as string]),
-            Query.limit(15),
+            Query.limit(queryLimit),
             Query.orderDesc('$createdAt'),
           ]
         );
+        if (unread.total > 0) {
+          setLastRead(unread.documents[0].messageId);
+        }
         const sortedDocuments = response.documents.sort((a, b) => {
           const dateA = new Date(a.$createdAt);
           const dateB = new Date(b.$createdAt);
@@ -621,10 +636,7 @@ function DirectChat() {
             }
             return prevData;
           };
-          queryClient.setQueryData(
-            [`directMessages-${id}-${slug}`],
-            queryData
-          );
+          queryClient.setQueryData([`directMessages-${id}-${slug}`], queryData);
           const promise = await account.createJWT();
           await axios.post('/api/editdirectchat', {
             jwt: promise.jwt,
@@ -655,10 +667,7 @@ function DirectChat() {
           };
           return [...prevData, newMessage];
         };
-        queryClient.setQueryData(
-          [`directMessages-${id}-${slug}`],
-          queryData
-        );
+        queryClient.setQueryData([`directMessages-${id}-${slug}`], queryData);
         const promise = await account.createJWT();
         await axios.post('/api/postdirectchat', {
           jwt: promise.jwt,
@@ -752,10 +761,7 @@ function DirectChat() {
           };
           return [...prevData, newMessage];
         };
-        queryClient.setQueryData(
-          [`directMessages-${id}-${slug}`],
-          queryData
-        );
+        queryClient.setQueryData([`directMessages-${id}-${slug}`], queryData);
         const promise = await account.createJWT();
         await axios.post('/api/postdirectchat', {
           jwt: promise.jwt,
@@ -1222,6 +1228,16 @@ function DirectChat() {
                         {renderDateDisplay(msg.$createdAt)}
                       </Text>
                       <Divider flex="1" ml={2} />
+                    </HStack>
+                  )}
+
+                  {lastRead === msg.$id && (
+                    <HStack w="full" my={8} px={4}>
+                      <Divider bg="red.500" flex="1" mr={2} />
+                      <Text fontWeight="bold" color="red.500">
+                        Unread Messages
+                      </Text>
+                      <Divider bg="red.500" flex="1" ml={2} />
                     </HStack>
                   )}
                   <Box ref={index === 0 ? ref : null}>
