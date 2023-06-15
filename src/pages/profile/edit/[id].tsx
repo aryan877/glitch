@@ -102,6 +102,9 @@ function EditProfile() {
 
   const handleGithubUpdate = async () => {
     try {
+      // const session = await account.getSession('current');
+      // console.log(session);
+      // return;
       // Update bio logic
       const updatedPrefs = {
         ...data.prefs,

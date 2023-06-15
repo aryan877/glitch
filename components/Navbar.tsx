@@ -747,6 +747,7 @@ const Navbar = ({ flexWidth }: { flexWidth: number }) => {
               bg="gray.900"
               _hover={{ bg: 'gray.900' }}
               _focus={{ bg: 'gray.900' }}
+              _active={{ bg: 'gray.900' }}
               variant="outline"
               border="none"
               size="md"
@@ -827,6 +828,7 @@ const Navbar = ({ flexWidth }: { flexWidth: number }) => {
               bg="gray.900"
               _hover={{ bg: 'gray.900' }}
               _focus={{ bg: 'gray.900' }}
+              _active={{ bg: 'gray.900' }}
               variant="outline"
               border="none"
               size="md"
@@ -911,6 +913,7 @@ const Navbar = ({ flexWidth }: { flexWidth: number }) => {
               bg="gray.900"
               _hover={{ bg: 'gray.900' }}
               _focus={{ bg: 'gray.900' }}
+              _active={{ bg: 'gray.900' }}
               variant="outline"
               border="none"
               size="md"

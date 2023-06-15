@@ -486,17 +486,19 @@ function Team() {
 
       <Box px={16} py={8} bg="gray.800">
         <Box mb={8}>
-          <Button
-            mr={4}
-            borderRadius="full"
-            bg="white"
-            _hover={{ bg: 'white' }}
-            color="black"
-            onClick={onOpen}
-            leftIcon={<AiOutlineUserAdd size="24px" />}
-          >
-            Invite Member
-          </Button>
+          {owner && (
+            <Button
+              mr={4}
+              borderRadius="full"
+              bg="white"
+              _hover={{ bg: 'white' }}
+              color="black"
+              onClick={onOpen}
+              leftIcon={<AiOutlineUserAdd size="24px" />}
+            >
+              Invite Member
+            </Button>
+          )}
 
           <Menu>
             <MenuButton

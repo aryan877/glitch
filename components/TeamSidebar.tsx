@@ -464,7 +464,7 @@ function TeamSidebar() {
                         textOverflow="ellipsis"
                         maxW={flexWidth - 100}
                       >
-                        {data[0].content}
+                        {data[0].content.replaceAll('<br>', ' ')}
                       </chakra.div>
                     </Box>
                   )}

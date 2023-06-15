@@ -27,25 +27,31 @@ const LoginPage = () => {
   const [error, setError] = useState('');
   const router = useRouter();
   const { setCurrentUser, currentUser } = useUser();
-
+  const [loading, setLoading] = useState(false);
+  const [githubLoading, setGithubLoading] = useState(false);
   const account = useMemo(() => new Account(client), []);
   useEffect(() => {
     if (currentUser) {
-      router.replace('/');
+      setGithubLoading(true);
+      setLoading(false);
+      router.push('/');
     }
   }, [currentUser, router]);
 
   const handleSignIn = () => {
+    setLoading(true);
     const promise = account.createEmailSession(email, password);
 
     promise.then(
       function (response) {
         account.get().then((accountResponse) => {
+          setLoading(false);
           setCurrentUser(accountResponse);
           router.push('/');
         });
       },
       function (error) {
+        setLoading(false);
         console.error(error);
         setError(error.message);
         setCurrentUser(undefined);
@@ -53,13 +59,13 @@ const LoginPage = () => {
     );
   };
 
-  const handleGithubSignIn = () => {
+  const handleGithubSignIn = async () => {
     const account = new Account(client);
     const baseUrl =
       process.env.NODE_ENV === 'production'
         ? 'https://glitch.zone'
         : 'http://localhost:3000';
-
+    setGithubLoading(true);
     account.createOAuth2Session('github', baseUrl, `${baseUrl}/login`);
   };
 
@@ -85,6 +91,7 @@ const LoginPage = () => {
           borderRadius="md"
           color="green.500"
           borderWidth={2}
+          isLoading={githubLoading}
           borderColor="green.500"
           onClick={handleGithubSignIn}
         >
@@ -123,6 +130,7 @@ const LoginPage = () => {
           colorScheme="whatsapp"
           onClick={handleSignIn}
           mb={4}
+          isLoading={loading}
           w="full"
           fontSize="lg"
           borderRadius="md"

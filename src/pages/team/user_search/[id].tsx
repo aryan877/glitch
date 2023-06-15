@@ -42,6 +42,8 @@ const UserSearch = () => {
   const storage = useMemo(() => new Storage(client), []);
   const queryClient = useQueryClient();
   const account = useMemo(() => new Account(client), []);
+  const [userLoading, setUserLoading] = useState({});
+
   const router = useRouter();
   const { showNotification } = useNotification();
   const { id } = router.query;
@@ -106,15 +108,22 @@ const UserSearch = () => {
   );
 
   const handleAddToTeam = async (userEmail: string) => {
-    const promise = await account.createJWT();
-    await axios.post('/api/addtoteam', {
-      jwt: promise.jwt,
-      team: id as string,
-      userEmail,
-    });
-    showNotification('user added to team');
-    queryClient.invalidateQueries([`teamMembers-${id}`]);
-    router.replace(`/team/${id}`);
+    try {
+      setUserLoading((prevState) => ({ ...prevState, [userEmail]: true }));
+      const promise = await account.createJWT();
+      await axios.post('/api/addtoteam', {
+        jwt: promise.jwt,
+        team: id as string,
+        userEmail,
+      });
+      showNotification('user added to team');
+      queryClient.invalidateQueries([`teamMembers-${id}`]);
+      router.replace(`/team/${id}`);
+    } catch (error) {
+      showNotification('could not add user, something went wrong');
+    } finally {
+      setUserLoading((prevState) => ({ ...prevState, [userEmail]: false }));
+    }
   };
 
   return (
@@ -196,6 +205,7 @@ const UserSearch = () => {
                           cursor="pointer"
                           color="white"
                           fontSize="24px"
+                          isLoading={userLoading[user.email]}
                           onClick={() => handleAddToTeam(user.email)}
                         />
                       </Tooltip>

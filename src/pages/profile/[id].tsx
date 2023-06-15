@@ -129,8 +129,6 @@ function Profile() {
     { staleTime: 600000, cacheTime: 600000, enabled: !!data }
   );
 
-  console.log(githubData);
-
   // const {
   //   data: userCountryData,
   //   isLoading: isUserCountryLoading,
