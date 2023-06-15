@@ -1,38 +1,46 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
 
-## Getting Started
+# Glitch - Team Management Tool
 
-First, run the development server:
+Glitch is a team management tool developed as part of an ongoing Appwrite hackathon. The tool aims to address the challenges faced by teams during hackathons, such as lack of accountability, ineffective communication, and poor task management. By leveraging the capabilities of Appwrite, Glitch provides a streamlined solution for team collaboration, task management, and communication.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-```
+## Features
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+-   **Team Creation:** Users can create teams and invite members to join.
+-   **Group Chats and Private Messages:** Team members can communicate via group chats or private messages, facilitating effective communication and idea sharing.
+-   **File Sharing:** Users can easily send and download files within the tool.
+-   **Task Management:** Glitch allows users to define, organize, and prioritize tasks, set due dates, and utilize task query filters for efficient task management.
+-   **Task Descriptions:** Users can create task descriptions using the GPT-3.5 Turbo API, enhancing clarity and understanding.
+-   **Real-time Notifications:** Instant notifications for chats and tasks ensure timely communication and task updates.
+-   **Task Pinning:** High-priority tasks can be pinned for easy reference and quick access.
+-   **Notes Sharing:** Users can share notes and collaborate on them within the tool.
+-   **Read Status:** Real-time read status ensures that team members are aware of message interactions and stay on the same page.
 
-You can start editing the page by modifying `pages/index.tsx`. The page auto-updates as you edit the file.
+## Tech Stack
 
-[API routes](https://nextjs.org/docs/api-routes/introduction) can be accessed on [http://localhost:3000/api/hello](http://localhost:3000/api/hello). This endpoint can be edited in `pages/api/hello.ts`.
+-   **Frontend:** Next.js, Chakra UI
+-   **Backend:** Appwrite, Vercel Serverless
+-   **Database:** Appwrite Storage
 
-The `pages/api` directory is mapped to `/api/*`. Files in this directory are treated as [API routes](https://nextjs.org/docs/api-routes/introduction) instead of React pages.
+## Live Website
 
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
+[https://glitch.zone/](https://glitch.zone/)
 
-## Learn More
 
-To learn more about Next.js, take a look at the following resources:
+## Appwrite Usage
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+The Glitch team management tool utilizes various Appwrite services and features, including:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
+-   **API keys**
+-   **JWTs (JSON Web Tokens)**
+-   **Authentication**
+-   **Events**
+-   **Storage**
+-   **Databases**
+-   **Teams**
+-   **Users**
+-   **Accounts**
+-   **Avatars**
+-   **Permissions**
+-   **Functions**
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+The software architecture of Glitch is designed to leverage these Appwrite services effectively. It ensures security, maintains data integrity, and optimizes performance by impleme
