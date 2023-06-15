@@ -263,7 +263,12 @@ function Home() {
           {isLoading && <Text my={4}>Loading...</Text>}
 
           {teams && teams.length === 0 && isSuccess && !searchTerm && (
-            <Box height="full" alignItems="center" justifyContent="flex-start">
+            <Box
+              mt={4}
+              height="full"
+              alignItems="center"
+              justifyContent="flex-start"
+            >
               <Text fontSize="xl" fontWeight="bold" color="gray.200">
                 You have no teams
               </Text>
