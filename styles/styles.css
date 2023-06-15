@@ -165,3 +165,56 @@ code {
   list-style: disc;
   margin-left: 1.25em;
 }
+
+//rolly bot
+.eyes {
+  animation: blink 3s linear infinite;
+}
+.Rolly {
+  animation: RollAround 5s ease-in-out infinite;
+}
+.Shaddow {
+  animation: MoveShaddow 5s ease-in-out infinite;
+  position: relative;
+  top: -12px;
+  z-index: -1;
+}
+@keyframes blink {
+  0% {
+    transform: scale(1, 1);
+  }
+  42% {
+    transform: scale(1, 1);
+  }
+  45% {
+    transform: scale(1, 0.4) translateY(100px);
+  }
+  48% {
+    transform: scale(1, 1);
+  }
+  100% {
+    transform: scale(1, 1);
+  }
+}
+@keyframes RollAround {
+  0% {
+    transform: translateX(-100px) rotateZ(7deg);
+  }
+  50% {
+    transform: translateX(100px) rotateZ(-7deg);
+  }
+  100% {
+    transform: translateX(-100px) rotateZ(7deg);
+  }
+}
+@keyframes MoveShaddow {
+  0% {
+    transform: translateX(-120px);
+  }
+  50% {
+    transform: translateX(120px);
+  }
+  100% {
+    transform: translateX(-120px);
+  }
+}
