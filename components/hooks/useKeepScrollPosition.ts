@@ -1,6 +1,6 @@
 import { RefObject, useLayoutEffect, useMemo, useRef } from 'react';
 
-const useKeepScrollPosition = (deps: any[] = []) => {
+const useKeepScrollPosition = (deps: any[] = [], sending: any) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const previousScrollPosition = useRef<number>(0);
 
@@ -16,8 +16,12 @@ const useKeepScrollPosition = (deps: any[] = []) => {
   useLayoutEffect(() => {
     if (containerRef.current) {
       const container = containerRef.current;
-      container.scrollTop =
-        container.scrollHeight - previousScrollPosition.current;
+      if (!sending.current) {
+        container.scrollTop =
+          container.scrollHeight - previousScrollPosition.current;
+      } else {
+        container.scrollTop = container.scrollHeight;
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [...deps]);

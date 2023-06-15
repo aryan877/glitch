@@ -18,14 +18,14 @@ import {
   TextareaProps,
   Tooltip,
   useDisclosure,
-  VStack,
+  VStack
 } from '@chakra-ui/react';
 import { isNotEmptyObject } from '@chakra-ui/utils';
 import Picker from '@emoji-mart/react';
 import {
   useInfiniteQuery,
   useQuery,
-  useQueryClient,
+  useQueryClient
 } from '@tanstack/react-query';
 import {
   Account,
@@ -36,7 +36,7 @@ import {
   Query,
   Role,
   Storage,
-  Teams,
+  Teams
 } from 'appwrite';
 import axios from 'axios';
 import { UnreadDirectChat } from 'components/Navbar';
@@ -57,7 +57,7 @@ import {
   BsReply,
   BsSend,
   BsThreeDots,
-  BsTrash2,
+  BsTrash2
 } from 'react-icons/bs';
 import { FaCheck, FaCheckDouble, FaEllipsisH, FaXing } from 'react-icons/fa';
 import { FiEdit, FiPaperclip } from 'react-icons/fi';
@@ -593,6 +593,10 @@ function DirectChat() {
   const sendMessage = async () => {
     if (message.trim() !== '') {
       try {
+        sending.current = true;
+        // setTimeout(() => {
+        //   sending.current = false;
+        // }, 2000);
         if (chatContainerRef.current) {
           chatContainerRef.current.scrollTop =
             chatContainerRef.current.scrollHeight;
@@ -795,6 +799,7 @@ function DirectChat() {
     const unsubscribe = client.subscribe(
       `databases.${process.env.NEXT_PUBLIC_DATABASE_ID}.collections.${process.env.NEXT_PUBLIC_DIRECT_CHATS_COLLECTION_ID}.documents`,
       (response) => {
+        sending.current = false;
         if (
           response.events.includes(
             `databases.${process.env.NEXT_PUBLIC_DATABASE_ID}.collections.${process.env.NEXT_PUBLIC_DIRECT_CHATS_COLLECTION_ID}.documents.*.create`
@@ -1080,8 +1085,8 @@ function DirectChat() {
   });
 
   const isLoadingRef = useRef(false);
-
-  const { containerRef } = useKeepScrollPosition([data]);
+  const sending = useRef(false);
+  const { containerRef } = useKeepScrollPosition([data], sending);
 
   useEffect(() => {
     async function fetchData() {
@@ -1089,7 +1094,7 @@ function DirectChat() {
         return;
       }
       isLoadingRef.current = true;
-
+      sending.current = false;
       try {
         const response = await databases.listDocuments(
           process.env.NEXT_PUBLIC_DATABASE_ID as string,

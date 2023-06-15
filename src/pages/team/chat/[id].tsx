@@ -19,7 +19,7 @@ import {
   TextareaProps,
   Tooltip,
   useDisclosure,
-  VStack,
+  VStack
 } from '@chakra-ui/react';
 import { isNotEmptyObject } from '@chakra-ui/utils';
 import data from '@emoji-mart/data';
@@ -29,7 +29,7 @@ import useKeepScrollPosition from '../../../../components/hooks/useKeepScrollPos
 import {
   useInfiniteQuery,
   useQuery,
-  useQueryClient,
+  useQueryClient
 } from '@tanstack/react-query';
 import {
   Account,
@@ -40,7 +40,7 @@ import {
   Query,
   Role,
   Storage,
-  Teams,
+  Teams
 } from 'appwrite';
 import axios from 'axios';
 import { UnreadChat } from 'components/Navbar';
@@ -54,7 +54,7 @@ import {
   useEffect,
   useMemo,
   useRef,
-  useState,
+  useState
 } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { AiOutlineSend } from 'react-icons/ai';
@@ -67,7 +67,7 @@ import {
   BsReply,
   BsSend,
   BsThreeDots,
-  BsTrash2,
+  BsTrash2
 } from 'react-icons/bs';
 import { FaCheck, FaCheckDouble, FaEllipsisH, FaXing } from 'react-icons/fa';
 import { FiEdit, FiPaperclip } from 'react-icons/fi';
@@ -586,158 +586,6 @@ function TeamChat() {
     }
   };
 
-  const sendMessage = async () => {
-    if (message.trim() !== '') {
-      try {
-        let formattedMessage = message.trim();
-        formattedMessage = message.replace(/\n/g, '<br>');
-        setMessage('');
-        if (mode === 'REPLY' || mode === 'EDIT') {
-          setMessageContent('');
-          setMode(null);
-        }
-        const docId = uuidv4();
-        if (mode === 'EDIT') {
-          //find id with messageId
-          const queryData = (prevData: any) => {
-            const messageIndex = prevData.findIndex(
-              (message: any) => message.$id === messageId
-            );
-            if (messageIndex !== -1) {
-              prevData[messageIndex].content = formattedMessage;
-              prevData[messageIndex].edited = true;
-            }
-            return prevData;
-          };
-          queryClient.setQueryData([`teamMessages-${id}`], queryData);
-          const promise = await account.createJWT();
-          await axios.post('/api/editchat', {
-            jwt: promise.jwt,
-            content: formattedMessage,
-            $id: messageId,
-          });
-          return;
-        }
-        // edit flow ends here
-        // normal message and reply flow
-        const queryData = (prevData: any) => {
-          const newMessage = {
-            sender: currentUser.$id,
-            content: formattedMessage,
-            team: id,
-            $id: docId,
-            sender_name: currentUser.name,
-            $createdAt: Date.now(),
-            ...(mode === 'REPLY' && {
-              reference: messageId,
-              referenceContent: messageContent,
-              referenceUser: messageUser,
-            }),
-            edited: false,
-            delivered: false,
-          };
-          return [...prevData, newMessage];
-        };
-        queryClient.setQueryData([`teamMessages-${id}`], queryData);
-        const promise = await account.createJWT();
-        await axios.post('/api/postchat', {
-          jwt: promise.jwt,
-          content: formattedMessage,
-          team: id,
-          $id: docId,
-          ...(mode === 'REPLY' && {
-            reference: messageId,
-            referenceContent: messageContent,
-            referenceUser: messageUser,
-          }),
-        });
-        // Mark the message as delivered
-        queryClient.setQueryData([`teamMessages-${id}`], (prevData: any) => {
-          const updatedData = prevData.map((msg: any) => {
-            if (msg.$id === docId && msg.sender === currentUser.$id) {
-              return {
-                ...msg,
-                delivered: true,
-              };
-            }
-            return msg;
-          });
-          return updatedData;
-        });
-
-        //here we set that as delivered
-      } catch (error) {
-        console.error(error);
-      }
-    }
-  };
-
-  const sendFileMessage = async (fileId: string) => {
-    if (file) {
-      try {
-        // let formattedMessage = message.trim();
-        let formattedMessage = '';
-        // formattedMessage = message.replace(/\n/g, '<br>');
-        setMessage('');
-        if (mode === 'REPLY') {
-          setMessageContent('');
-          setMode(null);
-        }
-        const docId = uuidv4();
-        const queryData = (prevData: any) => {
-          const newMessage = {
-            sender: currentUser.$id,
-            content: formattedMessage,
-            team: id,
-            $id: docId,
-            sender_name: currentUser.name,
-            $createdAt: Date.now(),
-            file: fileId,
-            ...(mode === 'REPLY' && {
-              reference: messageId,
-              referenceContent: messageContent,
-              referenceUser: messageUser,
-            }),
-            edited: false,
-            delivered: false,
-          };
-          return [...prevData, newMessage];
-        };
-        queryClient.setQueryData([`teamMessages-${id}`], queryData);
-        const promise = await account.createJWT();
-        await axios.post('/api/postchat', {
-          jwt: promise.jwt,
-          content: formattedMessage,
-          team: id,
-          file: fileId,
-          $id: docId,
-          ...(mode === 'REPLY' && {
-            reference: messageId,
-            referenceContent: messageContent,
-            referenceUser: messageUser,
-          }),
-        });
-        // Mark the message as delivered
-        queryClient.setQueryData([`teamMessages-${id}`], (prevData: any) => {
-          const updatedData = prevData.map((msg: any) => {
-            if (msg.$id === docId && msg.sender === currentUser.$id) {
-              return {
-                ...msg,
-                delivered: true,
-              };
-            }
-            return msg;
-          });
-          return updatedData;
-        });
-
-        //here we set that as delivered
-      } catch (error) {
-        console.error(error);
-      }
-    }
-  };
-
   const { data: unreadChatsData = [] } = useQuery<UnreadChat[]>(
     ['unreadChats'],
     async () => {
@@ -828,6 +676,7 @@ function TeamChat() {
     const unsubscribe = client.subscribe(
       `databases.${process.env.NEXT_PUBLIC_DATABASE_ID}.collections.${process.env.NEXT_PUBLIC_CHATS_COLLECTION_ID}.documents`,
       (response) => {
+        sending.current = false;
         if (
           response.events.includes(
             `databases.${process.env.NEXT_PUBLIC_DATABASE_ID}.collections.${process.env.NEXT_PUBLIC_CHATS_COLLECTION_ID}.documents.*.create`
@@ -860,6 +709,7 @@ function TeamChat() {
             (response.payload as { team?: string; sender?: string })?.team ===
             id
           ) {
+            queryClient.refetchQueries([`teamMessagesSidebar-${id}`]);
             queryClient.setQueryData(
               [`teamMessages-${id}`],
               (prevData: any) => {
@@ -1074,15 +924,171 @@ function TeamChat() {
   });
 
   const isLoadingRef = useRef(false);
+  const sending = useRef(false);
+  const { containerRef } = useKeepScrollPosition([data], sending);
 
-  const { containerRef } = useKeepScrollPosition([data]);
+  const sendMessage = async () => {
+    if (message.trim() !== '') {
+      try {
+        sending.current = true;
+        // setTimeout(() => {
+        //   sending.current = false;
+        // }, 1000);
+        let formattedMessage = message.trim();
+        formattedMessage = message.replace(/\n/g, '<br>');
+        setMessage('');
+        if (mode === 'REPLY' || mode === 'EDIT') {
+          setMessageContent('');
+          setMode(null);
+        }
+        const docId = uuidv4();
+        if (mode === 'EDIT') {
+          //find id with messageId
+          const queryData = (prevData: any) => {
+            const messageIndex = prevData.findIndex(
+              (message: any) => message.$id === messageId
+            );
+            if (messageIndex !== -1) {
+              prevData[messageIndex].content = formattedMessage;
+              prevData[messageIndex].edited = true;
+            }
+            return prevData;
+          };
+          queryClient.setQueryData([`teamMessages-${id}`], queryData);
+          const promise = await account.createJWT();
+          await axios.post('/api/editchat', {
+            jwt: promise.jwt,
+            content: formattedMessage,
+            $id: messageId,
+          });
+          return;
+        }
+        // edit flow ends here
+        // normal message and reply flow
+        const queryData = (prevData: any) => {
+          const newMessage = {
+            sender: currentUser.$id,
+            content: formattedMessage,
+            team: id,
+            $id: docId,
+            sender_name: currentUser.name,
+            $createdAt: Date.now(),
+            ...(mode === 'REPLY' && {
+              reference: messageId,
+              referenceContent: messageContent,
+              referenceUser: messageUser,
+            }),
+            edited: false,
+            delivered: false,
+          };
+          return [...prevData, newMessage];
+        };
+        queryClient.setQueryData([`teamMessages-${id}`], queryData);
+        const promise = await account.createJWT();
+        await axios.post('/api/postchat', {
+          jwt: promise.jwt,
+          content: formattedMessage,
+          team: id,
+          $id: docId,
+          ...(mode === 'REPLY' && {
+            reference: messageId,
+            referenceContent: messageContent,
+            referenceUser: messageUser,
+          }),
+        });
+        // Mark the message as delivered
+        queryClient.setQueryData([`teamMessages-${id}`], (prevData: any) => {
+          const updatedData = prevData.map((msg: any) => {
+            if (msg.$id === docId && msg.sender === currentUser.$id) {
+              return {
+                ...msg,
+                delivered: true,
+              };
+            }
+            return msg;
+          });
+          return updatedData;
+        });
+
+        //here we set that as delivered
+      } catch (error) {
+        console.error(error);
+      }
+    }
+  };
+
+  const sendFileMessage = async (fileId: string) => {
+    if (file) {
+      try {
+        // let formattedMessage = message.trim();
+        let formattedMessage = '';
+        // formattedMessage = message.replace(/\n/g, '<br>');
+        setMessage('');
+        if (mode === 'REPLY') {
+          setMessageContent('');
+          setMode(null);
+        }
+        const docId = uuidv4();
+        const queryData = (prevData: any) => {
+          const newMessage = {
+            sender: currentUser.$id,
+            content: formattedMessage,
+            team: id,
+            $id: docId,
+            sender_name: currentUser.name,
+            $createdAt: Date.now(),
+            file: fileId,
+            ...(mode === 'REPLY' && {
+              reference: messageId,
+              referenceContent: messageContent,
+              referenceUser: messageUser,
+            }),
+            edited: false,
+            delivered: false,
+          };
+          return [...prevData, newMessage];
+        };
+        queryClient.setQueryData([`teamMessages-${id}`], queryData);
+        const promise = await account.createJWT();
+        await axios.post('/api/postchat', {
+          jwt: promise.jwt,
+          content: formattedMessage,
+          team: id,
+          file: fileId,
+          $id: docId,
+          ...(mode === 'REPLY' && {
+            reference: messageId,
+            referenceContent: messageContent,
+            referenceUser: messageUser,
+          }),
+        });
+        // Mark the message as delivered
+        queryClient.setQueryData([`teamMessages-${id}`], (prevData: any) => {
+          const updatedData = prevData.map((msg: any) => {
+            if (msg.$id === docId && msg.sender === currentUser.$id) {
+              return {
+                ...msg,
+                delivered: true,
+              };
+            }
+            return msg;
+          });
+          return updatedData;
+        });
+
+        //here we set that as delivered
+      } catch (error) {
+        console.error(error);
+      }
+    }
+  };
 
   useEffect(() => {
     async function fetchData() {
       if (!data || isLoadingRef.current) {
         return;
       }
-
+      sending.current = false;
       isLoadingRef.current = true;
 
       try {
