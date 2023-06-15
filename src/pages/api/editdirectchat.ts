@@ -4,7 +4,7 @@ import sdk from 'node-appwrite';
 const postDirectChat = async (req: NextApiRequest, res: NextApiResponse) => {
   const client = new sdk.Client();
   const databases = new sdk.Databases(client);
-  const { jwt, content, $id } = req.body;
+  const { jwt, content, $id, sender_name } = req.body;
   try {
     // Set up the Appwrite client
     client
@@ -18,6 +18,7 @@ const postDirectChat = async (req: NextApiRequest, res: NextApiResponse) => {
       {
         content,
         edited: true,
+        sender_name: sender_name,
       }
     );
     res.status(201).json({

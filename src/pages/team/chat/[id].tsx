@@ -19,7 +19,7 @@ import {
   TextareaProps,
   Tooltip,
   useDisclosure,
-  VStack
+  VStack,
 } from '@chakra-ui/react';
 import { isNotEmptyObject } from '@chakra-ui/utils';
 import data from '@emoji-mart/data';
@@ -29,7 +29,7 @@ import useKeepScrollPosition from '../../../../components/hooks/useKeepScrollPos
 import {
   useInfiniteQuery,
   useQuery,
-  useQueryClient
+  useQueryClient,
 } from '@tanstack/react-query';
 import {
   Account,
@@ -40,7 +40,7 @@ import {
   Query,
   Role,
   Storage,
-  Teams
+  Teams,
 } from 'appwrite';
 import axios from 'axios';
 import { UnreadChat } from 'components/Navbar';
@@ -54,7 +54,7 @@ import {
   useEffect,
   useMemo,
   useRef,
-  useState
+  useState,
 } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { AiOutlineSend } from 'react-icons/ai';
@@ -67,7 +67,7 @@ import {
   BsReply,
   BsSend,
   BsThreeDots,
-  BsTrash2
+  BsTrash2,
 } from 'react-icons/bs';
 import { FaCheck, FaCheckDouble, FaEllipsisH, FaXing } from 'react-icons/fa';
 import { FiEdit, FiPaperclip } from 'react-icons/fi';
@@ -556,8 +556,8 @@ function TeamChat() {
       }
     },
     {
-      staleTime: 3600000,
-      cacheTime: 3600000,
+      // staleTime: 3600000,
+      // cacheTime: 3600000,
     }
   );
 
@@ -719,6 +719,33 @@ function TeamChat() {
                 const newData = prevData.filter(
                   (message: any) => message.$id !== deletedMessage.$id
                 );
+                return [...newData];
+              }
+            );
+          }
+        } else if (
+          response.events.includes(
+            `databases.${process.env.NEXT_PUBLIC_DATABASE_ID}.collections.${process.env.NEXT_PUBLIC_CHATS_COLLECTION_ID}.documents.*.update`
+          )
+        ) {
+          if (
+            (response.payload as { team?: string; sender?: string })?.team ===
+            id
+          ) {
+            queryClient.refetchQueries([`teamMessagesSidebar-${id}`]);
+            queryClient.setQueryData(
+              [`teamMessages-${id}`],
+              (prevData: any) => {
+                const editedMessage = response.payload as { $id: string };
+
+                const newData = prevData.map((message: any) => {
+                  if (message.$id === editedMessage.$id) {
+                    // Replace the edited message with the updated message
+                    return editedMessage;
+                  }
+                  return message;
+                });
+
                 return [...newData];
               }
             );
@@ -960,6 +987,7 @@ function TeamChat() {
             jwt: promise.jwt,
             content: formattedMessage,
             $id: messageId,
+            sender_name: currentUser.name,
           });
           return;
         }

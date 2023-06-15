@@ -18,14 +18,14 @@ import {
   TextareaProps,
   Tooltip,
   useDisclosure,
-  VStack
+  VStack,
 } from '@chakra-ui/react';
 import { isNotEmptyObject } from '@chakra-ui/utils';
 import Picker from '@emoji-mart/react';
 import {
   useInfiniteQuery,
   useQuery,
-  useQueryClient
+  useQueryClient,
 } from '@tanstack/react-query';
 import {
   Account,
@@ -36,7 +36,7 @@ import {
   Query,
   Role,
   Storage,
-  Teams
+  Teams,
 } from 'appwrite';
 import axios from 'axios';
 import { UnreadDirectChat } from 'components/Navbar';
@@ -57,7 +57,7 @@ import {
   BsReply,
   BsSend,
   BsThreeDots,
-  BsTrash2
+  BsTrash2,
 } from 'react-icons/bs';
 import { FaCheck, FaCheckDouble, FaEllipsisH, FaXing } from 'react-icons/fa';
 import { FiEdit, FiPaperclip } from 'react-icons/fi';
@@ -630,6 +630,7 @@ function DirectChat() {
             jwt: promise.jwt,
             content: formattedMessage,
             $id: messageId,
+            sender_name: currentUser.name,
           });
           return;
         }
@@ -839,6 +840,32 @@ function DirectChat() {
                 const newData = prevData.filter(
                   (message: any) => message.$id !== deletedMessage.$id
                 );
+                return [...newData];
+              }
+            );
+          }
+        } else if (
+          response.events.includes(
+            `databases.${process.env.NEXT_PUBLIC_DATABASE_ID}.collections.${process.env.NEXT_PUBLIC_CHATS_COLLECTION_ID}.documents.*.update`
+          )
+        ) {
+          if (
+            (response.payload as { channel?: string; sender?: string })
+              ?.channel === (hash as string)
+          ) {
+            queryClient.setQueryData(
+              [`directMessages-${slug}-${currentUser.$id}`],
+              (prevData: any) => {
+                const editedMessage = response.payload as { $id: string };
+
+                const newData = prevData.map((message: any) => {
+                  if (message.$id === editedMessage.$id) {
+                    // Replace the edited message with the updated message
+                    return editedMessage;
+                  }
+                  return message;
+                });
+
                 return [...newData];
               }
             );
