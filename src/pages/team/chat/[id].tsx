@@ -242,6 +242,7 @@ function ChatMessage({
           e.preventDefault();
           setIsOpen(true);
         }}
+        pos="relative"
       >
         {
           <Link href={`/profile/${sender}`}>
@@ -264,7 +265,9 @@ function ChatMessage({
             px={4}
             bg={sender === currentUser?.$id ? 'gray.500' : 'white'}
             color="white"
-            borderRadius="md"
+            borderBottomRightRadius={sender === currentUser?.$id ? '' : 'xl'}
+            borderBottomLeftRadius={sender === currentUser?.$id ? 'xl' : ''}
+            borderTopRadius="xl"
           >
             {display && (
               <Link href={`/profile/${sender}`}>
