@@ -593,6 +593,10 @@ function DirectChat() {
   const sendMessage = async () => {
     if (message.trim() !== '') {
       try {
+        if (chatContainerRef.current) {
+          chatContainerRef.current.scrollTop =
+            chatContainerRef.current.scrollHeight;
+        }
         let formattedMessage = message.trim();
         formattedMessage = message.replace(/\n/g, '<br>');
         setMessage('');
@@ -842,20 +846,26 @@ function DirectChat() {
     };
   }, [queryClient, hash, currentUser, id, slug]);
 
-  const componentRefs =
-    data?.reduce(
+  const componentRefs = useMemo(() => {
+    if (!data) return {};
+
+    return data.reduce(
       (acc: { [key: string]: React.RefObject<HTMLDivElement> }, item) => {
         const id = item.$id;
         acc[id] = createRef();
         return acc;
       },
       {}
-    ) || {};
+    );
+  }, [data]);
 
   const handleOriginalMessageClick = (id: string) => {
     if (data) {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
       setReferenceToScroll(id);
-      setTimeout(() => {
+      const newTimeoutId = setTimeout(() => {
         setReferenceToScroll(null);
       }, 2000);
       const referencedElement = data.find((item) => item.$id === id);
@@ -865,8 +875,19 @@ function DirectChat() {
           targetElement.scrollIntoView({ behavior: 'auto' });
         }
       }
+      setTimeoutId(newTimeoutId);
     }
   };
+
+  const [timeoutId, setTimeoutId] = useState<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    };
+  }, [timeoutId]);
 
   useEffect(() => {
     const markNotificationsAsRead = async () => {
