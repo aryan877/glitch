@@ -556,8 +556,8 @@ function TeamChat() {
       }
     },
     {
-      // staleTime: 3600000,
-      // cacheTime: 3600000,
+      staleTime: 3600000,
+      cacheTime: 3600000,
     }
   );
 
@@ -682,7 +682,7 @@ function TeamChat() {
             `databases.${process.env.NEXT_PUBLIC_DATABASE_ID}.collections.${process.env.NEXT_PUBLIC_CHATS_COLLECTION_ID}.documents.*.create`
           )
         ) {
-          setTimeout(markNotificationsAsRead, 4000);
+          // setTimeout(markNotificationsAsRead, 4000);
           queryClient.refetchQueries([`teamMessagesSidebar-${id}`]);
           // queryClient.invalidateQueries(['allTeams']);
           if (
@@ -691,7 +691,6 @@ function TeamChat() {
             (response.payload as { team?: string; sender?: string })?.sender !==
               currentUser?.$id
           ) {
-            setMessage('');
             queryClient.setQueryData(
               [`teamMessages-${id}`],
               (prevData: any) => {
@@ -730,7 +729,9 @@ function TeamChat() {
         ) {
           if (
             (response.payload as { team?: string; sender?: string })?.team ===
-            id
+              id &&
+            (response.payload as { team?: string; sender?: string })?.sender !==
+              currentUser?.$id
           ) {
             queryClient.refetchQueries([`teamMessagesSidebar-${id}`]);
             queryClient.setQueryData(
@@ -989,55 +990,54 @@ function TeamChat() {
             $id: messageId,
             sender_name: currentUser.name,
           });
-          return;
-        }
-        // edit flow ends here
-        // normal message and reply flow
-        const queryData = (prevData: any) => {
-          const newMessage = {
-            sender: currentUser.$id,
+        } else {
+          // edit flow ends here
+          // normal message and reply flow
+          const queryData = (prevData: any) => {
+            const newMessage = {
+              sender: currentUser.$id,
+              content: formattedMessage,
+              team: id,
+              $id: docId,
+              sender_name: currentUser.name,
+              $createdAt: Date.now(),
+              ...(mode === 'REPLY' && {
+                reference: messageId,
+                referenceContent: messageContent,
+                referenceUser: messageUser,
+              }),
+              edited: false,
+              delivered: false,
+            };
+            return [...prevData, newMessage];
+          };
+          queryClient.setQueryData([`teamMessages-${id}`], queryData);
+          const promise = await account.createJWT();
+          await axios.post('/api/postchat', {
+            jwt: promise.jwt,
             content: formattedMessage,
             team: id,
             $id: docId,
-            sender_name: currentUser.name,
-            $createdAt: Date.now(),
             ...(mode === 'REPLY' && {
               reference: messageId,
               referenceContent: messageContent,
               referenceUser: messageUser,
             }),
-            edited: false,
-            delivered: false,
-          };
-          return [...prevData, newMessage];
-        };
-        queryClient.setQueryData([`teamMessages-${id}`], queryData);
-        const promise = await account.createJWT();
-        await axios.post('/api/postchat', {
-          jwt: promise.jwt,
-          content: formattedMessage,
-          team: id,
-          $id: docId,
-          ...(mode === 'REPLY' && {
-            reference: messageId,
-            referenceContent: messageContent,
-            referenceUser: messageUser,
-          }),
-        });
-        // Mark the message as delivered
-        queryClient.setQueryData([`teamMessages-${id}`], (prevData: any) => {
-          const updatedData = prevData.map((msg: any) => {
-            if (msg.$id === docId && msg.sender === currentUser.$id) {
-              return {
-                ...msg,
-                delivered: true,
-              };
-            }
-            return msg;
           });
-          return updatedData;
-        });
-
+          // Mark the message as delivered
+          queryClient.setQueryData([`teamMessages-${id}`], (prevData: any) => {
+            const updatedData = prevData.map((msg: any) => {
+              if (msg.$id === docId && msg.sender === currentUser.$id) {
+                return {
+                  ...msg,
+                  delivered: true,
+                };
+              }
+              return msg;
+            });
+            return updatedData;
+          });
+        }
         //here we set that as delivered
       } catch (error) {
         console.error(error);

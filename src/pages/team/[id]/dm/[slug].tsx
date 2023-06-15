@@ -533,7 +533,7 @@ function DirectChat() {
   //here we implement infinite query and we move up and load previous messages not the next ones,
   // we start with the latest and go back
   const { data, isSuccess } = useQuery(
-    [`directMessages-${slug}-${currentUser.$id}`],
+    [`directMessages-${id}-${slug}`],
     async () => {
       try {
         const response = await databases.listDocuments(
@@ -565,8 +565,8 @@ function DirectChat() {
       }
     },
     {
-      // staleTime: 3600000,
-      // cacheTime: 3600000,
+      staleTime: 3600000,
+      cacheTime: 3600000,
     }
   );
 
@@ -622,7 +622,7 @@ function DirectChat() {
             return prevData;
           };
           queryClient.setQueryData(
-            [`directMessages-${slug}-${currentUser.$id}`],
+            [`directMessages-${id}-${slug}`],
             queryData
           );
           const promise = await account.createJWT();
@@ -656,7 +656,7 @@ function DirectChat() {
           return [...prevData, newMessage];
         };
         queryClient.setQueryData(
-          [`directMessages-${slug}-${currentUser.$id}`],
+          [`directMessages-${id}-${slug}`],
           queryData
         );
         const promise = await account.createJWT();
@@ -675,7 +675,7 @@ function DirectChat() {
         });
         // Mark the message as delivered
         queryClient.setQueryData(
-          [`directMessages-${slug}-${currentUser.$id}`],
+          [`directMessages-${id}-${slug}`],
           (prevData: any) => {
             const updatedData = prevData.map((msg: any) => {
               if (msg.$id === docId && msg.sender === currentUser.$id) {
@@ -753,7 +753,7 @@ function DirectChat() {
           return [...prevData, newMessage];
         };
         queryClient.setQueryData(
-          [`directMessages-${slug}-${currentUser.$id}`],
+          [`directMessages-${id}-${slug}`],
           queryData
         );
         const promise = await account.createJWT();
@@ -773,7 +773,7 @@ function DirectChat() {
         });
         // Mark the message as delivered
         queryClient.setQueryData(
-          [`directMessages-${slug}-${currentUser.$id}`],
+          [`directMessages-${id}-${slug}`],
           (prevData: any) => {
             const updatedData = prevData.map((msg: any) => {
               if (msg.$id === docId && msg.sender === currentUser.$id) {
@@ -813,9 +813,9 @@ function DirectChat() {
             (response.payload as { channel?: string; sender?: string })
               ?.sender !== currentUser?.$id
           ) {
-            setMessage('');
+            // setMessage('');
             queryClient.setQueryData(
-              [`directMessages-${slug}-${currentUser.$id}`],
+              [`directMessages-${id}-${slug}`],
               (prevData: any) => {
                 const newMessage = response.payload;
                 return [...prevData, newMessage];
@@ -832,7 +832,7 @@ function DirectChat() {
               ?.channel === (hash as string)
           ) {
             queryClient.setQueryData(
-              [`directMessages-${slug}-${currentUser.$id}`],
+              [`directMessages-${id}-${slug}`],
               (prevData: any) => {
                 const deletedMessage = response.payload as {
                   $id: string;
@@ -854,7 +854,7 @@ function DirectChat() {
               ?.channel === (hash as string)
           ) {
             queryClient.setQueryData(
-              [`directMessages-${slug}-${currentUser.$id}`],
+              [`directMessages-${id}-${slug}`],
               (prevData: any) => {
                 const editedMessage = response.payload as { $id: string };
 
@@ -1147,7 +1147,7 @@ function DirectChat() {
         });
 
         queryClient.setQueryData(
-          [`directMessages-${slug}-${currentUser.$id}`],
+          [`directMessages-${id}-${slug}`],
           (prevData: any) => {
             const updatedData = [...updatedDocuments, ...prevData];
             return updatedData;

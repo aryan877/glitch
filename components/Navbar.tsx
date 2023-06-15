@@ -223,10 +223,9 @@ const Navbar = ({ flexWidth }: { flexWidth: number }) => {
             sender: string;
             sender_name: string;
             readerId: string;
+            channel: string;
           };
-          queryClient.invalidateQueries([
-            `directMessages-${payload.sender}-${payload.readerId}`,
-          ]);
+
           // console.log(payload.teamId);
           if (payload?.sender !== currentUser?.$id) {
             queryClient.setQueryData(['unreadDirectChats'], (prevData: any) => {
@@ -260,7 +259,7 @@ const Navbar = ({ flexWidth }: { flexWidth: number }) => {
     return () => {
       unsubscribe();
     };
-  }, [queryClient, id, currentUser]);
+  }, [queryClient, id, currentUser, router.pathname]);
   //DIRECT CHAT NOTIF DATA HANDLERS
 
   //GROUP CHAT NOTIF DATA HANDLERS
@@ -315,7 +314,6 @@ const Navbar = ({ flexWidth }: { flexWidth: number }) => {
     const unsubscribe = client.subscribe(
       `databases.${process.env.NEXT_PUBLIC_DATABASE_ID}.collections.${process.env.NEXT_PUBLIC_CHATS_NOTIFICATION_COLLECTION_ID}.documents`,
       (response) => {
-        queryClient.refetchQueries([`teamMessagesSidebar-${id}`]);
         if (
           response.events.includes(
             `databases.${process.env.NEXT_PUBLIC_DATABASE_ID}.collections.${process.env.NEXT_PUBLIC_CHATS_NOTIFICATION_COLLECTION_ID}.documents.*.create`
@@ -362,7 +360,26 @@ const Navbar = ({ flexWidth }: { flexWidth: number }) => {
     return () => {
       unsubscribe();
     };
-  }, [queryClient, id, currentUser]);
+  }, [queryClient, id, currentUser, router.pathname]);
+
+  // c. clear cache on RUD
+  useEffect(() => {
+    const unsubscribe = client.subscribe(
+      `databases.${process.env.NEXT_PUBLIC_DATABASE_ID}.collections.${process.env.NEXT_PUBLIC_CHATS_COLLECTION_ID}.documents`,
+      (response) => {
+        const payload = response.payload as {
+          team: string;
+        };
+        if (payload.team === id && router.pathname !== '/team/chat/[id]') {
+          queryClient.refetchQueries([`teamMessagesSidebar-${id}`]);
+          queryClient.invalidateQueries([`teamMessages-${payload.team}`]);
+        }
+      }
+    );
+    return () => {
+      unsubscribe();
+    };
+  }, [queryClient, router.pathname, id]);
   //GROUP CHAT NOTIF DATA HANDLERS
 
   //TASK ASSIGNMENT NOTIF HANDLERS
@@ -471,7 +488,6 @@ const Navbar = ({ flexWidth }: { flexWidth: number }) => {
     const unsubscribe = client.subscribe(
       `databases.${process.env.NEXT_PUBLIC_DATABASE_ID}.collections.${process.env.NEXT_PUBLIC_TASKS_NOTIFICATION_COLLECTION_ID}.documents`,
       (response) => {
-        // queryClient.invalidateQueries([`allTasks`]);
         if (
           response.events.includes(
             `databases.${process.env.NEXT_PUBLIC_DATABASE_ID}.collections.${process.env.NEXT_PUBLIC_TASKS_NOTIFICATION_COLLECTION_ID}.documents.*.create`
@@ -486,7 +502,25 @@ const Navbar = ({ flexWidth }: { flexWidth: number }) => {
       unsubscribe();
     };
   }, [queryClient]);
-  //c. Mark Read
+  // c. clear cache on RUD
+  useEffect(() => {
+    const unsubscribe = client.subscribe(
+      `databases.${process.env.NEXT_PUBLIC_DATABASE_ID}.collections.${process.env.NEXT_PUBLIC_DIRECT_CHATS_COLLECTION_ID}.documents`,
+      (response) => {
+        const payload = response.payload as {
+          sender: string;
+        };
+        if (router.pathname !== `/team/[id]/dm/[slug]`) {
+          queryClient.invalidateQueries([
+            `directMessages-${id}-${payload.sender}`,
+          ]);
+        }
+      }
+    );
+    return () => {
+      unsubscribe();
+    };
+  }, [queryClient, router.pathname, id]);
   //to be done
   //TASK ASSIGNMENT NOTIF HANDLERS
 
