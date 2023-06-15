@@ -1226,7 +1226,7 @@ function TeamChat() {
         <Box
           overflowY="scroll"
           flex="1"
-          bgGradient={`linear(to top, gray.800 99%, ${teamPreference.bg})`}
+          bgGradient={`linear(to top, gray.800 94%, ${teamPreference.bg})`}
           py={4}
           ref={containerRef}
         >
