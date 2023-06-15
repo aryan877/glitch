@@ -40,6 +40,8 @@ function Home() {
   // const [teamImages, setTeamImages] = useState<any>([]);
   const teamsClient = useMemo(() => new Teams(client), []);
   const databases = useMemo(() => new Databases(client), []);
+  const [initialTeams, setInitialTeams] = useState<any>([]);
+
   // const queryClient = useQueryClient();
   const avatars = useMemo(() => new Avatars(client), []);
   const storage = useMemo(() => new Storage(client), []);
@@ -66,6 +68,11 @@ function Home() {
       cacheTime: 3600000,
     }
   );
+  useEffect(() => {
+    if (isSuccess && teams && initialTeams.length === 0) {
+      setInitialTeams(teams);
+    }
+  }, [isSuccess, teams, initialTeams]);
 
   const {
     data: teamPreferencesData,
@@ -244,7 +251,7 @@ function Home() {
             </Button>
           </Box>
 
-          {
+          {initialTeams.length > 0 && (
             <InputGroup mb={4}>
               <Input
                 placeholder="Search team"
@@ -259,7 +266,7 @@ function Home() {
                 <AiOutlineSearch size="24px" color="gray" />
               </InputRightElement>
             </InputGroup>
-          }
+          )}
           {isLoading && <Text my={4}>Loading...</Text>}
 
           {teams && teams.length === 0 && isSuccess && !searchTerm && (
