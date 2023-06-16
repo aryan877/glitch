@@ -242,22 +242,20 @@ function ChatMessage({
           e.preventDefault();
           setIsOpen(true);
         }}
-        pos="relative"
       >
-        {
-          <Link href={`/profile/${sender}`}>
-            <Avatar
-              name={senderName as string}
-              size="md"
-              src={profileImage}
-              w="12"
-              bg="gray.500"
-              color="white"
-              mr={sender !== currentUser?.$id ? 2 : 0}
-              ml={sender === currentUser?.$id ? 2 : 0}
-            />
-          </Link>
-        }
+        <Link href={`/profile/${sender}`}>
+          <Avatar
+            name={senderName as string}
+            size="md"
+            src={profileImage}
+            w="12"
+            bg="gray.500"
+            color="white"
+            mr={sender !== currentUser?.$id ? 2 : 0}
+            ml={sender === currentUser?.$id ? 2 : 0}
+          />
+        </Link>
+
         {
           <Box
             maxW="xl"
@@ -265,8 +263,10 @@ function ChatMessage({
             px={4}
             bg={sender === currentUser?.$id ? 'gray.500' : 'white'}
             color="white"
-            borderBottomRightRadius={sender === currentUser?.$id ? '' : 'xl'}
-            borderBottomLeftRadius={sender === currentUser?.$id ? 'xl' : ''}
+            borderBottomRightRadius={
+              sender === currentUser?.$id ? 'none' : 'xl'
+            }
+            borderBottomLeftRadius={sender === currentUser?.$id ? 'xl' : 'none'}
             borderTopRadius="xl"
           >
             {display && (
@@ -1226,7 +1226,7 @@ function TeamChat() {
         <Box
           overflowY="scroll"
           flex="1"
-          bgGradient={`linear(to top, gray.800 94%, ${teamPreference.bg})`}
+          bgGradient={`linear(to top, gray.800 99%, ${teamPreference.bg})`}
           py={4}
           ref={containerRef}
         >
