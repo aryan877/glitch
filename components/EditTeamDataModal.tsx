@@ -245,7 +245,14 @@ const EditTeamDataModal: React.FC<EditTeamDataModalProps> = ({
   const handleTeamDefaultRoleChange = (
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
-    setTeamDefaultRole(event.target.value);
+    const inputValue = event.target.value;
+
+    // Check if the input value conforms to the specified rules
+    const isValid = /^([a-zA-Z0-9._-]{0,36})$/.test(inputValue);
+
+    if (isValid) {
+      setTeamDefaultRole(inputValue);
+    }
   };
 
   return (

@@ -128,7 +128,7 @@ function TeamTasks() {
           sortBy = Query.orderDesc('$createdAt');
         } else if (sortType === 'deadline') {
           //@ts-ignore
-          sortBy = Query.orderDesc('deadline');
+          sortBy = Query.orderAsc('deadline');
         }
 
         const response = await databases.listDocuments(
