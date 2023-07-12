@@ -43,4 +43,4 @@ The Glitch team management tool utilizes various Appwrite services and features,
 -   **Permissions**
 -   **Functions**
 
-The software architecture of Glitch is designed to leverage these Appwrite services effectively. It ensures security, maintains data integrity, and optimizes performance by impleme
+The software architecture of Glitch is designed to leverage these Appwrite services effectively. It ensures security, maintains data integrity, and optimizes performance.
